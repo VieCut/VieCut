@@ -228,7 +228,6 @@ public:
         for (int i = 0; i < omp_get_max_threads(); ++i) {
 
             priority_queue_interface* pq = noi_minimum_cut::selectPq(pq_str, mincut, G, limit);
-
             std::vector<bool> visited(G->number_of_nodes(), false);
             std::vector<bool> seen(G->number_of_nodes(), false);
             std::vector<bool> blacklisted(G->number_of_nodes(), false);
@@ -282,6 +281,7 @@ public:
                     processVertexUnlimited(G, current_node, visited, r_v, blacklisted, seen, mincut, uf, pq);
                 }
             }
+	    delete pq;
         }
 
         return alphamin;

@@ -2,12 +2,12 @@
  * graph_extractor.cpp
  *
  * Source of VieCut.
- * 
+ *
  * Adapted from KaHIP.
  *
  ******************************************************************************
  * Copyright (C) 2013-2015 Christian Schulz <christian.schulz@kit.edu>
- * 
+ *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 

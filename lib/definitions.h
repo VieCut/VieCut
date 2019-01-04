@@ -2,7 +2,7 @@
  * definitions.h
  *
  * Source of VieCut.
- * 
+ *
  * Adapted from KaHIP.
  *
  ******************************************************************************
@@ -79,4 +79,3 @@ typedef enum {
     PERMUTATION_QUALITY_FAST,
     PERMUTATION_QUALITY_GOOD
 } PermutationQuality;
-

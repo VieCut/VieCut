@@ -2,13 +2,13 @@
  * flow_graph.h
  *
  * Source of VieCut.
- * 
+ *
  * Adapted from KaHIP.
  *
  ******************************************************************************
  * Copyright (C) 2013-2015 Christian Schulz <christian.schulz@kit.edu>
  * Copyright (C) 2017 Alexander Noe <alexander.noe@univie.ac.at>
- * 
+ *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 

@@ -2,12 +2,12 @@
  * random_functions.cpp
  *
  * Source of VieCut.
- * 
+ *
  * Adapted from KaHIP.
  *
  ******************************************************************************
  * Copyright (C) 2013-2015 Christian Schulz <christian.schulz@kit.edu>
- * 
+ *
  *****************************************************************************/
 
 #include "random_functions.h"

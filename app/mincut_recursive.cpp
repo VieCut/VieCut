@@ -2,7 +2,7 @@
  * mincut_recursive.cpp
  *
  * Source of VieCut.
- * 
+ *
  ******************************************************************************
  * Copyright (C) 2017-2018 Alexander Noe <alexander.noe@univie.ac.at>
  *

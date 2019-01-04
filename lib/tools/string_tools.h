@@ -5,7 +5,7 @@
  *
  ******************************************************************************
  * Copyright (C) 2017 Alexander Noe <alexander.noe@univie.ac.at>
- * 
+ *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 #pragma once

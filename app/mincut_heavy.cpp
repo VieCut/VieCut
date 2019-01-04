@@ -10,7 +10,6 @@
  *****************************************************************************/
 
 #include <algorithm>
-#include <argtable2.h>
 #include <cmath>
 #include <cstdio>
 #include <iostream>

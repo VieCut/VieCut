@@ -233,8 +233,8 @@ public:
                 processVertexUnlimited(G, current_node, visited, r_v, seen, mincut, uf, pq);
             }
         }
-	delete pq;
-	return alphamin;
+        delete pq;
+        return alphamin;
     }
 
     void processVertexLimited(std::shared_ptr<graph_access> G,

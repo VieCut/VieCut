@@ -281,7 +281,7 @@ public:
                     processVertexUnlimited(G, current_node, visited, r_v, blacklisted, seen, mincut, uf, pq);
                 }
             }
-	    delete pq;
+            delete pq;
         }
 
         return alphamin;

@@ -1,27 +1,18 @@
 /******************************************************************************
  * random_functions.h
  *
- * Source of KaHIP -- Karlsruhe High Quality Partitioning.
+ * Source of VieCut.
+ * 
+ * Adapted from KaHIP.
  *
  ******************************************************************************
- * Copyright (C) 2013-2015 Christian Schulz <christian.schulz@kit.edu>
- *
- * This program is free software: you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation, either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2013-2015 Christian Schulz <christian.schulz@univie.ac.at>
+ * Copyright (C) 2017-2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#ifndef RANDOM_FUNCTIONS_RMEPKWYT
-#define RANDOM_FUNCTIONS_RMEPKWYT
+#pragma once
 
 #include <algorithm>
 #include <iostream>
@@ -198,5 +189,3 @@ private:
     static int m_seed;
     static MersenneTwister m_mt;
 };
-
-#endif /* end of include guard: RANDOM_FUNCTIONS_RMEPKWYT */

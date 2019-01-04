@@ -1,3 +1,14 @@
+/******************************************************************************
+ * push_relabel_test.h
+ *
+ * Source of VieCut.
+ *
+ ******************************************************************************
+ * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
+
 #include "io/graph_io.h"
 #include <gtest/gtest.h>
 #include <random>

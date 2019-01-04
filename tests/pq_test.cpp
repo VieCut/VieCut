@@ -1,6 +1,13 @@
-//
-// Created by noea45cs on 28.08.18.
-//
+/******************************************************************************
+ * pq_test.h
+ *
+ * Source of VieCut.
+ *
+ ******************************************************************************
+ * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
 
 #include "data_structure/priority_queues/bucket_pq.h"
 #include "data_structure/priority_queues/fifo_node_bucket_pq.h"

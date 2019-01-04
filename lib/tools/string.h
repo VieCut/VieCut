@@ -1,12 +1,10 @@
 /*******************************************************************************
  * string.h
  *
- * Some string helper functions
- *
- * From Project Thrill - http://project-thrill.org
+ * Source of VieCut.
  *
  * Copyright (C) 2015 Timo Bingmann <tb@panthema.net>
- * Copyright (C) 2017 Alexander Noe <alexander.noe@univie.ac.at>
+ * Copyright (C) 2017-2018 Alexander Noe <alexander.noe@univie.ac.at>
  ******************************************************************************/
 
 #pragma once

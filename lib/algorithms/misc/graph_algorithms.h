@@ -1,8 +1,20 @@
+/******************************************************************************
+ * graph_algorithms.h
+ * 
+ * Source of VieCut
+ * 
+ ******************************************************************************
+ * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
+
+#pragma once
+
 #include <data_structure/graph_access.h>
 #include <definitions.h>
 #include <memory>
 
-#pragma once
 
 class graph_algorithms
 {

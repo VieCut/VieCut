@@ -81,7 +81,6 @@ set(SOURCE_FILES
         lib/tools/quality_metrics.h
         lib/io/graph_io.cpp
         lib/definitions.h
-        lib/tools/hash.h
         lib/algorithms/misc/core_decomposition.h
         lib/algorithms/flow/push_relabel.h
         lib/data_structure/flow_graph.h

@@ -1,6 +1,13 @@
-//
-// Created by noea45cs on 28.08.18.
-//
+/******************************************************************************
+ * hash.h
+ *
+ * Source of VieCut.
+ *
+ ******************************************************************************
+ * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
 
 #pragma once
 #define XXH_PRIVATE_API

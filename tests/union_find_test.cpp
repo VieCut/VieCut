@@ -1,6 +1,13 @@
-//
-// Created by noea45cs on 29.08.18.
-//
+/******************************************************************************
+ * union_find_test.h
+ *
+ * Source of VieCut.
+ *
+ ******************************************************************************
+ * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
 
 #include <gtest/gtest.h>
 #include <omp.h>

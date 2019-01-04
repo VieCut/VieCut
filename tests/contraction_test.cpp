@@ -1,6 +1,13 @@
-//
-// Created by noea45cs on 29.08.18.
-//
+/******************************************************************************
+ * contraction_test.h
+ *
+ * Source of VieCut.
+ *
+ ******************************************************************************
+ * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * 
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
 
 #ifdef PARALLEL
 #include "parallel/coarsening/contract_graph.h"

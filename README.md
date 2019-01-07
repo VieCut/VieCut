@@ -1,4 +1,4 @@
-# Shared-memory Minimum Cuts
+# VieCut 1.0 - Shared-memory Minimum Cuts
 
 This is the code repository to accompany our papers:
 

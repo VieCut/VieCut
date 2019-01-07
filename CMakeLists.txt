@@ -32,6 +32,8 @@ MESSAGE(STATUS "Option: SAVE_CUTS " ${SAVE_CUTS})
 MESSAGE(STATUS "Option: ENABLE_PARALLEL " ${ENABLE_PARALLEL})
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})
 
+set(default_build_type "Release")
+
 include_directories(
         app
         extlib/growt

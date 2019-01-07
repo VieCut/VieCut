@@ -65,8 +65,10 @@ To compile the code use the following commands
   make
 ```
 
-By default our programs are compiled for single thread.
-By replacing `cmake ..` with `cmake -DENABLE_PARALLEL=ON ..` we use shared-memory parallel
+We also offer a compile script `compile.sh` which compiles the executables and runs tests.
+
+By default our programs are compiled for single threaded use.
+By replacing `cmake ..` with `cmake -DENABLE_PARALLEL=ON ..` (or `./compile.sh -DENABLE_PARALLEL=ON`) we use shared-memory parallel
 implementations of algorithms and data structures (code from subfolder `/lib/parallel`).
 When adding `-DSAVE_CUTS=ON` the algorithms do not only store the value of the minimum cut but also write a cut file to disk.
 This cut file has one line per vertex, either '0' or '1', depending on which side of the cut the vertex is.

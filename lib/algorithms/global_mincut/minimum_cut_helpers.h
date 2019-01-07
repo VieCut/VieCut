@@ -13,6 +13,7 @@
 
 #include <data_structure/graph_access.h>
 #include <memory>
+#include <unordered_map>
 
 class minimum_cut_helpers
 {

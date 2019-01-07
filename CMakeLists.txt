@@ -8,7 +8,18 @@ endmacro(build_and_link)
 
 add_definitions("-DVIECUT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
-set(CMAKE_CXX_STANDARD 17)
+INCLUDE(CheckCXXCompilerFlag)
+
+check_cxx_compiler_flag("-std=c++17" HAS_MODERN_COMPILER)
+MESSAGE(Status: " Compiler supports c++17: " ${HAS_MODERN_COMPILER})
+
+IF (HAS_MODERN_COMPILER)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++17)
+ELSE (HAS_MODERN_COMPILER)
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++14)
+ENDIF (HAS_MODERN_COMPILER)
 
 OPTION(SAVE_CUTS "Save minimum cut to file" OFF)
 OPTION(ENABLE_PARALLEL "Shared-memory parallelism enabled" OFF)
@@ -41,7 +52,7 @@ include_directories(
         lib
         /usr/include/mpi)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pipe -msse4.2 -mcx16 -Wall -Wextra")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -msse4.2 -mcx16 -Wall -Wextra")
 
 set (CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 

@@ -83,7 +83,8 @@ int main(int argn, char** argv) {
         graph_extractor ge;
         strongly_connected_components scc;
 
-        auto new_g = graphs.emplace_back(ge.extract_block(G, larger).first);
+        graphs.emplace_back(ge.extract_block(G, larger).first);
+        std::shared_ptr<graph_access> new_g = graphs.back();
 
         graphs.emplace_back(scc.largest_scc(new_g));
         if (cut > last_cut && last_cut != 0 && cut < G->getMinDegree() && output) {

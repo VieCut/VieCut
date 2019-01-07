@@ -179,7 +179,10 @@ public:
                 (*G_in), G_in->number_of_nodes(), uf, contraction, iteration);
         }
 
-        auto [map, rev_map] = createMappings((*G_in), uf);
+        auto ret = createMappings((*G_in), uf);
+
+        auto map = std::get<0>(ret);
+        auto rev_map = std::get<1>(ret);
 
         std::shared_ptr<graph_access> G2 = contraction::contractGraph(G_in, map, rev_map);
 

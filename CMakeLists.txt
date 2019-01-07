@@ -2,8 +2,15 @@ cmake_minimum_required(VERSION 3.5)
 project(vc)
 
 macro(build_and_link TARGETNAME)
-    add_executable(${TARGETNAME} app/${TARGETNAME}.cpp)
-    target_link_libraries(${TARGETNAME} ${LIBS})
+    set (SEQ_NAME "${TARGETNAME}") 
+    add_executable(${SEQ_NAME} app/${TARGETNAME}.cpp)
+    target_link_libraries(${SEQ_NAME} ${LIBS})
+
+    set (PAR_NAME "${TARGETNAME}_parallel")
+    add_executable(${PAR_NAME} app/${TARGETNAME}.cpp)
+    target_link_libraries(${PAR_NAME} ${LIBS})
+    target_compile_definitions(${PAR_NAME} PUBLIC -DPARALLEL)
+
 endmacro(build_and_link)
 
 add_definitions("-DVIECUT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
@@ -22,7 +29,6 @@ ELSE (HAS_MODERN_COMPILER)
 ENDIF (HAS_MODERN_COMPILER)
 
 OPTION(SAVE_CUTS "Save minimum cut to file" OFF)
-OPTION(ENABLE_PARALLEL "Shared-memory parallelism enabled" OFF)
 OPTION(RUN_TESTS "Compile and run tests" ON)
 
 # prohibit in-source builds
@@ -30,17 +36,11 @@ if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
     message(SEND_ERROR "In-source builds are not allowed.")
 endif()
 
-IF (ENABLE_PARALLEL)
-    add_definitions(-DPARALLEL)
-ENDIF(ENABLE_PARALLEL)
-
-
 IF(SAVE_CUTS)
     add_definitions(-DSAVECUT)
 ENDIF(SAVE_CUTS)
 
 MESSAGE(STATUS "Option: SAVE_CUTS " ${SAVE_CUTS})
-MESSAGE(STATUS "Option: ENABLE_PARALLEL " ${ENABLE_PARALLEL})
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})
 
 set(default_build_type "Release")

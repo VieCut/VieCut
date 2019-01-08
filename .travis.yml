@@ -1,0 +1,54 @@
+# Travis-CI build scripts
+
+language: cpp
+dist: bionic
+sudo: false
+
+# gcc 6.x, Debug
+    - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Debug"
+      os: linux
+      addons: &gcc6
+        apt:
+          packages:
+            - g++-6
+
+# gcc 7.x, Debug 
+    - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Debug"
+      os: linux
+      addons: &gcc7
+        apt:
+          packages:
+            - g++-7
+
+# gcc 6.x, Release
+    - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Release"
+      os: linux
+      addons: &gcc6
+        apt:
+          packages:
+            - g++-6
+
+# gcc 7.x, Release
+    - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Release"
+      os: linux
+      addons: &gcc7
+        apt:
+          packages:
+            - g++-7
+
+before_script:
+
+  # print out some version numbers
+  - $CMAKE_CXX --version
+  - cmake --version
+
+  # configure
+  - mkdir build; cd build
+  - cmake -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_C_COMPILER="$CMAKE_CC"
+    -DCMAKE_CXX_COMPILER="$CMAKE_CXX"
+
+script:
+  - ctest
+      -DCTEST_SITE:STRING="travis-$TRAVIS_REPO_SLUG"
+      -DCTEST_BUILD_NAME:STRING="$TRAVIS_OS_NAME-$CMAKE_CC-$BUILD_TYPE" -VV
+

@@ -4,6 +4,8 @@ language: cpp
 dist: bionic
 sudo: false
 
+matrix:
+  include:
 # gcc 6.x, Debug
     - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Debug"
       os: linux

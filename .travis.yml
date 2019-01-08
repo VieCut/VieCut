@@ -54,9 +54,10 @@ before_script:
   # configure
   - mkdir build; cd build
   - cmake -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_C_COMPILER="$CMAKE_CC"
-    -DCMAKE_CXX_COMPILER="$CMAKE_CXX"
+    -DCMAKE_CXX_COMPILER="$CMAKE_CXX" ..
 
 script:
+  - make
   - ctest
       -DCTEST_SITE:STRING="travis-$TRAVIS_REPO_SLUG"
       -DCTEST_BUILD_NAME:STRING="$TRAVIS_OS_NAME-$CMAKE_CC-$BUILD_TYPE" -VV

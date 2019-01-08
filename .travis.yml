@@ -1,11 +1,8 @@
 # Travis-CI build scripts
 
 language: cpp
-dist: bionic
 sudo: false
-
-git:
-  submodules: false
+dist: trusty
 
 matrix:
   include:
@@ -48,11 +45,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-
-# Replace git URLs with public URL on-the-fly (Thanks, https://stackoverflow.com/questions/15674064/how-to-fix-a-permission-denied-publickey-error-for-a-git-submodule-update-in-t)
-before_install:
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  - git submodule update --init --recursive
 
 before_script:
   # print out some version numbers

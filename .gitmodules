@@ -1,9 +1,9 @@
 [submodule "extlib/growt"]
 	path = extlib/growt
-	url = git@github.com:TooBiased/growt.git
+	url = https://github.com/TooBiased/growt.git
 [submodule "extlib/tlx"]
 	path = extlib/tlx
-	url = git@github.com:tlx/tlx.git
+	url = https://github.com/tlx/tlx.git
 [submodule "extlib/googletest"]
 	path = extlib/googletest
-	url = git@github.com:google/googletest.git
+	url = https://github.com/google/googletest.git

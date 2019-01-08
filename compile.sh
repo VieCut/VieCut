@@ -6,7 +6,7 @@ git submodule update --init --recursive
 
 set +x
 
-CMAKE_OPTS="-DENABLE_PARALLEL=ON -DSAVE_CUTS=OFF"
+CMAKE_OPTS="-DSAVE_CUTS=OFF"
 
 set -x
 
@@ -24,6 +24,6 @@ if [ ! -d "build" ]; then
     mkdir build
 fi
 cd build
-cmake .. $CMAKE_OPTS $@
+cmake .. $CMAKE_OPTS
 make $MAKEOPTS
 ctest -V

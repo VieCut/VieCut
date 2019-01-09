@@ -40,13 +40,15 @@ int main(int argn, char** argv) {
     int iter = 1;
     bool disable_limiting = false;
 
+    cmdl.add_param_string("graph", graph_filename, "path to graph file");
 #ifdef PARALLEL
     std::vector<std::string> procs;
     cmdl.add_stringlist('p', "proc", procs, "number of processes");
+    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'exact')");
+#else
+    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'noi', 'matula', 'pr', 'ks')");
 #endif
 
-    cmdl.add_param_string("graph", graph_filename, "path to graph file");
-    cmdl.add_param_string("algo", algo, "global_mincut name");
     cmdl.add_string('q', "pq", pq, "name of priority queue implementation");
     cmdl.add_int('i', "iter", iter, "number of iterations");
     cmdl.add_bool('l', "disable_limiting", disable_limiting, "disable limiting of PQ values");

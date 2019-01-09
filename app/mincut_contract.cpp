@@ -43,9 +43,14 @@ int main(int argn, char** argv) {
     int iter = 1;
     double contraction_factor;
 
+    cmdl.add_param_string("graph", graph_filename, "path to graph file");
+
 #ifdef PARALLEL
     std::vector<std::string> procs;
     cmdl.add_stringlist('p', "proc", procs, "number of processes");
+    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'exact')");
+#else
+    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'noi', 'matula', 'pr', 'ks')");
 #endif
 
     cmdl.add_param_string("graph", graph_filename, "path to graph file");

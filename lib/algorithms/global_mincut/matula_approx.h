@@ -49,135 +49,42 @@ public:
             return -1;
 
         std::vector<std::shared_ptr<graph_access> > graphs;
-        graphs.push_back(G);
+
+        timer t;
         EdgeWeight global_mincut = G->getMinDegree();
+        graphs.push_back(G);
 
-        if (save_cut) {
-            size_t minindex = 0;
-            for (NodeID n : G->nodes()) {
-                if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
-                    minindex = n;
-                    break;
-                }
-            }
+        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
 
-            for (NodeID idx : graphs[0]->nodes()) {
-                if (idx == minindex) {
-                    graphs[0]->setNodeInCut(idx, true);
-                }
-                else {
-                    graphs[0]->setNodeInCut(idx, false);
-                }
-            }
-        }
         while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
 
-            if (save_cut) {
-                if (graphs.back()->getMinDegree() < global_mincut) {
-                    size_t minindex = 0;
-                    for (NodeID n : graphs.back()->nodes()) {
-                        if (graphs.back()->getWeightedNodeDegree(n) == graphs.back()->getMinDegree()) {
-                            minindex = n;
-                            break;
-                        }
-                    }
-
-                    for (NodeID idx : graphs[0]->nodes()) {
-                        NodeID coarseID = idx;
-                        for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
-                            coarseID = graphs[lv]->getPartitionIndex(coarseID);
-                        }
-                        if (coarseID == minindex) {
-                            graphs[0]->setNodeInCut(idx, true);
-                        }
-                        else {
-                            graphs[0]->setNodeInCut(idx, false);
-                        }
-                    }
-                }
-            }
-            std::shared_ptr<graph_access> curr_g = graphs.back();
-            noi_minimum_cut noi;
             std::vector<std::pair<NodeID, NodeID> > contractable;
-            size_t j = global_mincut / 2;
 
-            if (!j)
-                return global_mincut;
-
-            union_find uf(curr_g->number_of_nodes());
-            noi.modified_capforest(curr_g, j, uf, graphs, save_cut);
-            global_mincut = std::min(global_mincut, graphs.back()->getMinDegree());
-
-            LOG << "Global mincut now: " << global_mincut;
-
-            size_t num_contractable = 0;
-
-            for (auto edge : contractable) {
-                NodeID first = uf.Find(edge.first);
-                NodeID second = uf.Find(edge.second);
-                if (first != second) {
-                    uf.Union(first, second);
-                    ++num_contractable;
-                }
-            }
-
-            num_contractable = curr_g->number_of_nodes() - uf.n();
-            std::vector<std::vector<NodeID> > reverse_mapping(
-                curr_g->number_of_nodes() - num_contractable);
-            std::vector<NodeID> mapping(curr_g->number_of_nodes());
-            std::vector<NodeID> part(curr_g->number_of_nodes(), UNDEFINED_NODE);
+            union_find uf(graphs.back()->number_of_nodes());
+            timer time;
+            noi_minimum_cut noi;
+            global_mincut = std::min(global_mincut, noi.modified_capforest(graphs.back(), global_mincut / 2, uf, graphs, save_cut, pq));
+            std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
+            std::vector<NodeID> mapping(graphs.back()->number_of_nodes());
+            std::vector<NodeID> part(graphs.back()->number_of_nodes(), UNDEFINED_NODE);
             NodeID current_pid = 0;
 
-            for (NodeID n : curr_g->nodes()) {
+            for (NodeID n : graphs.back()->nodes()) {
                 NodeID part_id = uf.Find(n);
                 if (part[part_id] == UNDEFINED_NODE) {
                     part[part_id] = current_pid++;
                 }
                 mapping[n] = part[part_id];
-                curr_g->setPartitionIndex(n, part[part_id]);
+                graphs.back()->setPartitionIndex(n, part[part_id]);
                 reverse_mapping[part[part_id]].push_back(n);
             }
 
-            assert(current_pid == reverse_mapping.size());
-            std::shared_ptr<graph_access> new_graph = contraction::contractGraph(
-                curr_g, mapping,
-                reverse_mapping.size(),
-                reverse_mapping);
-
-            graphs.push_back(new_graph);
-
-            if (new_graph->number_of_nodes() > 1) {
-                if (save_cut) {
-                    if (new_graph->getMinDegree() < global_mincut) {
-                        size_t minindex = 0;
-
-                        for (NodeID n : G->nodes()) {
-                            if (new_graph->getWeightedNodeDegree(n) ==
-                                new_graph->getMinDegree()) {
-                                minindex = n;
-                                break;
-                            }
-                        }
-
-                        for (NodeID idx : graphs[0]->nodes()) {
-                            NodeID coarseID = idx;
-                            for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
-                                coarseID = graphs[lv]->getPartitionIndex(coarseID);
-                            }
-                            if (coarseID == minindex) {
-                                graphs[0]->setNodeInCut(idx, true);
-                            }
-                            else {
-                                graphs[0]->setNodeInCut(idx, false);
-                            }
-                        }
-                    }
-                }
-                global_mincut = std::min(graphs.back()->getMinDegree(), global_mincut);
-            }
+            graphs.push_back(contraction::contractGraph(graphs.back(), mapping, reverse_mapping.size(), reverse_mapping));
+            minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
         }
 
-        minimum_cut_helpers::retrieveMinimumCut(graphs);
+        if (!indirect && save_cut)
+            minimum_cut_helpers::retrieveMinimumCut(graphs);
 
         return global_mincut;
     }

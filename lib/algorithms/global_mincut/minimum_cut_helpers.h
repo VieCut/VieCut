@@ -49,7 +49,7 @@ public:
     }
 
     // set minimum cut to initial value (one minimum degree vertex) - this cut will be updated later in the global_mincut
-    static void setInitialCutValues(__attribute__ ((unused)) std::vector<std::shared_ptr<graph_access> > graphs, bool save_cut) {
+    static void setInitialCutValues(std::vector<std::shared_ptr<graph_access> > graphs, bool save_cut) {
         if (save_cut) {
             size_t minimum_index = minimumIndex(graphs.back());
 

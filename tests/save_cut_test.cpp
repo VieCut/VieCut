@@ -32,7 +32,7 @@ class SaveCutTest : public testing::Test { };
 #ifdef PARALLEL
 typedef testing::Types<viecut, exact_parallel_minimum_cut> MCAlgTypes;
 #else
-typedef testing::Types<viecut, noi_minimum_cut, padberg_rinaldi, matula_approx, ks_minimum_cut> MCAlgTypes;// maxNodeHeap, vecMaxNodeHeap> PQTypes;
+typedef testing::Types<viecut, noi_minimum_cut, padberg_rinaldi, matula_approx> MCAlgTypes; //TODO: Re-enable ks_minimum_cut 
 #endif
 
 TYPED_TEST_CASE(SaveCutTest, MCAlgTypes);
@@ -120,7 +120,8 @@ TYPED_TEST(SaveCutTest, LargerGraph) {
             if (j == 0) {
                 if (i == 0) {
                     G->new_edge(0, 100);
-                } else {
+                }
+                else {
                     G->new_edge(100, 0);
                 }
             }
@@ -128,7 +129,8 @@ TYPED_TEST(SaveCutTest, LargerGraph) {
             if (j == 1) {
                 if (i == 0) {
                     G->new_edge(1, 101);
-                } else {
+                }
+                else {
                     G->new_edge(101, 1);
                 }
             }

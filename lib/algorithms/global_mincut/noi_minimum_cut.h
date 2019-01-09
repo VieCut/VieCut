@@ -75,24 +75,7 @@ public:
         EdgeWeight global_mincut = G->getMinDegree();
         graphs.push_back(G);
 
-        if (save_cut) {
-            size_t minindex = 0;
-            for (NodeID n : G->nodes()) {
-                if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
-                    minindex = n;
-                    break;
-                }
-            }
-
-            for (NodeID idx : graphs[0]->nodes()) {
-                if (idx == minindex) {
-                    graphs[0]->setNodeInCut(idx, true);
-                }
-                else {
-                    graphs[0]->setNodeInCut(idx, false);
-                }
-            }
-        }
+        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
 
         while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
 

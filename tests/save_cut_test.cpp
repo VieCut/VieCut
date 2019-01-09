@@ -110,3 +110,48 @@ TYPED_TEST(SaveCutTest, WeightedGraph) {
         ASSERT_GE(cut_sum, (EdgeWeight)1);
     }
 }
+
+TYPED_TEST(SaveCutTest, LargerGraph) {
+    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    G->start_construction(200, 0);
+
+    for (size_t i = 0; i < 2; ++i) {
+        for (size_t j = 0; j < 100; ++j) {
+            if (j == 0) {
+                if (i == 0) {
+                    G->new_edge(0, 100);
+                } else {
+                    G->new_edge(100, 0);
+                }
+            }
+
+            if (j == 1) {
+                if (i == 0) {
+                    G->new_edge(1, 101);
+                } else {
+                    G->new_edge(101, 1);
+                }
+            }
+
+            size_t n = i * 100 + j;
+            for (size_t k = 0; k < 100; ++k) {
+                size_t t = i * 100 + k;
+                if (n != t) {
+                    G->new_edge(n, t);
+                }
+            }
+        }
+    }
+    G->finish_construction();
+
+    TypeParam mc;
+
+    EdgeWeight cut = mc.perform_minimum_cut(G, true);
+
+    ASSERT_EQ(cut, 2);
+
+    size_t first_block = G->getNodeInCut(0);
+    for (size_t i = 0; i < 200; ++i) {
+        ASSERT_EQ(i < 100, first_block == G->getNodeInCut(i));
+    }
+}

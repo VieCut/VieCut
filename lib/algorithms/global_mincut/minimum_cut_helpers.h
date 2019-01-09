@@ -64,7 +64,7 @@ public:
         }
     }
 
-    static EdgeWeight updateCutValueAfterContraction(__attribute__ ((unused)) std::vector<std::shared_ptr<graph_access> > graphs,
+    static EdgeWeight updateCutValueAfterContraction(std::vector<std::shared_ptr<graph_access> > graphs,
                                                      EdgeWeight previous_mincut, bool save_cut) {
         if (save_cut) {
             std::shared_ptr<graph_access> new_graph = graphs.back();

@@ -63,27 +63,12 @@ public:
             union_find uf(graphs.back()->number_of_nodes());
             timer time;
             noi_minimum_cut noi;
-            global_mincut = std::min(global_mincut, noi.modified_capforest(graphs.back(), global_mincut / 2, uf, graphs, save_cut, pq));
-            std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
-            std::vector<NodeID> mapping(graphs.back()->number_of_nodes());
-            std::vector<NodeID> part(graphs.back()->number_of_nodes(), UNDEFINED_NODE);
-            NodeID current_pid = 0;
-
-            for (NodeID n : graphs.back()->nodes()) {
-                NodeID part_id = uf.Find(n);
-                if (part[part_id] == UNDEFINED_NODE) {
-                    part[part_id] = current_pid++;
-                }
-                mapping[n] = part[part_id];
-                graphs.back()->setPartitionIndex(n, part[part_id]);
-                reverse_mapping[part[part_id]].push_back(n);
-            }
-
-            graphs.push_back(contraction::contractGraph(graphs.back(), mapping, reverse_mapping.size(), reverse_mapping));
-            minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
+            noi.modified_capforest(graphs.back(), global_mincut / 2, uf, graphs, save_cut);
+            graphs.emplace_back(contraction::contractFromUnionFind(graphs.back(), uf, save_cut));
+            global_mincut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
         }
 
-        if (!indirect && save_cut)
+        if (save_cut)
             minimum_cut_helpers::retrieveMinimumCut(graphs);
 
         return global_mincut;

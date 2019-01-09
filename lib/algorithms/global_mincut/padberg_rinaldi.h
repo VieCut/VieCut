@@ -52,10 +52,12 @@ public:
 
         while (graphs.back()->number_of_nodes() > 2
                && graphs.back()->number_of_nodes() < last_nodes) {
+
             last_nodes = graphs.back()->number_of_nodes();
             union_find uf_34 = tests::prTests34(graphs.back(), cut);
             graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf_34, save_cut));
             cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);
+
             union_find uf_12 = tests::prTests12(graphs.back(), cut);
             graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf_12, save_cut));
             cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);

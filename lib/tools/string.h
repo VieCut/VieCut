@@ -63,11 +63,11 @@ public:
     NonZeroVecToStr(const std::vector<T>& data) {
         return "This method only works for integral types. Use VecToStr()";
     }
-    
+
 #if __has_cpp_attribute(maybe_unused)
     static std::string graphToString [[maybe_unused]] (std::shared_ptr<graph_access> G) {
 #else
-    static std::string graphToString (std::shared_ptr<graph_access> G) {
+    static std::string graphToString(std::shared_ptr<graph_access> G) {
 #endif
         std::ostringstream oss;
 
@@ -87,7 +87,7 @@ public:
 #if __has_cpp_attribute(maybe_unused)
     static std::string weightedGraphToString [[maybe_unused]] (std::shared_ptr<graph_access> G) {
 #else
-    static std::string weightedGraphToString (std::shared_ptr<graph_access> G) {
+    static std::string weightedGraphToString(std::shared_ptr<graph_access> G) {
 #endif
         std::ostringstream oss;
 

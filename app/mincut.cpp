@@ -39,6 +39,7 @@ int main(int argn, char** argv) {
     std::string pq = "default";
     int iter = 1;
     bool disable_limiting = false;
+    bool save_cut = false;
 
     cmdl.add_param_string("graph", graph_filename, "path to graph file");
 #ifdef PARALLEL
@@ -52,6 +53,7 @@ int main(int argn, char** argv) {
     cmdl.add_string('q', "pq", pq, "name of priority queue implementation");
     cmdl.add_int('i', "iter", iter, "number of iterations");
     cmdl.add_bool('l', "disable_limiting", disable_limiting, "disable limiting of PQ values");
+    cmdl.add_bool('s', "save_cut", save_cut, "compute and store minimum cut");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -98,15 +100,15 @@ int main(int argn, char** argv) {
             t.restart();
             EdgeWeight cut;
             if (algo == "noi") {
-                cut = mc->perform_minimum_cut(G, pq, disable_limiting);
+                cut = mc->perform_minimum_cut(G, save_cut, pq, disable_limiting);
             }
             else {
-                cut = mc->perform_minimum_cut(G);
+                cut = mc->perform_minimum_cut(G, save_cut);
             }
 
-#ifdef SAVECUT
-            graph_io::writeCut(G, graph_filename + ".cut");
-#endif
+            if (save_cut) {
+                graph_io::writeCut(G, graph_filename + ".cut");
+            }
 
             std::string graphname = string::basename(graph_filename);
 

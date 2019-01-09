@@ -26,17 +26,12 @@ ELSE (HAS_MODERN_COMPILER)
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++14)
 ENDIF (HAS_MODERN_COMPILER)
 
-OPTION(SAVE_CUTS "Save minimum cut to file" OFF)
 OPTION(RUN_TESTS "Compile and run tests" ON)
 
 # prohibit in-source builds
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
     message(SEND_ERROR "In-source builds are not allowed.")
 endif()
-
-IF(SAVE_CUTS)
-    add_definitions(-DSAVECUT)
-ENDIF(SAVE_CUTS)
 
 MESSAGE(STATUS "Option: SAVE_CUTS " ${SAVE_CUTS})
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})

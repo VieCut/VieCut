@@ -102,7 +102,7 @@ public:
     }
 
     std::vector<std::vector<NodeID> > remap_cluster(
-        std::shared_ptr<graph_access> G, std::vector<NodeID>& cluster_mapping) {
+        std::shared_ptr<graph_access> G, std::vector<NodeID>& cluster_mapping, bool save_cut) {
         PartitionID cur_no_clusters = 0;
         std::unordered_map<PartitionID, PartitionID> remap;
 
@@ -119,9 +119,9 @@ public:
             }
 
             cluster_mapping[node] = part[cur_cluster];
-#ifdef SAVECUT
-            G->setPartitionIndex(node, part[cur_cluster]);
-#endif
+            if (save_cut) {
+                G->setPartitionIndex(node, part[cur_cluster]);
+            }
             reverse_mapping[part[cur_cluster]].push_back(node);
         }
 
@@ -134,7 +134,6 @@ public:
         std::vector<std::vector<NodeID> >& reverse_mapping) {
 
         std::vector<bool> found(G->number_of_nodes(), false);
-        timer t3;
         NodeID clusters = reverse_mapping.size();
         std::vector<std::vector<NodeID> > marked;
         {

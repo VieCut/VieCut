@@ -20,11 +20,11 @@ class minimum_cut
 public:
     virtual ~minimum_cut() { }
 
-    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, std::string, bool) {
-        return perform_minimum_cut(G);
+    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut, std::string, bool) {
+        return perform_minimum_cut(G, save_cut);
     }
 
-    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>) {
+    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>, bool) {
 #ifdef PARALLEL
         std::cout << "Please select a parallel minimum cut algorithm [vc, exact]!" << std::endl;
         std::cout << "vc - Run heuristic VieCut algorithm" << std::endl;

@@ -41,7 +41,7 @@ TYPED_TEST(SaveCutTest, UnweightedGraph) {
     std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small.metis");
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G);
+    EdgeWeight cut = mc.perform_minimum_cut(G, true);
 
 #ifdef PARALLEL
     if (std::is_same<TypeParam, exact_parallel_minimum_cut>::value) {
@@ -78,7 +78,7 @@ TYPED_TEST(SaveCutTest, WeightedGraph) {
     std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G);
+    EdgeWeight cut = mc.perform_minimum_cut(G, true);
 
 #ifdef PARALLEL
     if (std::is_same<TypeParam, exact_parallel_minimum_cut>::value) {

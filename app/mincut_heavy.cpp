@@ -48,6 +48,7 @@ int main(int argn, char** argv) {
     std::string pq = "default";
     double contraction_factor = 0.9;
     int iter = 1;
+    bool save_cut = false;
 
     cmdl.add_param_string("graph", graph_filename, "path to graph file");
 
@@ -62,6 +63,7 @@ int main(int argn, char** argv) {
     cmdl.add_string('q', "pq", pq, "name of priority queue implementation");
     cmdl.add_int('i', "iter", iter, "number of iterations");
     cmdl.add_double('c', "contraction factor", contraction_factor, "contract until only n/(1-contraction_factor) vertices are left");
+    cmdl.add_bool('s', "save_cut", save_cut, "compute and save minimum cut");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -102,7 +104,7 @@ int main(int argn, char** argv) {
             random_functions::setSeed(i);
             t.restart();
             minimum_cut* mc = selectMincutAlgorithm(algo);
-            mc->perform_minimum_cut(G2);
+            mc->perform_minimum_cut(G2, save_cut);
             omp_set_num_threads(numthread);
 
             for (NodeID n : G->nodes()) {
@@ -153,9 +155,9 @@ int main(int argn, char** argv) {
 
             quality_metrics qm;
 
-#ifdef SAVECUT
-            graph_io::writeCut(G, graph_filename + ".cut");
-#endif
+            if (save_cut) {
+                graph_io::writeCut(G, graph_filename + ".cut");
+            }
 
             std::string graphname = string::basename(graph_filename);
             std::cout << "RESULT source=taa algo=viecut graph="

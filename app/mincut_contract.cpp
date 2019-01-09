@@ -42,6 +42,7 @@ int main(int argn, char** argv) {
     std::string pq = "default";
     int iter = 1;
     double contraction_factor;
+    bool save_cut;
 
     cmdl.add_param_string("graph", graph_filename, "path to graph file");
 
@@ -58,6 +59,7 @@ int main(int argn, char** argv) {
     cmdl.add_string('q', "pq", pq, "name of priority queue implementation");
     cmdl.add_int('i', "iter", iter, "number of iterations");
     cmdl.add_double('c', "contraction factor", contraction_factor, "contract until only n*(1-contraction_factor) vertices are left");
+    cmdl.add_bool('s', "save_cut", save_cut, "compute and store minimum cut");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -103,11 +105,11 @@ int main(int argn, char** argv) {
             auto G2 = sf.one_ks(G, contraction_factor, i);
 
             LOGC(timing) << "Contraction: " << t.elapsed() << "s";
-            EdgeWeight cut = mc->perform_minimum_cut(G2);
+            EdgeWeight cut = mc->perform_minimum_cut(G2, save_cut);
 
-#ifdef SAVECUT
-            graph_io::writeCut(G, graph_filename + ".cut");
-#endif
+            if (save_cut) {
+                graph_io::writeCut(G, graph_filename + ".cut");
+            }
 
             std::string graphname = string::basename(graph_filename);
 

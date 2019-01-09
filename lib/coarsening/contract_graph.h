@@ -56,7 +56,7 @@ public:
         union_find uf(G->number_of_nodes());
         uf.Union(src, tgt);
 
-        std::shared_ptr<graph_access> G_out = contraction::contractFromUnionFind(G, uf);
+        std::shared_ptr<graph_access> G_out = contraction::contractFromUnionFind(G, uf, true);
         std::vector<NodeID> terminals_out;
         for (NodeID t : terminals) {
             terminals_out.emplace_back(G->getPartitionIndex(t));
@@ -222,7 +222,7 @@ public:
     }
 
     static std::shared_ptr<graph_access> contractFromUnionFind(std::shared_ptr<graph_access> G,
-                                                               union_find& uf) {
+                                                               union_find& uf, bool save_cut) {
         std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
 
         std::vector<NodeID> mapping(G->number_of_nodes());
@@ -237,7 +237,9 @@ public:
             }
 
             mapping[n] = part[part_id];
-            G->setPartitionIndex(n, part[part_id]);
+            if (save_cut) {
+                G->setPartitionIndex(n, part[part_id]);
+            }
             reverse_mapping[part[part_id]].push_back(n);
         }
         return contractGraph(G, mapping, reverse_mapping.size(), reverse_mapping);

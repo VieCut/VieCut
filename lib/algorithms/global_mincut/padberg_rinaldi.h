@@ -39,7 +39,7 @@ public:
     virtual ~padberg_rinaldi() { }
     static constexpr bool debug = false;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut) {
 
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
@@ -48,20 +48,22 @@ public:
         graphs.push_back(G);
         NodeID last_nodes = G->number_of_nodes() + 1;
         timer t;
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
 
         while (graphs.back()->number_of_nodes() > 2
                && graphs.back()->number_of_nodes() < last_nodes) {
             last_nodes = graphs.back()->number_of_nodes();
             union_find uf_34 = tests::prTests34(graphs.back(), cut);
-            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf_34));
-            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut);
+            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf_34, save_cut));
+            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);
             union_find uf_12 = tests::prTests12(graphs.back(), cut);
-            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf_12));
-            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut);
+            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf_12, save_cut));
+            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);
         }
 
-        minimum_cut_helpers::retrieveMinimumCut(graphs);
+        if (save_cut) {
+            minimum_cut_helpers::retrieveMinimumCut(graphs);
+        }
 
         LOG << "nodesleft=" << graphs.back()->number_of_nodes();
 

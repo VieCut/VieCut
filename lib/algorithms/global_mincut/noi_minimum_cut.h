@@ -49,19 +49,20 @@ public:
     static constexpr bool debug = false;
     static constexpr bool timing = true;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr) {
-        return perform_minimum_cut(G_ptr, false, "default");
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool save_cut) {
+        return perform_minimum_cut(G_ptr, save_cut, false, "default");
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool indirect) {
-        return perform_minimum_cut(G_ptr, indirect, "default");
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool save_cut, bool indirect) {
+        return perform_minimum_cut(G_ptr, save_cut, indirect, "default");
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, std::string pq) {
-        return perform_minimum_cut(G_ptr, false, pq);
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool save_cut, std::string pq) {
+        return perform_minimum_cut(G_ptr, save_cut, false, pq);
     }
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
+                                   bool save_cut,
                                    bool __attribute__ ((unused)) indirect,
                                    std::string pq) {
 
@@ -74,32 +75,32 @@ public:
         EdgeWeight global_mincut = G->getMinDegree();
         graphs.push_back(G);
 
-#ifdef SAVECUT
-        size_t minindex = 0;
-        for (NodeID n : G->nodes()) {
-            if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
-                minindex = n;
-                break;
+        if (save_cut) {
+            size_t minindex = 0;
+            for (NodeID n : G->nodes()) {
+                if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
+                    minindex = n;
+                    break;
+                }
+            }
+
+            for (NodeID idx : graphs[0]->nodes()) {
+                if (idx == minindex) {
+                    graphs[0]->setNodeInCut(idx, true);
+                }
+                else {
+                    graphs[0]->setNodeInCut(idx, false);
+                }
             }
         }
 
-        for (NodeID idx : graphs[0]->nodes()) {
-            if (idx == minindex) {
-                graphs[0]->setNodeInCut(idx, true);
-            }
-            else {
-                graphs[0]->setNodeInCut(idx, false);
-            }
-        }
-
-#endif
         while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
 
             std::vector<std::pair<NodeID, NodeID> > contractable;
 
             union_find uf(graphs.back()->number_of_nodes());
             timer time;
-            global_mincut = std::min(global_mincut, modified_capforest(graphs.back(), global_mincut, uf, graphs, pq));
+            global_mincut = std::min(global_mincut, modified_capforest(graphs.back(), global_mincut, uf, graphs, save_cut, pq));
             std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
             std::vector<NodeID> mapping(graphs.back()->number_of_nodes());
             std::vector<NodeID> part(graphs.back()->number_of_nodes(), UNDEFINED_NODE);
@@ -116,10 +117,10 @@ public:
             }
 
             graphs.push_back(contraction::contractGraph(graphs.back(), mapping, reverse_mapping.size(), reverse_mapping));
-            minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut);
+            minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
         }
 
-        if (!indirect)
+        if (!indirect && save_cut)
             minimum_cut_helpers::retrieveMinimumCut(graphs);
 
         return global_mincut;
@@ -167,6 +168,7 @@ public:
         std::shared_ptr<graph_access> G, EdgeWeight mincut,
         union_find& uf,
         std::vector<std::shared_ptr<graph_access> >& all_graphs,
+        bool save_cut,
         std::string pq_str = "default",
         bool limit = true) {
 
@@ -198,21 +200,21 @@ public:
             if (alpha < alphamin && (alpha > 0 || elements < G->number_of_nodes())) {
 
                 alphamin = alpha;
-#ifdef SAVECUT
-                for (NodeID idx : all_graphs[0]->nodes()) {
-                    NodeID coarseID = idx;
-                    for (size_t lv = 0; lv < all_graphs.size() - 1; ++lv) {
-                        coarseID = all_graphs[lv]->getPartitionIndex(coarseID);
-                    }
+                if (save_cut) {
+                    for (NodeID idx : all_graphs[0]->nodes()) {
+                        NodeID coarseID = idx;
+                        for (size_t lv = 0; lv < all_graphs.size() - 1; ++lv) {
+                            coarseID = all_graphs[lv]->getPartitionIndex(coarseID);
+                        }
 
-                    if (!visited[coarseID]) {
-                        all_graphs[0]->setNodeInCut(idx, false);
-                    }
-                    else {
-                        all_graphs[0]->setNodeInCut(idx, true);
+                        if (!visited[coarseID]) {
+                            all_graphs[0]->setNodeInCut(idx, false);
+                        }
+                        else {
+                            all_graphs[0]->setNodeInCut(idx, true);
+                        }
                     }
                 }
-#endif // SAVECUT
             }
 
             if (limit) {

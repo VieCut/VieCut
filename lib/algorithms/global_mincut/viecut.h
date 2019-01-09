@@ -51,11 +51,12 @@ public:
 
     virtual ~viecut() { }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
-        return perform_minimum_cut(G, false);
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut) {
+        return perform_minimum_cut(G, save_cut, false);
     }
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
+                                   bool save_cut,
                                    bool indirect) {
 
         if (!minimum_cut_helpers::graphValid(G))
@@ -65,7 +66,7 @@ public:
         std::vector<std::shared_ptr<graph_access> > graphs;
         graphs.push_back(G);
 
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
 
         while (graphs.back()->number_of_nodes() > 10000 &&
                (graphs.size() == 1 ||
@@ -77,34 +78,34 @@ public:
 
             label_propagation lp;
             std::vector<NodeID> cluster_mapping = lp.propagate_labels(G);
-            std::vector<std::vector<NodeID> > reverse_mapping = minimum_cut_helpers::remap_cluster(G, cluster_mapping);
+            std::vector<std::vector<NodeID> > reverse_mapping = minimum_cut_helpers::remap_cluster(G, cluster_mapping, save_cut);
             LOGC(timing) << "LP (total): " << t.elapsedToZero();
 
             contraction::findTrivialCuts(G, cluster_mapping, reverse_mapping, cut);
             LOGC(timing) << "Trivial Cut Local Search: " << t.elapsedToZero();
 
             graphs.push_back(contraction::contractGraph(G, cluster_mapping, reverse_mapping.size(), reverse_mapping));
-            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut);
+            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);
             LOGC(timing) << "Graph Contraction (to " << graphs.back()->number_of_nodes() << " nodes): " << t.elapsedToZero();
 
             union_find uf = tests::prTests12(graphs.back(), cut);
-            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf));
-            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut);
+            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf, save_cut));
+            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);
             union_find uf2 = tests::prTests34(graphs.back(), cut);
-            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf2));
-            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut);
+            graphs.push_back(contraction::contractFromUnionFind(graphs.back(), uf2, save_cut));
+            cut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, cut, save_cut);
             LOGC(timing) << "Padberg-Rinaldi Tests (to " << graphs.back()->number_of_nodes() << " nodes): " << t.elapsedToZero();
         }
 
         if (graphs.back()->number_of_nodes() > 1) {
             timer t;
             noi_minimum_cut noi;
-            cut = std::min(cut, noi.perform_minimum_cut(graphs.back(), true));
+            cut = std::min(cut, noi.perform_minimum_cut(graphs.back(), save_cut, true));
 
             LOGC(timing) << "Exact Algorithm:" << t.elapsedToZero() << " deg: " << graphs.back()->getMinDegree();
         }
 
-        if (!indirect)
+        if (!indirect && save_cut)
             minimum_cut_helpers::retrieveMinimumCut(graphs);
 
         return cut;

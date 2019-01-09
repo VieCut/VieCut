@@ -49,44 +49,44 @@ public:
     }
 
     // set minimum cut to initial value (one minimum degree vertex) - this cut will be updated later in the global_mincut
-    static void setInitialCutValues(__attribute__ ((unused)) std::vector<std::shared_ptr<graph_access> > graphs) {
-#ifdef SAVECUT
-        size_t minimum_index = minimumIndex(graphs.back());
+    static void setInitialCutValues(__attribute__ ((unused)) std::vector<std::shared_ptr<graph_access> > graphs, bool save_cut) {
+        if (save_cut) {
+            size_t minimum_index = minimumIndex(graphs.back());
 
-        for (NodeID idx : graphs[0]->nodes()) {
-            if (idx == minimum_index) {
-                graphs[0]->setNodeInCut(idx, true);
-            }
-            else {
-                graphs[0]->setNodeInCut(idx, false);
+            for (NodeID idx : graphs[0]->nodes()) {
+                if (idx == minimum_index) {
+                    graphs[0]->setNodeInCut(idx, true);
+                }
+                else {
+                    graphs[0]->setNodeInCut(idx, false);
+                }
             }
         }
-#endif
     }
 
     static EdgeWeight updateCutValueAfterContraction(__attribute__ ((unused)) std::vector<std::shared_ptr<graph_access> > graphs,
-                                                     EdgeWeight previous_mincut) {
-#ifdef SAVECUT
-        std::shared_ptr<graph_access> new_graph = graphs.back();
-        if (new_graph->number_of_nodes() > 1) {
-            if (new_graph->getMinDegree() < previous_mincut) {
-                size_t minimum_index = minimumIndex(graphs.back());
+                                                     EdgeWeight previous_mincut, bool save_cut) {
+        if (save_cut) {
+            std::shared_ptr<graph_access> new_graph = graphs.back();
+            if (new_graph->number_of_nodes() > 1) {
+                if (new_graph->getMinDegree() < previous_mincut) {
+                    size_t minimum_index = minimumIndex(graphs.back());
 
-                for (NodeID idx : graphs[0]->nodes()) {
-                    NodeID coarseID = idx;
-                    for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
-                        coarseID = graphs[lv]->getPartitionIndex(coarseID);
-                    }
-                    if (coarseID == minimum_index) {
-                        graphs[0]->setNodeInCut(idx, true);
-                    }
-                    else {
-                        graphs[0]->setNodeInCut(idx, false);
+                    for (NodeID idx : graphs[0]->nodes()) {
+                        NodeID coarseID = idx;
+                        for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
+                            coarseID = graphs[lv]->getPartitionIndex(coarseID);
+                        }
+                        if (coarseID == minimum_index) {
+                            graphs[0]->setNodeInCut(idx, true);
+                        }
+                        else {
+                            graphs[0]->setNodeInCut(idx, false);
+                        }
                     }
                 }
             }
         }
-#endif
         if (graphs.back()->number_of_nodes() > 1) {
             return std::min<EdgeWeight>(previous_mincut, graphs.back()->getMinDegree());
         }
@@ -96,8 +96,6 @@ public:
     }
 
     static void retrieveMinimumCut(__attribute__ ((unused)) std::vector<std::shared_ptr<graph_access> > graphs) {
-
-#ifdef SAVECUT
         std::shared_ptr<graph_access> G = graphs[0];
 
         size_t inside = 0, outside = 0;
@@ -125,11 +123,10 @@ public:
 #endif
 
         LOG1 << "smaller side of cut has " << std::min(inside, outside) << " nodes.";
-#endif // SAVECUT
     }
 
     static std::vector<std::vector<NodeID> > remap_cluster(
-        std::shared_ptr<graph_access> G, std::vector<NodeID>& cluster_id) {
+        std::shared_ptr<graph_access> G, std::vector<NodeID>& cluster_id, bool save_cut) {
 
         std::vector<std::vector<NodeID> > reverse_mapping;
 
@@ -147,9 +144,9 @@ public:
             }
 
             cluster_id[node] = part[cur_cluster];
-#ifdef SAVECUT
-            G->setPartitionIndex(node, part[cur_cluster]);
-#endif
+            if (save_cut) {
+                G->setPartitionIndex(node, part[cur_cluster]);
+            }
             reverse_mapping[part[cur_cluster]].push_back(node);
         }
 

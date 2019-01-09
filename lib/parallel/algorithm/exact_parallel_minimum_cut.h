@@ -57,17 +57,19 @@ public:
     static constexpr bool debug = false;
     static constexpr bool timing = true;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
-        return perform_minimum_cut(G, false);
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut) {
+        return perform_minimum_cut(G, save_cut, false);
     }
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
                                    std::string pq,
+                                   bool save_cut,
                                    bool disable_limiting) {
-        return perform_minimum_cut(G, false, pq, disable_limiting);
+        return perform_minimum_cut(G, save_cut, false, pq, disable_limiting);
     }
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
+                                   bool save_cut,
                                    bool __attribute__ ((unused)) indirect,
                                    std::string __attribute__ ((unused)) pq = "default",
                                    bool __attribute__ ((unused)) disable_limiting = false) {
@@ -87,7 +89,7 @@ public:
 
         // if PARALLEL is set, NodeInCut are already set to the result of viecut. This is what we want.
 #ifndef PARALLEL
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
 #endif
 
         while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
@@ -101,18 +103,18 @@ public:
             if (graphs.size() == 1 || curr_g->number_of_nodes() < graphs[graphs.size() - 2]->number_of_nodes()) {
                 global_mincut = std::min(global_mincut,
                                          parallel_modified_capforest(curr_g, global_mincut,
-                                                                     uf, graphs, pq, !disable_limiting));
+                                                                     uf, graphs, save_cut, pq, !disable_limiting));
                 if (uf.n() == curr_g->number_of_nodes()) {
                     global_mincut = std::min(global_mincut,
                                              noi.modified_capforest(curr_g, global_mincut,
-                                                                    uf, graphs, pq));
+                                                                    uf, graphs, save_cut, pq));
                     LOG1 << "seq capforest needed";
                 }
             }
             else {
                 global_mincut = std::min(global_mincut,
                                          noi.modified_capforest(curr_g, global_mincut,
-                                                                uf, graphs, pq));
+                                                                uf, graphs, save_cut, pq));
             }
 
 #else
@@ -122,7 +124,7 @@ public:
             noi_minimum_cut noi;
             global_mincut = std::min(global_mincut,
                                      noi.modified_capforest(curr_g, global_mincut,
-                                                            uf, graphs, pq));
+                                                            uf, graphs, save_cut, pq));
 #endif
 
             if (uf.n() > 1) {
@@ -143,14 +145,14 @@ public:
 
                 graphs.push_back(contraction::contractGraph(curr_g, mapping, current_pid, reverse_mapping));
 
-                global_mincut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut);
+                global_mincut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
             }
             else {
                 break;
             }
         }
 
-        if (!indirect)
+        if (!indirect && save_cut)
             minimum_cut_helpers::retrieveMinimumCut(graphs);
 
         return global_mincut;
@@ -204,6 +206,7 @@ public:
         std::shared_ptr<graph_access> G, EdgeWeight mincut,
         union_find& uf,
         std::vector<std::shared_ptr<graph_access> >& all_graphs,
+        bool save_cut,
         std::string pq_str = "default",
         bool limit = true) {
 
@@ -246,21 +249,21 @@ public:
                 if (alpha < alphamin && (alpha > 0 || elements < G->number_of_nodes())) {
 
                     alphamin = alpha;
-#ifdef SAVECUT
-                    for (NodeID idx : all_graphs[0]->nodes()) {
-                        NodeID coarseID = idx;
-                        for (size_t lv = 0; lv < all_graphs.size() - 1; ++lv) {
-                            coarseID = all_graphs[lv]->getPartitionIndex(coarseID);
-                        }
+                    if (save_cut) {
+                        for (NodeID idx : all_graphs[0]->nodes()) {
+                            NodeID coarseID = idx;
+                            for (size_t lv = 0; lv < all_graphs.size() - 1; ++lv) {
+                                coarseID = all_graphs[lv]->getPartitionIndex(coarseID);
+                            }
 
-                        if (!visited[coarseID]) {
-                            all_graphs[0]->setNodeInCut(idx, false);
-                        }
-                        else {
-                            all_graphs[0]->setNodeInCut(idx, true);
+                            if (!visited[coarseID]) {
+                                all_graphs[0]->setNodeInCut(idx, false);
+                            }
+                            else {
+                                all_graphs[0]->setNodeInCut(idx, true);
+                            }
                         }
                     }
-#endif // SAVECUT
                 }
 
                 if (limit) {

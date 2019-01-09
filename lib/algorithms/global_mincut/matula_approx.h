@@ -43,7 +43,7 @@ public:
     virtual ~matula_approx() { }
     static constexpr bool debug = false;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut) {
 
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
@@ -52,53 +52,50 @@ public:
         graphs.push_back(G);
         EdgeWeight global_mincut = G->getMinDegree();
 
-#ifdef SAVECUT
-        size_t minindex = 0;
-        for (NodeID n : G->nodes()) {
-            if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
-                minindex = n;
-                break;
+        if (save_cut) {
+            size_t minindex = 0;
+            for (NodeID n : G->nodes()) {
+                if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
+                    minindex = n;
+                    break;
+                }
+            }
+
+            for (NodeID idx : graphs[0]->nodes()) {
+                if (idx == minindex) {
+                    graphs[0]->setNodeInCut(idx, true);
+                }
+                else {
+                    graphs[0]->setNodeInCut(idx, false);
+                }
             }
         }
-
-        for (NodeID idx : graphs[0]->nodes()) {
-            if (idx == minindex) {
-                graphs[0]->setNodeInCut(idx, true);
-            }
-            else {
-                graphs[0]->setNodeInCut(idx, false);
-            }
-        }
-
-#endif
         while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
 
-#ifdef SAVECUT
+            if (save_cut) {
+                if (graphs.back()->getMinDegree() < global_mincut) {
+                    size_t minindex = 0;
+                    for (NodeID n : graphs.back()->nodes()) {
+                        if (graphs.back()->getWeightedNodeDegree(n) == graphs.back()->getMinDegree()) {
+                            minindex = n;
+                            break;
+                        }
+                    }
 
-            if (graphs.back()->getMinDegree() < global_mincut) {
-                size_t minindex = 0;
-                for (NodeID n : graphs.back()->nodes()) {
-                    if (graphs.back()->getWeightedNodeDegree(n) == graphs.back()->getMinDegree()) {
-                        minindex = n;
-                        break;
-                    }
-                }
-
-                for (NodeID idx : graphs[0]->nodes()) {
-                    NodeID coarseID = idx;
-                    for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
-                        coarseID = graphs[lv]->getPartitionIndex(coarseID);
-                    }
-                    if (coarseID == minindex) {
-                        graphs[0]->setNodeInCut(idx, true);
-                    }
-                    else {
-                        graphs[0]->setNodeInCut(idx, false);
+                    for (NodeID idx : graphs[0]->nodes()) {
+                        NodeID coarseID = idx;
+                        for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
+                            coarseID = graphs[lv]->getPartitionIndex(coarseID);
+                        }
+                        if (coarseID == minindex) {
+                            graphs[0]->setNodeInCut(idx, true);
+                        }
+                        else {
+                            graphs[0]->setNodeInCut(idx, false);
+                        }
                     }
                 }
             }
-
-#endif
             std::shared_ptr<graph_access> curr_g = graphs.back();
             noi_minimum_cut noi;
             std::vector<std::pair<NodeID, NodeID> > contractable;
@@ -108,7 +105,7 @@ public:
                 return global_mincut;
 
             union_find uf(curr_g->number_of_nodes());
-            noi.modified_capforest(curr_g, j, uf, graphs);
+            noi.modified_capforest(curr_g, j, uf, graphs, save_cut);
             global_mincut = std::min(global_mincut, graphs.back()->getMinDegree());
 
             LOG << "Global mincut now: " << global_mincut;
@@ -116,7 +113,6 @@ public:
             size_t num_contractable = 0;
 
             for (auto edge : contractable) {
-
                 NodeID first = uf.Find(edge.first);
                 NodeID second = uf.Find(edge.second);
                 if (first != second) {
@@ -151,32 +147,32 @@ public:
             graphs.push_back(new_graph);
 
             if (new_graph->number_of_nodes() > 1) {
-#ifdef SAVECUT
-                if (new_graph->getMinDegree() < global_mincut) {
-                    size_t minindex = 0;
+                if (save_cut) {
+                    if (new_graph->getMinDegree() < global_mincut) {
+                        size_t minindex = 0;
 
-                    for (NodeID n : G->nodes()) {
-                        if (new_graph->getWeightedNodeDegree(n) ==
-                            new_graph->getMinDegree()) {
-                            minindex = n;
-                            break;
+                        for (NodeID n : G->nodes()) {
+                            if (new_graph->getWeightedNodeDegree(n) ==
+                                new_graph->getMinDegree()) {
+                                minindex = n;
+                                break;
+                            }
                         }
-                    }
 
-                    for (NodeID idx : graphs[0]->nodes()) {
-                        NodeID coarseID = idx;
-                        for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
-                            coarseID = graphs[lv]->getPartitionIndex(coarseID);
-                        }
-                        if (coarseID == minindex) {
-                            graphs[0]->setNodeInCut(idx, true);
-                        }
-                        else {
-                            graphs[0]->setNodeInCut(idx, false);
+                        for (NodeID idx : graphs[0]->nodes()) {
+                            NodeID coarseID = idx;
+                            for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
+                                coarseID = graphs[lv]->getPartitionIndex(coarseID);
+                            }
+                            if (coarseID == minindex) {
+                                graphs[0]->setNodeInCut(idx, true);
+                            }
+                            else {
+                                graphs[0]->setNodeInCut(idx, false);
+                            }
                         }
                     }
                 }
-#endif
                 global_mincut = std::min(graphs.back()->getMinDegree(), global_mincut);
             }
         }

@@ -39,7 +39,7 @@ TYPED_TEST(MincutAlgoTest, NoGraph) {
     std::shared_ptr<graph_access> G;
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G);
+    EdgeWeight cut = mc.perform_minimum_cut(G, false);
     ASSERT_EQ(cut, (EdgeWeight) - 1);
 }
 
@@ -47,7 +47,7 @@ TYPED_TEST(MincutAlgoTest, EmptyGraph) {
     std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G);
+    EdgeWeight cut = mc.perform_minimum_cut(G, false);
     ASSERT_EQ(cut, (EdgeWeight) - 1);
 }
 
@@ -55,7 +55,7 @@ TYPED_TEST(MincutAlgoTest, UnweightedGraphFromFile) {
 
     std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small.metis");
     TypeParam mc;
-    EdgeWeight cut = mc.perform_minimum_cut(G);
+    EdgeWeight cut = mc.perform_minimum_cut(G, false);
 
 #ifdef PARALLEL
     if (std::is_same<TypeParam, viecut>::value) {
@@ -78,7 +78,7 @@ TYPED_TEST(MincutAlgoTest, WeightedGraphFromFile) {
 
     std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
     TypeParam mc;
-    EdgeWeight cut = mc.perform_minimum_cut(G);
+    EdgeWeight cut = mc.perform_minimum_cut(G, false);
 
 #ifdef PARALLEL
     if (std::is_same<TypeParam, viecut>::value) {

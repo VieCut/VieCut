@@ -44,11 +44,13 @@ public:
 
     ~ks_minimum_cut() { }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
-        return perform_minimum_cut(G, 0);
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut) {
+        return perform_minimum_cut(G, save_cut, 0);
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, size_t optimal) {
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut, size_t optimal) {
+
+        // TODO: Save minimum cut.
 
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
@@ -59,7 +61,7 @@ public:
         for (size_t i = 0; i < std::log2(G->number_of_nodes()) && mincut > optimal; ++i) {
             std::vector<std::shared_ptr<graph_access> > graphs;
             graphs.push_back(G);
-            EdgeWeight curr_cut = recurse(graphs, 0, i);
+            EdgeWeight curr_cut = recurse(graphs, 0, i, save_cut);
             mincut = std::min(mincut, curr_cut);
             LOGC(timing) << "iter=" << i << " mincut=" << mincut << " curr_cut=" << curr_cut
                          << " time=" << t.elapsed();
@@ -175,7 +177,7 @@ public:
     }
 
     EdgeWeight recurse(std::vector<std::shared_ptr<graph_access> >& graphs,
-                       size_t current, size_t iteration) {
+                       size_t current, size_t iteration, bool save_cut) {
 
         std::shared_ptr<graph_access> G = graphs[current];
 
@@ -218,12 +220,12 @@ public:
 
             size_t currvecsize = graphs.size() - 1;
 
-            return std::min(recurse(graphs, currvecsize, iteration),
-                            recurse(graphs, currvecsize, iteration + 9273 /* pseudo-random seed */));
+            return std::min(recurse(graphs, currvecsize, iteration, save_cut),
+                            recurse(graphs, currvecsize, iteration + 9273 /* pseudo-random seed */, save_cut));
         }
         else {
             noi_minimum_cut mc;
-            return mc.perform_minimum_cut(graphs[current]);
+            return mc.perform_minimum_cut(graphs[current], save_cut);
         }
     }
 };

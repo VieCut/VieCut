@@ -169,7 +169,7 @@ public:
     }
 
     static std::shared_ptr<graph_access> contractFromUnionFind(std::shared_ptr<graph_access> G,
-                                                               union_find& uf) {
+                                                               union_find& uf, bool save_cut) {
         std::vector<std::vector<NodeID> > reverse_mapping;
 
         std::vector<NodeID> mapping(G->number_of_nodes());
@@ -184,9 +184,9 @@ public:
             }
 
             mapping[n] = part[part_id];
-#ifdef SAVECUT
-            G->setPartitionIndex(n, part[part_id]);
-#endif
+            if (save_cut) {
+                G->setPartitionIndex(n, part[part_id]);
+            }
             reverse_mapping[part[part_id]].push_back(n);
         }
 

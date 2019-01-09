@@ -1,5 +1,7 @@
 # VieCut 1.00 - Shared-memory Minimum Cuts
 
+[![Build Status](https://travis-ci.com/alexnoe/VieCut.svg?branch=master)](https://travis-ci.com/alexnoe/VieCut)
+
 This is the code repository to accompany our papers:
 
 *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms. arXiv preprint [arXiv:1708.06127.](https://arxiv.org/abs/1708.06127)*

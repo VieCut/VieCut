@@ -13,6 +13,12 @@ macro(build_and_link TARGETNAME)
 
 endmacro(build_and_link)
 
+if(NOT CMAKE_BUILD_TYPE)
+  message("Defaulting CMAKE_BUILD_TYPE to Release")
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+
 add_definitions("-DVIECUT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
 INCLUDE(CheckCXXCompilerFlag)
@@ -33,25 +39,23 @@ if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
     message(SEND_ERROR "In-source builds are not allowed.")
 endif()
 
-MESSAGE(STATUS "Option: SAVE_CUTS " ${SAVE_CUTS})
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})
 
-set(default_build_type "Release")
+add_subdirectory(extlib/tlx)
 
 include_directories(
-        app
-        extlib/growt
-        extlib/tlx
-        lib
-        /usr/include/mpi)
+    app 
+    lib             
+    /usr/include/mpi
+    extlib/growt
+    extlib/tlx
+)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -msse4.2 -mcx16 -Wall -Wextra")
 
 set (CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 set (CMAKE_CXX_FLAGS_DEBUG "-g3")
-
-add_subdirectory(extlib/tlx)
 
 set(SOURCE_FILES
         lib/algorithms/global_mincut/algorithms.h

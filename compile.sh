@@ -6,8 +6,6 @@ git submodule update --init --recursive
 
 set +x
 
-CMAKE_OPTS="-DSAVE_CUTS=OFF"
-
 set -x
 
 # detect number of cores
@@ -24,6 +22,6 @@ if [ ! -d "build" ]; then
     mkdir build
 fi
 cd build
-cmake .. $CMAKE_OPTS
+cmake .. $@
 make $MAKEOPTS
 ctest -V

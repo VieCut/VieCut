@@ -90,7 +90,7 @@ For <algorithm> use one of the following:
 * `vc` - `VieCut` [HNSS'18]
 * `noi` - Algorithm of Nagamochi et al. [NOI'94]
 * `ks` - Algorithm of Karger and Stein [KS'96]
-* `sw` - Algorithm of Stoer and Wagner [SW'97]
+* `matula` - Approximation Algorithm of Matula [Matula'93]
 * `pr` - Repeated application of Padberg-Rinaldi contraction rules [PR'91]
 
 when parallelism is enabled, use one of the following:
@@ -187,6 +187,8 @@ This can be used to create subgraphs of a graph that have different minimum cuts
 [HNSS'18] - *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms.*
 
 [KS'96] - *Karger, D. and Stein, C., 1996. A new approach to the minimum cut problem.*
+
+[Matula'93] - *Matula, D., 1993. A linear time (2 + ε)-approximation algorithm for edge connectivity*
 
 [NOI'94] - *Nagamochi, H., Ono, T. and Ibaraki, T., 1994. Implementing an efficient minimum capacity cut algorithm.*
 

@@ -95,7 +95,7 @@ For <algorithm> use one of the following:
 
 when parallelism is enabled, use one of the following:
 
-* `vc` - shared-memory parallel `VieCut` [HNSS'18]
+* `inexact` - shared-memory parallel version of `VieCut` [HNSS'18]
 * `exact` - exact shared-memory parallel minimum cut [HNS'18]
 
 #### (Optional) Program Options:

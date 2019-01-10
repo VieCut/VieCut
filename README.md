@@ -69,7 +69,7 @@ To compile the code use the following commands
 
 We also offer a compile script `compile.sh` which compiles the executables and runs tests.
 
-All of our programs are compiled both for single threaded and shared-memory parallel use. The name of the parallel executable is indicated by appending it with `_parallel`. The executables can be found in subfolder `/build`.
+All of our programs are compiled both for single threaded and shared-memory parallel use. The name of the parallel executable is indicated by appending it with `_parallel`. The executables can be found in subfolder `build`.
 
 
 # Running the programs
@@ -104,6 +104,7 @@ when parallelism is enabled, use one of the following:
 * `-i` - Number of iterations (default: 1)
 * `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'18])
 * `-p` - Use `p` processors (multiple values possible)
+* `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
 
 The following command
 
@@ -162,6 +163,7 @@ Usage is similar to mincut and can be combined with any minimum cut algorithm.
 * `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'18])
 * `-p` - Use `p` processors (multiple values possible)
 * `-c` - Contraction factor: we contract until only n*(1-c) vertices are left.
+* `-s` - Compute and save minimum cut.
 
 ### `mincut_recursive`
 

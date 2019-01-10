@@ -32,7 +32,7 @@ class SaveCutTest : public testing::Test { };
 #ifdef PARALLEL
 typedef testing::Types<viecut, exact_parallel_minimum_cut> MCAlgTypes;
 #else
-typedef testing::Types<viecut, noi_minimum_cut, matula_approx> MCAlgTypes; // TODO: Re-enable ks_minimum_cut
+typedef testing::Types<viecut, noi_minimum_cut, matula_approx, ks_minimum_cut> MCAlgTypes;
 #endif
 
 TYPED_TEST_CASE(SaveCutTest, MCAlgTypes);

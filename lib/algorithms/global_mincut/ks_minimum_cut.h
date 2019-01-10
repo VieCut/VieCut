@@ -48,24 +48,40 @@ public:
         return perform_minimum_cut(G, save_cut, 0);
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut, size_t optimal) {
-
-        // TODO: Save minimum cut.
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save, size_t optimal) {
 
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
 
+        save_cut = save;
+
         EdgeWeight mincut = std::numeric_limits<EdgeWeight>::max();
+
+        std::vector<PartitionID> best_partition(G->number_of_nodes());
 
         timer t;
         for (size_t i = 0; i < std::log2(G->number_of_nodes()) && mincut > optimal; ++i) {
-            std::vector<std::shared_ptr<graph_access> > graphs;
             graphs.push_back(G);
-            EdgeWeight curr_cut = recurse(graphs, 0, i, save_cut);
+            EdgeWeight curr_cut = recurse(0, i).first;
+
+            if (save_cut) {
+                if (curr_cut < mincut) {
+                    for (NodeID n : G->nodes()) {
+                        best_partition[n] = G->getNodeInCut(n);
+                    }
+                }
+            }
             mincut = std::min(mincut, curr_cut);
             LOGC(timing) << "iter=" << i << " mincut=" << mincut << " curr_cut=" << curr_cut
                          << " time=" << t.elapsed();
+
+            graphs.clear();
         }
+
+        for (NodeID n : G->nodes()) {
+            G->setNodeInCut(n, best_partition[n]);
+        }
+
         return mincut;
     }
 
@@ -80,31 +96,6 @@ public:
         else {
             return false;
         }
-    }
-
-    std::pair<std::vector<NodeID>, std::vector<std::vector<NodeID> > >
-    createMappings(graph_access& G,
-                   union_find& uf) {
-
-        std::vector<std::vector<NodeID> > reverse_mapping;
-        std::vector<NodeID> mapping(G.number_of_nodes());
-        std::vector<NodeID> part(G.number_of_nodes(), UNDEFINED_NODE);
-        NodeID current_pid = 0;
-
-        for (NodeID n : G.nodes()) {
-            NodeID part_id = uf.Find(n);
-
-            if (part[part_id] == UNDEFINED_NODE) {
-                part[part_id] = current_pid++;
-                reverse_mapping.emplace_back();
-            }
-
-            mapping[n] = part[part_id];
-            //  G.setPartitionIndex(n, part[part_id]);
-            reverse_mapping[part[part_id]].push_back(n);
-        }
-
-        return std::make_pair(mapping, reverse_mapping);
     }
 
     NodeID sample_contractible(graph_access& G,
@@ -176,56 +167,78 @@ public:
         return currentN - contracted;
     }
 
-    EdgeWeight recurse(std::vector<std::shared_ptr<graph_access> >& graphs,
-                       size_t current, size_t iteration, bool save_cut) {
+    std::pair<EdgeWeight, size_t> recurse(size_t current, size_t iteration) {
 
         std::shared_ptr<graph_access> G = graphs[current];
 
-        if (G->number_of_nodes() > 100) {
+        NodeID currentN = G->number_of_nodes();
 
-            NodeID currentN = G->number_of_nodes();
+        union_find uf(G->number_of_nodes());
 
-            union_find uf(G->number_of_nodes());
+        if (current > 0) {
+            for (NodeID n : G->nodes()) {
+                for (EdgeID e : G->edges_of(n)) {
+                    if (G->getEdgeTarget(e) > n && currentN > 2) {
+                        if (G->getEdgeWeight(e) > G->getMinDegree() ||
+                            G->getEdgeWeight(e) * 2 > G->getWeightedNodeDegree(n) ||
+                            G->getEdgeWeight(e) * 2 > G->getWeightedNodeDegree(G->getEdgeTarget(e))) {
+                            NodeID first = uf.Find(n);
+                            NodeID second = uf.Find(G->getEdgeTarget(e));
 
-            if (current > 0) {
-                for (NodeID n : G->nodes()) {
-                    for (EdgeID e : G->edges_of(n)) {
-                        if (G->getEdgeTarget(e) > n && currentN > 2) {
-                            if (G->getEdgeWeight(e) > G->getMinDegree() ||
-                                G->getEdgeWeight(e) * 2 > G->getWeightedNodeDegree(n) ||
-                                G->getEdgeWeight(e) * 2 > G->getWeightedNodeDegree(G->getEdgeTarget(e))) {
-                                NodeID first = uf.Find(n);
-                                NodeID second = uf.Find(G->getEdgeTarget(e));
-
-                                if (first != second) {
-                                    currentN--;
-                                    uf.Union(first, second);
-                                }
+                            if (first != second) {
+                                currentN--;
+                                uf.Union(first, second);
                             }
                         }
                     }
                 }
             }
+        }
 
-            sample_contractible(*G, currentN, uf, 0.4, iteration);
-            // sample_contractible_weighted(G, currentN, uf, 0.4, iteration);
-            auto maps = createMappings(*G, uf);
-            LOG << "Contracted to " << uf.n();
+        sample_contractible(*G, currentN, uf, 0.4, iteration);
+        // sample_contractible_weighted(G, currentN, uf, 0.4, iteration);
+        LOG << "Contracted to " << uf.n();
 
-            std::shared_ptr<graph_access> G2 = contraction::contractGraph(G, maps.first,
-                                                                          maps.second.size(),
-                                                                          maps.second);
+        std::shared_ptr<graph_access> G2 = contraction::contractFromUnionFind(G, uf, save_cut);
 
-            graphs.push_back(G2);
+        graphs.push_back(G2);
+        size_t current_position = graphs.size() - 1;
+        EdgeWeight mincut_to_return = 0;
 
-            size_t currvecsize = graphs.size() - 1;
+        if (graphs.back()->number_of_nodes() > 50) {
 
-            return std::min(recurse(graphs, currvecsize, iteration, save_cut),
-                            recurse(graphs, currvecsize, iteration + 9273 /* pseudo-random seed */, save_cut));
+            auto w1 = recurse(current_position, iteration);
+            auto w2 = recurse(current_position, iteration + 9273 /* pseudo-random seed */);
+
+            if (save_cut) {
+                size_t update_from = w1.first < w2.first ? w1.second : w2.second;
+                for (NodeID n : G2->nodes()) {
+                    NodeID ctr = G2->getPartitionIndex(n);
+                    PartitionID pid = graphs[update_from]->getNodeInCut(ctr);
+                    G2->setNodeInCut(n, pid);
+                }
+            }
+            mincut_to_return = std::min(w1.first, w2.first);
         }
         else {
             noi_minimum_cut mc;
-            return mc.perform_minimum_cut(graphs[current], save_cut);
+            mincut_to_return = mc.perform_minimum_cut(G2, save_cut, false);
         }
+
+        if (!current) {
+            // last graph, propagate to top.
+            std::vector<size_t> up(2, 0);
+            for (NodeID n : G->nodes()) {
+                NodeID ctr = G->getPartitionIndex(n);
+                PartitionID pid = G2->getNodeInCut(ctr);
+                G->setNodeInCut(n, pid);
+                up[pid]++;
+            }
+        }
+        return std::make_pair(mincut_to_return, current_position);
     }
+
+private:
+    std::vector<std::shared_ptr<graph_access> > graphs;
+    bool save_cut;
 };

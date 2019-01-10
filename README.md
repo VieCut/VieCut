@@ -69,10 +69,7 @@ To compile the code use the following commands
 
 We also offer a compile script `compile.sh` which compiles the executables and runs tests.
 
-All of our programs are compiled both for single threaded and shared-memory parallel use. The name of the parallel executable is indicated by appending it with `_parallel`.
-When compiling with `./compile.sh -DSAVE_CUTS=ON` the algorithms do not only store the value of the minimum cut but also write a cut file to disk.
-This cut file has one line per vertex, either '0' or '1', depending on which side of the cut the vertex is.
-The executables can be found in subfolder `/build`.
+All of our programs are compiled both for single threaded and shared-memory parallel use. The name of the parallel executable is indicated by appending it with `_parallel`. The executables can be found in subfolder `/build`.
 
 
 # Running the programs

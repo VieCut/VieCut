@@ -45,7 +45,7 @@ int main(int argn, char** argv) {
 #ifdef PARALLEL
     std::vector<std::string> procs;
     cmdl.add_stringlist('p', "proc", procs, "number of processes");
-    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'exact')");
+    cmdl.add_param_string("algo", algo, "algorithm name ('inexact', 'exact')");
 #else
     cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'noi', 'matula', 'pr', 'ks')");
 #endif

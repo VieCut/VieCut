@@ -34,7 +34,7 @@ static minimum_cut * selectMincutAlgorithm(std::string argv_str) {
         return new padberg_rinaldi();
 #endif
 #ifdef PARALLEL
-    if (argv_str == "vc")
+    if (argv_str == "inexact")
         return new viecut();
     if (argv_str == "exact")
         return new exact_parallel_minimum_cut();

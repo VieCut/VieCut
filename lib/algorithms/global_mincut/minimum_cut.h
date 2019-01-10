@@ -26,8 +26,8 @@ public:
 
     virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>, bool) {
 #ifdef PARALLEL
-        std::cout << "Please select a parallel minimum cut algorithm [vc, exact]!" << std::endl;
-        std::cout << "vc - Run heuristic VieCut algorithm" << std::endl;
+        std::cout << "Please select a parallel minimum cut algorithm [inexact, exact]!" << std::endl;
+        std::cout << "inexact - Run heuristic VieCut algorithm" << std::endl;
         std::cout << "extact - Run shared-memory exact algorithm" << std::endl;
 #else
         std::cout << "Please select a minimum cut global_mincut [vc, noi, pr, matula, ks]!" << std::endl;

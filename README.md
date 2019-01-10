@@ -191,7 +191,7 @@ This can be used to create subgraphs of a graph that have different minimum cuts
 
 [KS'96] - *Karger, D. and Stein, C., 1996. A new approach to the minimum cut problem.*
 
-[Matula'93] - *Matula, D., 1993. A linear time (2 + Ɛ)-approximation algorithm for edge connectivity*
+[Matula'93] - *Matula, D., 1993. A linear time (2 + ε)-approximation algorithm for edge connectivity*
 
 [NOI'94] - *Nagamochi, H., Ono, T. and Ibaraki, T., 1994. Implementing an efficient minimum capacity cut algorithm.*
 

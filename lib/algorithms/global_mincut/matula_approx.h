@@ -15,7 +15,6 @@
 #include "data_structure/priority_queues/maxNodeHeap.h"
 #include "minimum_cut.h"
 #include "noi_minimum_cut.h"
-
 #include "tools/timer.h"
 
 #ifdef PARALLEL
@@ -50,7 +49,6 @@ public:
 
         std::vector<std::shared_ptr<graph_access> > graphs;
 
-        timer t;
         EdgeWeight global_mincut = G->getMinDegree();
         graphs.push_back(G);
 
@@ -63,7 +61,7 @@ public:
             union_find uf(graphs.back()->number_of_nodes());
             timer time;
             noi_minimum_cut noi;
-            noi.modified_capforest(graphs.back(), global_mincut / 2, uf, graphs, save_cut);
+            noi.modified_capforest(graphs.back(), std::max(global_mincut / 2, (EdgeWeight)1), uf, graphs, save_cut);
             graphs.emplace_back(contraction::contractFromUnionFind(graphs.back(), uf, save_cut));
             global_mincut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
         }

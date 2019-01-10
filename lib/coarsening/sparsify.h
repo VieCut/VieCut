@@ -41,14 +41,9 @@ public:
 
         LOG1 << "sample: " << t.elapsedToZero();
 
-        auto maps = subroutine.createMappings((*G_in), uf);
+        std::shared_ptr<graph_access> G2 = contraction::contractFromUnionFind(G_in, uf, false);
 
-        LOG1 << "map: " << t.elapsedToZero();
-
-        std::shared_ptr<graph_access> G2 = contraction::contractGraph(G_in, maps.first,
-                                                                      maps.second.size(), maps.second);
-
-        LOG1 << "contracterino: " << t.elapsedToZero();
+        LOG1 << "contract: " << t.elapsedToZero();
 
         return G2;
     }

@@ -5,7 +5,7 @@
 This is the code repository to accompany our papers:
 
 *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms. arXiv preprint [arXiv:1708.06127.](https://arxiv.org/abs/1708.06127)*
-*Henzinger, M., Noe, A. and Schulz, C., 2018. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
+*Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
 
 The papers can be freely accessed online in the arXiv.
 
@@ -20,12 +20,13 @@ If you use this code in the context of an academic publication, we ask that you 
   organization={SIAM}
 }
 
-@article{henzinger2018shared,
-  title={Shared-memory Exact Minimum Cuts},
-  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
-  journal={arXiv preprint arXiv:1808.05458},
-  year={2018}
+@inproceedings{henzinger2019shared,
+  author = {Henzinger, Monika and Noe, Alexander and Schulz, Christian},
+  title = {{Shared-memory Exact Minimum Cuts}},
+  booktitle={Proceedings of the 33rd International Parallel and Distributed Processing Symposium (IPDPS)},
+  year = {2019}
 }
+
 ```
 
 ## Introduction
@@ -96,13 +97,13 @@ For <algorithm> use one of the following:
 when parallelism is enabled, use one of the following:
 
 * `inexact` - shared-memory parallel version of `VieCut` [HNSS'18]
-* `exact` - exact shared-memory parallel minimum cut [HNS'18]
+* `exact` - exact shared-memory parallel minimum cut [HNS'19]
 
 #### (Optional) Program Options:
 
-* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'18] for details)
+* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19] for details)
 * `-i` - Number of iterations (default: 1)
-* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'18])
+* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19])
 * `-p` - Use `p` processors (multiple values possible)
 * `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
 
@@ -121,7 +122,7 @@ For each of the runs we print running time and results, as well as a few informa
 
 As most real-world graphs contain vertices with degree 1 and multiple connected components, finding the minimum cut is
 as easy as finding the minimum degree or checking whether the graph has multiple connected components.
-In order to create harder instances for [HNS'18] and [HNSS'18] we use the cores decomposition of the graph.
+In order to create harder instances for [HNS'19] and [HNSS'18] we use the cores decomposition of the graph.
 The k-core of a graph is the largest subgraph of the graph, in which every node has at least degree k in the k-core.
 We use the executable `kcore` to find k-cores of a graph where the minimum cut is not equal to the minimum degree.
 If the minimum cut is not equal to the minimum degree, the k-core graph is written both in METIS and in DIMACS format.
@@ -158,9 +159,9 @@ Usage is similar to mincut and can be combined with any minimum cut algorithm.
 
 #### Program Options:
 
-* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'18] for details)
+* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19] for details)
 * `-i` - Number of iterations (default: 1)
-* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'18])
+* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19])
 * `-p` - Use `p` processors (multiple values possible)
 * `-c` - Contraction factor: we contract until only n*(1-c) vertices are left.
 * `-s` - Compute and save minimum cut.
@@ -184,7 +185,7 @@ This can be used to create subgraphs of a graph that have different minimum cuts
 
 [BZ'03] - *Batagelj, V. and Zaversnik, M., 2003. An O(m) algorithm for cores decomposition of networks.*
 
-[HNS'18] - *Henzinger, M., Noe, A. and Schulz, C., 2018. Shared-memory Exact Minimum Cuts.*
+[HNS'19] - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts.*
 
 [HNSS'18] - *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms.*
 

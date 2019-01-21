@@ -2,7 +2,7 @@
 
 language: cpp
 sudo: false
-dist: bionic
+dist: xenial
 
 matrix:
   include:

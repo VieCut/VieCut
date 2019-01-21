@@ -53,7 +53,7 @@ include_directories(
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -msse4.2 -mcx16 -Wall -Wextra")
 
-set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -flto -DNDEBUG")
+set (CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -DNDEBUG")
 
 set (CMAKE_CXX_FLAGS_DEBUG "-g3")
 

@@ -7,9 +7,9 @@ dist: xenial
 matrix:
   include:
 # gcc 6.x, Debug
-    - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Debug"
+    - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
       os: linux
-      addons: &gcc6
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -17,9 +17,9 @@ matrix:
             - g++-6
 
 # gcc 7.x, Debug 
-    - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Debug"
+    - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
       os: linux
-      addons: &gcc7
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -27,9 +27,9 @@ matrix:
             - g++-7
 
 # gcc 8.x, Debug
-    - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Debug"
+    - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
       os: linux
-      addons: &gcc8
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -37,9 +37,9 @@ matrix:
             - g++-8
 
 # gcc 6.x, Release
-    - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Release"
+    - env: CMAKE_CC="gcc-6" CMAKE_CXX="g++-6" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
       os: linux
-      addons: &gcc6
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -47,9 +47,9 @@ matrix:
             - g++-6
 
 # gcc 7.x, Release
-    - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Release"
+    - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
       os: linux
-      addons: &gcc7
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -57,14 +57,17 @@ matrix:
             - g++-7
 
 # gcc 8.x, Release
-    - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8 BUILD_TYPE="Release"
+    - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8 BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
       os: linux
-      addons: &gcc8
+      addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
             - g++-8
+
+before_install:
+  -eval "${MATRIX_EVAL}"
 
 before_script:
   # print out some version numbers

@@ -67,7 +67,7 @@ matrix:
             - g++-8
 
 before_install:
-  -eval "${MATRIX_EVAL}"
+    - eval "${MATRIX_EVAL}"
 
 before_script:
   # print out some version numbers

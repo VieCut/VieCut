@@ -27,7 +27,7 @@ TEST(PushRelabelTest, EmptyGraph) {
     std::vector<NodeID> src;
     src.push_back(0);
     src.push_back(1);
-    auto [f, src_block] = pr.solve_max_flow_min_cut(fG, src, 0, false);
+    auto f = pr.solve_max_flow_min_cut(fG, src, 0, false).first;
     ASSERT_EQ(f, -1);
 }
 
@@ -45,7 +45,7 @@ TEST(PushRelabelTest, TooLargeSrc) {
     std::vector<NodeID> src;
     src.push_back(0);
     src.push_back(10);
-    auto [f, src_block] = pr.solve_max_flow_min_cut(fG, src, 0, false);
+    auto f = pr.solve_max_flow_min_cut(fG, src, 0, false).first;
     ASSERT_EQ(f, -1);
 }
 
@@ -372,12 +372,12 @@ TEST(PushRelabelTest, ReInit) {
 
     push_relabel pr;
     std::vector<NodeID> terminals = { 0, 2 };
-    auto [f, src_block] = pr.solve_max_flow_min_cut(G, terminals, 0, false);
+    auto f = pr.solve_max_flow_min_cut(G, terminals, 0, false).first;
     ASSERT_EQ(f, static_cast<FlowType>(1));
     terminals = { 0, 1 };
     G->contractEdge(0, 0);
 
-    auto [f2, src2] = pr.solve_max_flow_min_cut(G, terminals, 0, false);
+    auto f2 = pr.solve_max_flow_min_cut(G, terminals, 0, false).first;
     ASSERT_EQ(f2, static_cast<FlowType>(2));
 }
 
@@ -419,7 +419,7 @@ TEST(PushRelabelTest, ContractSrcBlock) {
     G->contractVertexSet(ctr);
     terminals = { G->getCurrentPosition(0), G->getCurrentPosition(11) };
     auto [f4, src_block4] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
-    ASSERT_EQ(f, static_cast<FlowType>(1));
+    ASSERT_EQ(f4, static_cast<FlowType>(1));
     ASSERT_EQ(src_block4.size(), 9);
 
     std::unordered_set<NodeID> ctr2 = { 3, 4, 5 };

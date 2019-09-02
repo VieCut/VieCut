@@ -514,13 +514,12 @@ class branch_multicut {
                                    &prs[i],
                                    problem->graph, curr_terminals, i, true));
                 } else {
-                    push_relabel pr;
-                    auto [flow, block] = pr.solve_max_flow_min_cut(
-                        problem->graph,
+                    push_relabel pr; 
+                    maxVolIsoBlock.emplace_back(
+                        pr.solve_max_flow_min_cut(problem->graph,
                         curr_terminals,
                         i,
-                        true);
-                    maxVolIsoBlock.emplace_back(block);
+                        true).second);
                 }
 
                 problem->terminals[i].invalid_flow = false;

@@ -278,9 +278,8 @@ class recursive_cactus {
         {
             std::vector<NodeID> vtcs = { s, tgt };
             push_relabel pr;
-            auto [mf, empty] = pr.solve_max_flow_min_cut(
-                G, vtcs, 0, false, false);
-            max_flow = mf;
+            max_flow = pr.solve_max_flow_min_cut(
+                G, vtcs, 0, false, false).first;
         }
 
         if (max_flow > (FlowType)mincut) {

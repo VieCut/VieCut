@@ -137,7 +137,7 @@ For each of the runs we print running time and results, as well as a few informa
 ### `multiterminal_cut`
 
 The multiterminal cut of a graph G and a set of terminals T is to find the minimum cut of G that separates all terminals from each other. 
-For $|T|=2$ this is equal to the minimum s-t-cut problem, for $|T|>2$, the problem is NP-hard. 
+For |T|=2 this is equal to the minimum s-t-cut problem, for |T|>2, the problem is NP-hard. 
 We solve the problem using a branch-and-reduce approach which finds a hard kernel by applying reduction rules and then branching on edges adjacent to a terminal. For a more detailed description, we refer the reader to [HNS'19b]. The algorithm is shared-memory parallel and uses OpenMP.
 
 #### Usage:
@@ -147,7 +147,7 @@ We solve the problem using a branch-and-reduce approach which finds a hard kerne
 ```
 
 #### (Optional) Program Options:
-* `-f` - Path to partition file. This file has one line for each vertex. A value of $0$ to $|T| - 1$ indicates which terminal a vertex belongs to, otherwise a value of $|T|$ indicates that the vertex does not belong to a terminal.
+* `-f` - Path to partition file. This file has one line for each vertex. A value of 0 to |T|-1 indicates which terminal a vertex belongs to, otherwise a value of |T| indicates that the vertex does not belong to a terminal.
 * `-t` - Add vertex `t` as a terminal.
 * `-k` - Find multiterminal cut between `k` vertices with highest vertex degree.
 * `-r` - Find multiterminal cut between `r` random vertices.
@@ -162,7 +162,7 @@ The following command
 ./build/multiterminal_cut /path/to/my/graph.metis -f /path/to/my/partition_file -p 12 -c 1
 ```
 
-finds the multiterminal cut as given by the graph and partition file using `12` cores and all except for the high-connectivity kernelization (see [HNS'19b] for further details) rules enabled.
+finds the multiterminal cut as given by the graph and partition file using 12 threads and all except for the high-connectivity kernelization (see [HNS'19b] for further details) rules enabled.
 
 
 

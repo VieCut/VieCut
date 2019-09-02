@@ -10,7 +10,7 @@
  *
  *****************************************************************************/
 
-#include "random_functions.h"
+#include "tools/random_functions.h"
 
 MersenneTwister random_functions::m_mt;
 int random_functions::m_seed = 0;

@@ -11,8 +11,7 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#ifndef MACROS_COMMON_H
-#define MACROS_COMMON_H
+#pragma once
 
 // If DEBUG has not been defined yet then define it as false.
 #ifndef DEBUG
@@ -35,12 +34,10 @@
 
 // A macro to disallow the assignment operators.
 #define DISALLOW_ASSIGN(TypeName) \
-    void operator = (const TypeName&)
+    void operator =(const TypeName& )
 
 // Helper macro for STR.
-#define ASSERT_H_XSTR(x) ( #x)
+#define ASSERT_H_XSTR(x) ( #x)  // NOLINT
 
 // This macro allows to convert an expression to a string.
 #define STR(x) ASSERT_H_XSTR(x)
-
-#endif // ifndef MACROS_COMMON_H

@@ -18,10 +18,9 @@
 
 // A simple Union-Find datastructure implementation.
 // This is sometimes also caled "disjoint sets datastructure.
-class union_find
-{
-public:
-    union_find(unsigned n) : m_parent(n), m_rank(n), m_n(n) {
+class union_find {
+ public:
+    explicit union_find(unsigned n) : m_parent(n), m_rank(n), m_n(n) {
         for (unsigned i = 0; i < m_parent.size(); i++) {
             m_parent[i] = i;
             m_rank[i] = 0;
@@ -33,8 +32,7 @@ public:
         if (set_lhs != set_rhs) {
             if (m_rank[set_lhs] < m_rank[set_rhs]) {
                 m_parent[set_lhs] = set_rhs;
-            }
-            else {
+            } else {
                 m_parent[set_rhs] = set_lhs;
                 if (m_rank[set_lhs] == m_rank[set_rhs]) m_rank[set_lhs]++;
             }
@@ -53,12 +51,20 @@ public:
         return element;
     }
 
+    inline unsigned Find(unsigned element) const {
+        if (m_parent[element] != element) {
+            unsigned retValue = Find(m_parent[element]);
+            return retValue;
+        }
+        return element;
+    }
+
     // Returns:
     //   The total number of sets.
     inline unsigned n() const
     { return m_n; }
 
-private:
+ private:
     std::vector<unsigned> m_parent;
     std::vector<unsigned> m_rank;
 

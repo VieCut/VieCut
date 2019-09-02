@@ -14,24 +14,30 @@
 
 #pragma once
 
-#include "data_structure/flow_graph.h"
-#include "definitions.h"
-#include "tools/timer.h"
+#include <algorithm>
 #include <iostream>
 #include <memory>
+#include <queue>
+#include <utility>
+#include <vector>
+
+#include "common/definitions.h"
+#include "data_structure/mutable_graph.h"
+#include "tools/timer.h"
 
 const int WORK_OP_RELABEL = 9;
 const double GLOBAL_UPDATE_FRQ = 0.51;
 const int WORK_NODE_TO_EDGES = 4;
 
-class push_relabel
-{
-public:
+class push_relabel {
+ public:
     push_relabel() { }
     virtual ~push_relabel() { }
 
-    void init(std::shared_ptr<flow_graph> G, std::vector<NodeID> sources, NodeID source) {
-
+ private:
+    void init(std::shared_ptr<mutable_graph> G,
+              std::vector<NodeID> sources,
+              NodeID source) {
         m_Q = std::queue<NodeID>();
         m_excess.clear();
         m_distance.clear();
@@ -58,7 +64,7 @@ public:
         }
 
         for (EdgeID e : G->edges_of(flow_source)) {
-            m_excess[flow_source] += G->getEdgeCapacity(flow_source, e);
+            m_excess[flow_source] += G->getEdgeWeight(flow_source, e);
             push(flow_source, e);
         }
     }
@@ -66,7 +72,6 @@ public:
     // perform a backward bfs in the residual starting at the sink
     // to update distance labels
     void global_relabeling(std::vector<NodeID> sources, NodeID source) {
-
         std::queue<NodeID> Q;
         NodeID flow_source = sources[source];
 
@@ -96,7 +101,8 @@ public:
                 if (m_bfstouched[target]) continue;
 
                 EdgeID rev_e = m_G->getReverseEdge(node, e);
-                if (m_G->getEdgeCapacity(target, rev_e) - m_G->getEdgeFlow(target, rev_e) > 0) {
+                if (m_G->getEdgeWeight(target, rev_e) -
+                    getEdgeFlow(target, rev_e) > 0) {
                     m_count[m_distance[target]]--;
                     m_distance[target] = m_distance[node] + 1;
                     m_count[m_distance[target]]++;
@@ -110,18 +116,19 @@ public:
     // push flow from source to target if possible
     void push(NodeID source, EdgeID e) {
         m_pushes++;
-        FlowType capacity = m_G->getEdgeCapacity(source, e);
-        FlowType flow = m_G->getEdgeFlow(source, e);
-        FlowType amount = std::min((long long)(capacity - flow), m_excess[source]);
+        FlowType capacity = m_G->getEdgeWeight(source, e);
+        FlowType flow = getEdgeFlow(source, e);
+
+        FlowType amount = std::min(capacity - flow, m_excess[source]);
         NodeID target = m_G->getEdgeTarget(source, e);
 
         if (m_distance[source] <= m_distance[target] || amount == 0) return;
 
-        m_G->setEdgeFlow(source, e, flow + amount);
+        setEdgeFlow(source, e, flow + amount);
 
         EdgeID rev_e = m_G->getReverseEdge(source, e);
-        FlowType rev_flow = m_G->getEdgeFlow(target, rev_e);
-        m_G->setEdgeFlow(target, rev_e, rev_flow - amount);
+        FlowType rev_flow = getEdgeFlow(target, rev_e);
+        setEdgeFlow(target, rev_e, rev_flow - amount);
 
         m_excess[source] -= amount;
         m_excess[target] += amount;
@@ -149,11 +156,11 @@ public:
         }
 
         if (m_excess[node] > 0) {
-            if (m_count[m_distance[node]] == 1 && m_distance[node] < m_G->number_of_nodes()) {
+            if (m_count[m_distance[node]] == 1
+                && m_distance[node] < m_G->number_of_nodes()) {
                 // hence this layer will be empty after the relabel step
                 gap_heuristic(m_distance[node]);
-            }
-            else {
+            } else {
                 relabel(node);
             }
         }
@@ -165,7 +172,7 @@ public:
         for (NodeID node : m_G->nodes()) {
             if (m_distance[node] < level) continue;
             m_count[m_distance[node]]--;
-            m_distance[node] = std::max(m_distance[node], m_G->number_of_nodes());
+            m_distance[node] = std::max(m_distance[node], m_G->n());
             m_count[m_distance[node]]++;
             enqueue(node);
         }
@@ -181,9 +188,10 @@ public:
         m_distance[node] = 2 * m_G->number_of_nodes();
 
         for (EdgeID e : m_G->edges_of(node)) {
-            if (m_G->getEdgeCapacity(node, e) - m_G->getEdgeFlow(node, e) > 0) {
+            if (m_G->getEdgeWeight(node, e) - getEdgeFlow(node, e) > 0) {
                 NodeID target = m_G->getEdgeTarget(node, e);
-                m_distance[node] = std::min(m_distance[node], m_distance[target] + 1);
+                m_distance[node] =
+                    std::min(m_distance[node], m_distance[target] + 1);
             }
             m_work++;
         }
@@ -192,19 +200,124 @@ public:
         enqueue(node);
     }
 
-    FlowType solve_max_flow_min_cut(std::shared_ptr<flow_graph> G,
-                                    std::vector<NodeID> sources,
-                                    NodeID curr_source,
-                                    bool compute_source_set,
-                                    std::vector<NodeID>& source_set) {
+    std::vector<NodeID> computeSourceSet(const std::vector<NodeID>& sources,
+                                         NodeID curr_source) {
+        std::vector<NodeID> source_set;
+        // perform bfs starting from source set
+        source_set.clear();
+        NodeID src = sources[curr_source];
 
-        for (NodeID s : sources) {
-            if (s >= G->number_of_nodes()) {
-                LOG1 << "source " << s << " is too large (only " << G->number_of_nodes() << " nodes)";
-                return -1;
+        for (NodeID node : m_G->nodes()) {
+            m_bfstouched[node] = false;
+        }
+
+        std::queue<NodeID> Q;
+        for (NodeID tgt : sources) {
+            if (tgt == src)
+                continue;
+
+            Q.push(tgt);
+            m_bfstouched[tgt] = true;
+        }
+
+        while (!Q.empty()) {
+            NodeID node = Q.front();
+            Q.pop();
+
+            for (EdgeID e : m_G->edges_of(node)) {
+                EdgeID rev_e = m_G->getReverseEdge(node, e);
+
+                NodeID edge_source = m_G->getEdgeTarget(node, e);
+                FlowType resCap = m_G->getEdgeWeight(edge_source, rev_e)
+                                  - getEdgeFlow(edge_source, rev_e);
+                if (resCap > 0 && !m_bfstouched[edge_source]) {
+                    Q.push(edge_source);
+                    m_bfstouched[edge_source] = true;
+                }
             }
         }
 
+        std::queue<NodeID> Qsrc;
+        Qsrc.push(src);
+        source_set.emplace_back(src);
+        m_bfstouched[src] = true;
+        while (!Qsrc.empty()) {
+            NodeID node = Qsrc.front();
+            Qsrc.pop();
+
+            for (EdgeID e : m_G->edges_of(node)) {
+                NodeID n = m_G->getEdgeTarget(node, e);
+                if (!m_bfstouched[n]) {
+                    source_set.emplace_back(n);
+                    m_bfstouched[n] = true;
+                    Qsrc.push(n);
+                }
+            }
+        }
+
+        return source_set;
+    }
+
+    void setEdgeFlow(NodeID n, EdgeID e, FlowType f) {
+        if (m_parallel_flows) {
+            edge_flow[n][e] = f;
+        } else {
+            m_G->setEdgeFlow(n, e, f);
+        }
+    }
+
+    FlowType getEdgeFlow(NodeID n, EdgeID e) {
+        if (m_parallel_flows) {
+            return edge_flow[n][e];
+        } else {
+            return m_G->getEdgeFlow(n, e);
+        }
+    }
+
+ public:
+    std::vector<NodeID> callable_max_flow(std::shared_ptr<mutable_graph> G,
+                                          std::vector<NodeID> sources,
+                                          NodeID curr_source,
+                                          bool compute_source_set) {
+        // this exists to be called by std::async.
+        // thus, parallel_flows is set to true
+        auto [flow, source_set] = solve_max_flow_min_cut(
+            G, sources, curr_source, compute_source_set, true);
+        return source_set;
+    }
+
+    std::pair<FlowType, std::vector<NodeID> > solve_max_flow_min_cut(
+        std::shared_ptr<mutable_graph> G,
+        std::vector<NodeID> sources,
+        NodeID curr_source,
+        bool compute_source_set,
+        bool parallel_flows = false) {
+        for (NodeID s : sources) {
+            if (s >= G->number_of_nodes()) {
+                LOG1 << "source " << s << " is too large (only "
+                     << G->number_of_nodes() << " nodes)";
+                return std::make_pair(-1, std::vector<NodeID>());
+            }
+        }
+
+        if (parallel_flows) {
+            // if we have parallel flows on the same graphs,
+            // we can't use edge flows on the graph.
+            // in sequential cases it's faster and flow values
+            // might still be useful outside of this algorithm
+            edge_flow.clear();
+            for (NodeID n : G->nodes()) {
+                edge_flow.emplace_back(G->get_first_invalid_edge(n), 0);
+            }
+        } else {
+            for (NodeID n : G->nodes()) {
+                for (EdgeID e : G->edges_of(n)) {
+                    G->setEdgeFlow(n, e, 0);
+                }
+            }
+        }
+
+        m_parallel_flows = parallel_flows;
         m_G = G;
         m_work = 0;
         m_num_relabels = 0;
@@ -216,7 +329,8 @@ public:
         init(G, sources, curr_source);
         global_relabeling(sources, curr_source);
 
-        int work_todo = WORK_NODE_TO_EDGES * G->number_of_nodes() + G->number_of_edges();
+        int work_todo = WORK_NODE_TO_EDGES * G->number_of_nodes()
+                        + G->number_of_edges();
         // main loop
         while (!m_Q.empty()) {
             NodeID v = m_Q.front();
@@ -225,44 +339,9 @@ public:
             discharge(v);
 
             if (m_work > GLOBAL_UPDATE_FRQ * work_todo) {
-                // global_relabeling(sources, curr_source);
+                global_relabeling(sources, curr_source);
                 m_work = 0;
                 m_global_updates++;
-            }
-        }
-
-        if (compute_source_set) {
-            // perform bfs starting from source set
-            source_set.clear();
-
-            for (NodeID node : G->nodes()) {
-                m_bfstouched[node] = false;
-            }
-
-            std::queue<NodeID> Q;
-            for (NodeID tgt : sources) {
-                if (tgt == src)
-                    continue;
-
-                Q.push(tgt);
-                m_bfstouched[tgt] = true;
-            }
-
-            while (!Q.empty()) {
-                NodeID node = Q.front();
-                Q.pop();
-
-                for (EdgeID e : G->edges_of(node)) {
-
-                    EdgeID rev_e = G->getReverseEdge(node, e);
-
-                    NodeID edge_source = G->getEdgeTarget(node, e);
-                    FlowType resCap = G->getEdgeCapacity(edge_source, rev_e) - G->getEdgeFlow(edge_source, rev_e);
-                    if (resCap > 0 && !m_bfstouched[edge_source]) {
-                        Q.push(edge_source);
-                        m_bfstouched[edge_source] = true;
-                    }
-                }
             }
         }
 
@@ -274,45 +353,33 @@ public:
             }
         }
 
-        std::queue<NodeID> Q;
-        Q.push(src);
-        source_set.emplace_back(src);
-        m_bfstouched[src] = true;
-        m_already_contracted[src] = true;
+        std::vector<NodeID> source_set;
 
-        while (!Q.empty()) {
-            NodeID node = Q.front();
-            Q.pop();
-
-            for (EdgeID e : G->edges_of(node)) {
-                NodeID n = G->getEdgeTarget(node, e);
-                if (!m_bfstouched[n] && !m_already_contracted[n]) {
-                    source_set.emplace_back(n);
-                    m_bfstouched[n] = true;
-                    m_already_contracted[n] = true;
-                    Q.push(n);
-                }
-            }
+        if (compute_source_set) {
+            source_set = computeSourceSet(sources, curr_source);
         }
 
-        LOGC(extended_logs) << "updates " << m_global_updates << " relabel " << m_num_relabels << " pushes " << m_pushes;
-        return total_flow;
+        LOGC(extended_logs) << "updates " << m_global_updates
+                            << " relabel " << m_num_relabels
+                            << " pushes " << m_pushes;
+        return std::make_pair(total_flow, source_set);
     }
 
-private:
-    std::vector<long long> m_excess;
+ private:
+    std::vector<FlowType> m_excess;
     std::vector<NodeID> m_distance;
-    std::vector<bool> m_active;          // store which nodes are in the queue already
+    std::vector<bool> m_active;   // store which nodes are in the queue already
     std::vector<int> m_count;
     std::queue<NodeID> m_Q;
     std::vector<bool> m_bfstouched;
     std::vector<bool> m_already_contracted;
-    // highest_label_queue    m_Q;
+    std::vector<std::vector<FlowType> > edge_flow;
     int m_num_relabels;
     int m_gaps;
     int m_global_updates;
     int m_pushes;
     int m_work;
-    std::shared_ptr<flow_graph> m_G;
+    std::shared_ptr<mutable_graph> m_G;
     static const bool extended_logs = false;
+    bool m_parallel_flows;
 };

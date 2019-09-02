@@ -9,12 +9,13 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <omp.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
-#include <omp.h>
 #include <sstream>
 
 #include "algorithms/global_mincut/algorithms.h"
@@ -31,40 +32,45 @@
 #endif
 
 int main(int argn, char** argv) {
-
     static constexpr bool debug = false;
     static const bool timing = true;
 
     tlx::CmdlineParser cmdl;
 
-    std::string graph_filename;
-    std::string algo;
-    std::string pq = "default";
     int iter = 1;
     double contraction_factor;
-    bool save_cut;
 
-    cmdl.add_param_string("graph", graph_filename, "path to graph file");
+    cmdl.add_param_string("graph", configuration::getConfig()->graph_filename,
+                          "path to graph file");
 
 #ifdef PARALLEL
     std::vector<std::string> procs;
     cmdl.add_stringlist('p', "proc", procs, "number of processes");
-    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'exact')");
+    cmdl.add_param_string("algo", configuration::getConfig()->algorithm,
+                          "algorithm name ('vc', 'exact')");
 #else
-    cmdl.add_param_string("algo", algo, "algorithm name ('vc', 'noi', 'matula', 'pr', 'ks')");
+    cmdl.add_param_string("algo", configuration::getConfig()->algorithm,
+                          "algorithm name ('vc', 'noi', 'matula', 'pr', 'ks')");
 #endif
 
-    cmdl.add_param_string("graph", graph_filename, "path to graph file");
-    cmdl.add_param_string("algo", algo, "global_mincut name");
-    cmdl.add_string('q', "pq", pq, "name of priority queue implementation");
+    cmdl.add_param_string("graph", configuration::getConfig()->graph_filename,
+                          "path to graph file");
+    cmdl.add_string('q', "pq", configuration::getConfig()->pq,
+                    "name of priority queue implementation");
     cmdl.add_int('i', "iter", iter, "number of iterations");
-    cmdl.add_double('c', "contraction factor", contraction_factor, "contract until only n*(1-contraction_factor) vertices are left");
-    cmdl.add_bool('s', "save_cut", save_cut, "compute and store minimum cut");
+    cmdl.add_double('c', "contraction factor", contraction_factor,
+                    "contract until only 1 - factor of vertices are left");
+    cmdl.add_bool('s', "save_cut", configuration::getConfig()->save_cut,
+                  "compute and store minimum cut");
+    cmdl.add_string('k', "sampling_type",
+                    configuration::getConfig()->sampling_type,
+                    "sampling variant for pre-run of viecut");
 
     if (!cmdl.process(argn, argv))
         return -1;
 
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(graph_filename);
+    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        configuration::getConfig()->graph_filename);
     timer t;
 
     if (G->getMinDegree() == 0) {
@@ -87,7 +93,8 @@ int main(int argn, char** argv) {
             numthreads.emplace_back(std::stoi(procs[i]));
         }
     } catch (...) {
-        LOG1 << procs[i] << " is not a valid number of workers! Continuing without.";
+        LOG1 << procs[i]
+             << " is not a valid number of workers! Continuing without.";
     }
 #else
     LOG1 << "PARALLEL NOT DEFINED";
@@ -98,24 +105,29 @@ int main(int argn, char** argv) {
     for (int i = 0; i < iter; ++i) {
         for (size_t numthread : numthreads) {
             random_functions::setSeed(i);
-            minimum_cut* mc = selectMincutAlgorithm(algo);
+            configuration::getConfig()->seed = i;
+            minimum_cut* mc = selectMincutAlgorithm(
+                configuration::getConfig()->algorithm);
             t.restart();
             omp_set_num_threads(numthread);
 
-            auto G2 = sf.one_ks(G, contraction_factor, i);
+            auto G2 = sf.one_ks(G);
 
             LOGC(timing) << "Contraction: " << t.elapsed() << "s";
-            EdgeWeight cut = mc->perform_minimum_cut(G2, save_cut);
+            EdgeWeight cut = mc->perform_minimum_cut(G2);
 
-            if (save_cut) {
-                graph_io::writeCut(G, graph_filename + ".cut");
+            if (configuration::getConfig()->save_cut) {
+                graph_io::writeCut(G,
+                                   configuration::getConfig()->graph_filename
+                                   + ".cut");
             }
 
-            std::string graphname = string::basename(graph_filename);
-
             double time = t.elapsed();
-            std::cout << "RESULT source=taa algo=contract" << (int)100 * contraction_factor << " graph="
-                      << graphname << " time=" << time
+            std::cout << "RESULT source=taa algo=contract"
+                      << static_cast<int>(100) * contraction_factor
+                      << " graph="
+                      << configuration::getConfig()->graph_filename
+                      << " time=" << time
                       << " cut=" << cut
                       << " n=" << G->number_of_nodes()
                       << " m=" << G->number_of_edges() << " processes="

@@ -11,37 +11,37 @@
 
 #pragma once
 
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "algorithms/global_mincut/ks_minimum_cut.h"
+#include "data_structure/graph_access.h"
 #include "tools/random_functions.h"
-#include <data_structure/graph_access.h>
 
-#include <algorithms/global_mincut/ks_minimum_cut.h>
-
-class sparsify
-{
-
-public:
+class sparsify {
+ public:
     std::shared_ptr<graph_access> one_ks(
-        std::shared_ptr<graph_access> G_in, double contraction, size_t iteration) {
-
+        std::shared_ptr<graph_access> G_in) {
+        double contraction = configuration::getConfig()->contraction_factor;
+        size_t iteration = configuration::getConfig()->seed;
         union_find uf(G_in->number_of_nodes());
         ks_minimum_cut subroutine;
-
         timer t;
 
         constexpr bool weighted = true;
 
         if (weighted) {
             subroutine.sample_contractible_weighted(
-                (*G_in), G_in->number_of_nodes(), uf, contraction, iteration);
-        }
-        else {
+                G_in, G_in->number_of_nodes(), &uf, contraction, iteration);
+        } else {
             subroutine.sample_contractible(
-                (*G_in), G_in->number_of_nodes(), uf, contraction, iteration);
+                G_in, G_in->number_of_nodes(), &uf, contraction, iteration);
         }
 
         LOG1 << "sample: " << t.elapsedToZero();
 
-        std::shared_ptr<graph_access> G2 = contraction::contractFromUnionFind(G_in, uf, false);
+        std::shared_ptr<graph_access> G2 = contraction::fromUnionFind(G_in, uf);
 
         LOG1 << "contract: " << t.elapsedToZero();
 
@@ -50,7 +50,6 @@ public:
 
     std::shared_ptr<graph_access> random_matching(
         std::shared_ptr<graph_access> G_in) {
-
         std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
 
         const size_t MAX_TRIES = 50;
@@ -65,23 +64,18 @@ public:
 
         for (NodeID n : G_in->nodes()) {
             if (edge_matching[n] == n) {
-
                 size_t no_try = 0;
                 NodeID matchingPartner = n;
                 while (no_try < MAX_TRIES) {
-
                     // match with a random neighbor
                     EdgeID s = G_in->get_first_edge(n);
                     EdgeID modulo = G_in->getNodeDegree(n);
                     EdgeID r = s + (random_functions::next() % modulo);
-
                     NodeID tgt = G_in->getEdgeTarget(r);
-
                     if (edge_matching[tgt] == tgt) {
                         matchingPartner = tgt;
                         break;
                     }
-
                     no_try++;
                 }
 
@@ -89,14 +83,11 @@ public:
                     coarse_mapping[n] = no_of_coarse_vertices;
                     edge_matching[n] = n;
                     no_of_coarse_vertices++;
-                }
-                else {
+                } else {
                     coarse_mapping[matchingPartner] = no_of_coarse_vertices;
                     coarse_mapping[n] = no_of_coarse_vertices;
-
                     edge_matching[matchingPartner] = n;
                     edge_matching[n] = matchingPartner;
-
                     no_of_coarse_vertices++;
                 }
             }
@@ -130,12 +121,12 @@ public:
                 auto pos = edge_positions[new_coarse_edge_target];
 
                 if (pos.first != coarseNode) {
-                    EdgeID coarseEdge = G_out->new_edge(coarseNode, new_coarse_edge_target);
+                    EdgeID coarseEdge = G_out->new_edge(coarseNode,
+                                                        new_coarse_edge_target);
                     G_out->setEdgeWeight(coarseEdge, G_in->getEdgeWeight(e));
                     edge_positions[new_coarse_edge_target] =
                         std::make_pair(coarseNode, coarseEdge);
-                }
-                else {
+                } else {
                     EdgeWeight new_weight = G_out->getEdgeWeight(pos.second)
                                             + G_in->getEdgeWeight(e);
 
@@ -157,11 +148,11 @@ public:
                     if (pos.first != coarseNode) {
                         EdgeID coarseEdge = G_out->new_edge(
                             coarseNode, new_coarse_edge_target);
-                        G_out->setEdgeWeight(coarseEdge, G_in->getEdgeWeight(e));
+                        G_out->setEdgeWeight(coarseEdge,
+                                             G_in->getEdgeWeight(e));
                         edge_positions[new_coarse_edge_target] =
                             std::make_pair(coarseNode, coarseEdge);
-                    }
-                    else {
+                    } else {
                         EdgeWeight new_weight = G_out->getEdgeWeight(pos.second)
                                                 + G_in->getEdgeWeight(e);
 
@@ -178,7 +169,8 @@ public:
 
     std::shared_ptr<graph_access> remove_heavy_vertices(
         std::shared_ptr<graph_access> G_in, double percentile,
-        std::vector<NodeID>& prefixsum) {
+        std::vector<NodeID>* p) {
+        std::vector<NodeID>& prefixsum = *p;
 
         std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
 
@@ -189,15 +181,14 @@ public:
 
         size_t ctr = 0;
         // this is an upper bound, as edges to dense vectors are also counted.
-        // we can just resize the edge vector afterwards though, no need to check
+        // we can resize the edge vector afterwards though, no need to check
         // each edge (todo: if slow, this needs to be changed for parallelism)
         size_t existing_edges = 0;
         for (NodeID n : G_in->nodes()) {
             if (G_in->getWeightedNodeDegree(n) < bound_deg) {
                 prefixsum[n] = ctr++;
                 existing_edges += G_in->getNodeDegree(n);
-            }
-            else {
+            } else {
                 prefixsum[n] = G_in->number_of_nodes();
             }
         }

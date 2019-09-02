@@ -11,43 +11,43 @@
 
 #pragma once
 
-#include "data_structure/flow_graph.h"
-#include "data_structure/graph_access.h"
-#include "definitions.h"
-#include "tlx/logger.hpp"
-#include "unit_flow.h"
-
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <queue>
+#include <vector>
 
-class excess_scaling
-{
+#include "algorithms/flow/unit_flow.h"
+#include "common/definitions.h"
+#include "data_structure/flow_graph.h"
+#include "data_structure/graph_access.h"
+#include "tlx/logger.hpp"
 
+class excess_scaling {
+ public:
     static constexpr bool debug = false;
-
-public:
     excess_scaling() { }
     virtual ~excess_scaling() { }
 
-    void init(flow_graph& fg, std::vector<EdgeWeight>& delta_src,
+    void init(flow_graph* fg, const std::vector<EdgeWeight>& delta_src,
               float tau, FlowType U, NodeID max_height) {
-        m_fg = &fg;
+        m_fg = fg;
         m_delta_src = delta_src;
         m_tau = tau;
         m_U = U;
         m_max_height = max_height;
         m_F = 0.f;
 
-        for (size_t n = 0; n < fg.number_of_nodes(); ++n) {
-            float div = m_delta_src[n] / (float)(2 * fg.getCapacity(n));
+        for (size_t n = 0; n < fg->number_of_nodes(); ++n) {
+            float div = m_delta_src[n] /
+                        static_cast<float>(2 * fg->getCapacity(n));
             m_F = std::max(m_F, div);
         }
         m_mu = std::ceil(m_F);
         m_j = 0;
-        m_flows.resize(fg.number_of_edges(), 0);
-        m_fj.resize(fg.number_of_nodes(), 0);
+        m_flows.resize(fg->number_of_edges(), 0);
+        m_fj.resize(fg->number_of_nodes(), 0);
     }
 
     void run() {
@@ -60,17 +60,13 @@ public:
             flowsrc[i] = (m_delta_src[i] + m_mu - 1) / m_mu;
         }
         while (m_mu > 4) {
-
             size_t discard = 0;
             unit_flow uf;
-
             uf.init(*m_fg, flowsrc, m_U, m_max_height, 2);
-
             uf.run();
             size_t ctr = 0;
 
             for (NodeID n : m_fg->nodes()) {
-
                 for (EdgeID e : m_fg->edges_of(n)) {
                     EdgeID rev = m_fg->getReverseEdge(n, e);
                     NodeID tgt = m_fg->getEdgeTarget(n, e);
@@ -90,8 +86,7 @@ public:
         }
     }
 
-private:
-private:
+ private:
     flow_graph* m_fg;
     std::vector<EdgeWeight> m_delta_src;
     std::vector<FlowType> m_flows;

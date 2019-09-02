@@ -11,10 +11,20 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
+#include <cstdlib>
+#include <functional>
+#include <memory>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "algorithms/global_mincut/minimum_cut.h"
+#include "algorithms/global_mincut/noi_minimum_cut.h"
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"
-#include "minimum_cut.h"
-#include "noi_minimum_cut.h"
 #include "tools/timer.h"
 
 #ifdef PARALLEL
@@ -23,52 +33,34 @@
 #include "coarsening/contract_graph.h"
 #endif
 
-#include "definitions.h"
-#include "minimum_cut.h"
-
-#include <algorithm>
-#include <cstdint>
-#include <cstdlib>
-#include <functional>
-#include <memory>
-#include <unordered_map>
-
-#include <cstdint>
-#include <cstdlib>
-class matula_approx : public minimum_cut
-{
-public:
+class matula_approx : public minimum_cut {
+ public:
     matula_approx() { }
     virtual ~matula_approx() { }
     static constexpr bool debug = false;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut) {
-
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
 
         std::vector<std::shared_ptr<graph_access> > graphs;
-
-        EdgeWeight global_mincut = G->getMinDegree();
+        EdgeWeight mincut = G->getMinDegree();
         graphs.push_back(G);
+        minimum_cut_helpers::setInitialCutValues(graphs);
 
-        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
-
-        while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
-
+        while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
             std::vector<std::pair<NodeID, NodeID> > contractable;
-
-            union_find uf(graphs.back()->number_of_nodes());
             timer time;
             noi_minimum_cut noi;
-            noi.modified_capforest(graphs.back(), std::max(global_mincut / 2, (EdgeWeight)1), uf, graphs, save_cut);
-            graphs.emplace_back(contraction::contractFromUnionFind(graphs.back(), uf, save_cut));
-            global_mincut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
+            auto uf = noi.modified_capforest(graphs.back(),
+                                             std::max(mincut / 2, 1UL));
+            graphs.emplace_back(contraction::fromUnionFind(graphs.back(), uf));
+            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
         }
 
-        if (save_cut)
+        if (configuration::getConfig()->save_cut)
             minimum_cut_helpers::retrieveMinimumCut(graphs);
 
-        return global_mincut;
+        return mincut;
     }
 };

@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <vector>
+
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
-#include "definitions.h"
 
 struct rEdge {
     NodeID   source;
@@ -24,7 +26,8 @@ struct rEdge {
     FlowType flow;
     EdgeID   reverse_edge_index;
 
-    rEdge(NodeID source, NodeID target, FlowType capacity, FlowType flow, EdgeID reverse_edge_index) {
+    rEdge(NodeID source, NodeID target, FlowType capacity,
+          FlowType flow, EdgeID reverse_edge_index) {
         this->source = source;
         this->target = target;
         this->capacity = capacity;
@@ -36,9 +39,8 @@ struct rEdge {
 // this is a adjacency list implementation of the residual graph
 // for each edge we create, we create a rev edge with cap 0
 // zero capacity edges are residual edges
-class flow_graph
-{
-public:
+class flow_graph {
+ public:
     flow_graph() {
         m_num_edges = 0;
         m_num_nodes = 0;
@@ -55,11 +57,11 @@ public:
 
     void finish_construction() { }
 
-    NodeID number_of_nodes() { return m_num_nodes; }
+    NodeID number_of_nodes() const { return m_num_nodes; }
     EdgeID number_of_edges() { return m_num_edges; }
 
     NodeID getEdgeTarget(NodeID source, EdgeID e);
-    FlowType getEdgeCapacity(NodeID source, EdgeID e);
+    FlowType getEdgeCapacity(NodeID source, EdgeID e) const;
 
     FlowType getEdgeFlow(NodeID source, EdgeID e);
     void setEdgeFlow(NodeID source, EdgeID e, FlowType flow);
@@ -67,20 +69,24 @@ public:
     EdgeID getReverseEdge(NodeID source, EdgeID e);
 
     void new_edge(NodeID source, NodeID target, FlowType capacity) {
-
-        m_adjacency_lists[source].push_back(rEdge(source, target, capacity, 0, m_adjacency_lists[target].size()));
+        m_adjacency_lists[source].push_back(
+            rEdge(source, target, capacity, 0,
+                  m_adjacency_lists[target].size()));
         // for each edge we add a reverse edge
-        m_adjacency_lists[target].push_back(rEdge(target, source, 0, 0, m_adjacency_lists[source].size() - 1));
+        m_adjacency_lists[target].push_back(
+            rEdge(target, source, 0, 0, m_adjacency_lists[source].size() - 1));
         m_capacity[source] += capacity;
         m_num_edges += 2;
     }
 
-    FlowType getCapacity(NodeID node) {
+    FlowType getCapacity(NodeID node) const {
         return m_capacity[node];
     }
 
     EdgeID get_first_edge(NodeID /* node */) { return 0; }
-    EdgeID get_first_invalid_edge(NodeID node) { return m_adjacency_lists[node].size(); }
+    EdgeID get_first_invalid_edge(NodeID node) {
+        return m_adjacency_lists[node].size();
+    }
 
     auto nodes() {
         return iterator<NodeID>(0, number_of_nodes());
@@ -90,7 +96,7 @@ public:
         return iterator<EdgeID>(get_first_edge(n), get_first_invalid_edge(n));
     }
 
-private:
+ private:
     std::vector<std::vector<rEdge> > m_adjacency_lists;
     std::vector<FlowType> m_capacity;
     NodeID m_num_nodes;
@@ -98,7 +104,7 @@ private:
 };
 
 inline
-FlowType flow_graph::getEdgeCapacity(NodeID source, EdgeID e) {
+FlowType flow_graph::getEdgeCapacity(NodeID source, EdgeID e) const {
 #ifdef NDEBUG
     return m_adjacency_lists[source][e].capacity;
 #else

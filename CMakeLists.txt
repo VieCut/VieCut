@@ -1,16 +1,22 @@
 cmake_minimum_required(VERSION 3.5)
 project(vc)
 
-macro(build_and_link TARGETNAME)
+macro(bal_seq TARGETNAME)
     set (SEQ_NAME "${TARGETNAME}") 
     add_executable(${SEQ_NAME} app/${TARGETNAME}.cpp)
     target_link_libraries(${SEQ_NAME} ${LIBS})
+endmacro(bal_seq)
 
+macro(bal_par TARGETNAME)
     set (PAR_NAME "${TARGETNAME}_parallel")
     add_executable(${PAR_NAME} app/${TARGETNAME}.cpp)
     target_link_libraries(${PAR_NAME} ${LIBS})
     target_compile_definitions(${PAR_NAME} PUBLIC -DPARALLEL)
+endmacro(bal_par)
 
+macro(build_and_link TARGETNAME)
+    bal_seq(${TARGETNAME})
+    bal_par(${TARGETNAME})
 endmacro(build_and_link)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -51,11 +57,12 @@ include_directories(
     extlib/tlx
 )
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -msse4.2 -mcx16 -Wall -Wextra")
 
-set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -ltcmalloc ")
+set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -g -fno-omit-frame-pointer -DNDEBUG -pthread")
 
-set (CMAKE_CXX_FLAGS_DEBUG "-g3")
+set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
 
 set(SOURCE_FILES
         lib/algorithms/global_mincut/algorithms.h
@@ -78,7 +85,6 @@ set(SOURCE_FILES
         lib/tools/string.h
         lib/data_structure/adjlist_graph.h
         lib/data_structure/graph_access.h
-        lib/io/graph_io_adj.h
         lib/parallel/algorithm/exact_parallel_minimum_cut.h
         lib/parallel/coarsening/contract_graph.h
         lib/parallel/coarsening/contraction_tests.h
@@ -90,18 +96,12 @@ set(SOURCE_FILES
         lib/tools/graph_extractor.h
         lib/tools/quality_metrics.h
         lib/io/graph_io.cpp
-        lib/definitions.h
+        lib/common/definitions.h
         lib/algorithms/misc/core_decomposition.h
         lib/algorithms/flow/push_relabel.h
         lib/data_structure/flow_graph.h
         lib/tools/vector.h 
         lib/algorithms/misc/graph_algorithms.h)
-
-SET(ARGTABLE2_SEARCH_PATHS
-        /usr/local
-        /usr
-        /opt
-        )
 
 FIND_PACKAGE(OpenMP REQUIRED)
 #include_directories(${OPENMP_INCLUDE_DIRS})
@@ -119,7 +119,12 @@ build_and_link(mincut_contract)
 build_and_link(mincut_heavy)
 build_and_link(mincut_recursive)
 build_and_link(mincut)
+bal_seq(multiterminal_cut)
+bal_seq(largest_cc)
 
+target_link_libraries(mincut /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
+target_link_libraries(mincut_parallel /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
+target_link_libraries(multiterminal_cut /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
 
 if(RUN_TESTS)
     enable_testing()

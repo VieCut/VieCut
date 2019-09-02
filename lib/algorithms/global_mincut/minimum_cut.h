@@ -11,31 +11,31 @@
 
 #pragma once
 
-#include "data_structure/graph_access.h"
-#include "definitions.h"
 #include <memory>
 
-class minimum_cut
-{
-public:
+#include "common/definitions.h"
+#include "data_structure/graph_access.h"
+
+class minimum_cut {
+ public:
     virtual ~minimum_cut() { }
 
-    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G, bool save_cut, std::string, bool) {
-        return perform_minimum_cut(G, save_cut);
-    }
-
-    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>, bool) {
+    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>&) {
 #ifdef PARALLEL
-        std::cout << "Please select a parallel minimum cut algorithm [inexact, exact]!" << std::endl;
-        std::cout << "inexact - Run heuristic VieCut algorithm" << std::endl;
-        std::cout << "extact - Run shared-memory exact algorithm" << std::endl;
+        LOG1 << "Please select a parallel minimum cut"
+             << " algorithm [inexact, exact, cactus]!";
+        LOG1 << "inexact - Run heuristic VieCut algorithm";
+        LOG1 << "exact - Run shared-memory exact algorithm";
+        LOG1 << "cactus - Find all minimum cuts and build cactus graph!";
 #else
-        std::cout << "Please select a minimum cut global_mincut [vc, noi, pr, matula, ks]!" << std::endl;
-        std::cout << "vc - Run heuristic VieCut algorithm" << std::endl;
-        std::cout << "noi - Run algorithm of Nagamochi, Ono and Ibaraki" << std::endl;
-        std::cout << "pr - Repeated run of local contraction routines of Padberg and Rinaldi" << std::endl;
-        std::cout << "matula - Run algorithm of Matula" << std::endl;
-        std::cout << "ks - Run algorithm of Karger and Stein" << std::endl;
+        LOG1 << "Please select a minimum cut global_mincut"
+             << " [vc, noi, pr, matula, ks, cactus]!";
+        LOG1 << "vc - Run heuristic VieCut algorithm";
+        LOG1 << "noi - Run algorithm of Nagamochi, Ono and Ibaraki";
+        LOG1 << "pr - Repeated run of routines of Padberg and Rinaldi";
+        LOG1 << "matula - Run algorithm of Matula";
+        LOG1 << "ks - Run algorithm of Karger and Stein";
+        LOG1 << "cactus - Find all minimum cuts and build cactus graph!";
 #endif
         exit(1);
         return 42;

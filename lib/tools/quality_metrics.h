@@ -14,14 +14,13 @@
 
 #include "data_structure/graph_access.h"
 
-class quality_metrics
-{
-public:
+class quality_metrics {
+ public:
     quality_metrics() { }
 
     ~quality_metrics() { }
 
-    EdgeWeight edge_cut(graph_access& G) {
+    EdgeWeight edge_cut(const graph_access& G) {
         EdgeWeight edgeCut = 0;
         for (NodeID n : G.nodes()) {
             PartitionID partitionIDSource = G.getPartitionIndex(n);

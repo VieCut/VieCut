@@ -16,9 +16,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-class timer
-{
-public:
+class timer {
+ public:
     timer() {
         m_start = timestamp();
     }
@@ -37,12 +36,12 @@ public:
         return elapsed;
     }
 
-private:
+ private:
     /** Returns a timestamp ('now') in seconds (incl. a fractional part). */
     inline double timestamp() {
         struct timeval tp;
         gettimeofday(&tp, NULL);
-        return double(tp.tv_sec) + tp.tv_usec / 1000000.;
+        return static_cast<double>(tp.tv_sec) + tp.tv_usec / 1000000.;
     }
 
     double m_start;

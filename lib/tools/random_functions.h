@@ -17,21 +17,22 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <utility>
 #include <vector>
 
-#include "definitions.h"
+#include "common/definitions.h"
 #include "tlx/logger.hpp"
 
 typedef std::mt19937 MersenneTwister;
 
-class random_functions
-{
-public:
+class random_functions {
+ public:
     random_functions();
     virtual ~random_functions();
 
     template <typename sometype>
-    static void circular_permutation(std::vector<sometype>& vec) {
+    static void circular_permutation(std::vector<sometype>* v) {
+        std::vector<sometype>& vec = *v;
         if (vec.size() < 2) return;
         for (unsigned int i = 0; i < vec.size(); i++) {
             vec[i] = i;
@@ -56,7 +57,8 @@ public:
     }
 
     template <typename sometype>
-    static void permutate_vector_fast(std::vector<sometype>& vec, bool init) {
+    static void permutate_vector_fast(std::vector<sometype>* v, bool init) {
+        std::vector<sometype>& vec = *v;
         if (init) {
             for (unsigned int i = 0; i < vec.size(); i++) {
                 vec[i] = i;
@@ -79,7 +81,8 @@ public:
     }
 
     template <typename sometype>
-    static void permutate_vector_local(std::vector<sometype>& vec, bool init) {
+    static void permutate_vector_local(std::vector<sometype>* v, bool init) {
+        std::vector<sometype>& vec = *v;
         if (init) {
             for (unsigned int i = 0; i < vec.size(); i++) {
                 vec[i] = i;
@@ -93,7 +96,9 @@ public:
         }
     }
 
-    static void permutate_vector_good(std::vector<std::pair<NodeID, NodeID> >& vec) {
+    static void permutate_vector_good(
+        std::vector<std::pair<NodeID, NodeID> >* v) {
+        std::vector<std::pair<NodeID, NodeID> >& vec = *v;
 
         unsigned int size = vec.size();
         if (size < 4) return;
@@ -112,7 +117,8 @@ public:
     }
 
     template <typename sometype>
-    static void permutate_vector_good(std::vector<sometype>& vec, bool init) {
+    static void permutate_vector_good(std::vector<sometype>* v, bool init) {
+        std::vector<sometype>& vec = *v;
         if (init) {
             for (unsigned int i = 0; i < vec.size(); i++) {
                 vec[i] = (sometype)i;
@@ -138,7 +144,8 @@ public:
     }
 
     template <typename sometype>
-    static void permutate_vector_good_small(std::vector<sometype>& vec) {
+    static void permutate_vector_good_small(std::vector<sometype>* v) {
+        std::vector<sometype>& vec = *v;
         if (vec.size() < 2) return;
         unsigned int size = vec.size();
         std::uniform_int_distribution<unsigned int> A(0, size - 1);
@@ -153,22 +160,13 @@ public:
 
     static bool nextBool() {
         std::uniform_int_distribution<unsigned int> A(0, 1);
-        return (bool)A(m_mt);
+        return static_cast<bool>(A(m_mt));
     }
 
     // including lb and rb
     static unsigned nextInt(unsigned int lb, unsigned int rb) {
         std::uniform_int_distribution<unsigned int> A(lb, rb);
         return A(m_mt);
-    }
-
-    static double nextDouble(double lb, double rb) {
-        double rnbr = (double)rand() / (double)RAND_MAX;                     // rnd in 0,1
-        double length = rb - lb;
-        rnbr *= length;
-        rnbr += lb;
-
-        return rnbr;
     }
 
     static uint32_t next() {
@@ -185,7 +183,7 @@ public:
         return m_seed;
     }
 
-private:
+ private:
     static int m_seed;
     static MersenneTwister m_mt;
 };

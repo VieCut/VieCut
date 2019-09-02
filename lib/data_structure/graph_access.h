@@ -19,9 +19,11 @@
 #include <cassert>
 #include <functional>
 #include <iostream>
+#include <memory>
+#include <string>
 #include <vector>
 
-#include "definitions.h"
+#include "common/definitions.h"
 #include "tlx/logger.hpp"
 
 struct Node {
@@ -34,8 +36,9 @@ struct Edge {
     EdgeWeight weight;
 
     Edge() { }
-    Edge(NodeID p_target) : target(p_target), weight(1) { }
-    Edge(NodeID p_target, EdgeWeight p_wgt) : target(p_target), weight(p_wgt) { }
+    explicit Edge(NodeID p_target) : target(p_target), weight(1) { }
+    Edge(NodeID p_target, EdgeWeight p_wgt)
+        : target(p_target), weight(p_wgt) { }
 };
 
 struct refinementNode {
@@ -49,12 +52,12 @@ struct coarseningEdge {
 
 class graph_access;
 
-// construction etc. is encapsulated in basicGraph / access to properties etc. is encapsulated in graph_access
-class basicGraph
-{
+// construction etc. is encapsulated in basicGraph / access to properties etc.
+// is encapsulated in graph_access
+class basicGraph {
     friend class graph_access;
 
-public:
+ public:
     basicGraph() : m_building_graph(false) { }
 
     // methods only to be used by friend class
@@ -94,7 +97,7 @@ public:
     }
 
     void resize_m(EdgeID m) {
-        m_edges.resize(m, 0);
+        m_edges.resize(m, Edge(0));
     }
 
     NodeID new_node_hacky(EdgeID edge) {
@@ -105,7 +108,6 @@ public:
 
     EdgeID new_edge_and_reverse(NodeID source, NodeID target,
                                 EdgeID e_for, EdgeID e_rev, EdgeWeight wgt) {
-
         m_edges[e_for] = Edge(target, wgt);
         m_edges[e_rev] = Edge(source, wgt);
 
@@ -114,10 +116,13 @@ public:
     }
 
     EdgeID new_edge(NodeID source, NodeID target) {
-        VIECUT_ASSERT_TRUE(m_building_graph);
-//        ASSERT_TRUE(e < m_edges.size());
+        return new_edge(source, target, 1);
+    }
 
-        m_edges.emplace_back(target, 1);
+    EdgeID new_edge(NodeID source, NodeID target, EdgeWeight weight) {
+        VIECUT_ASSERT_TRUE(m_building_graph);
+
+        m_edges.emplace_back(target, weight);
         EdgeID e_bar = e;
         ++e;
 
@@ -172,54 +177,62 @@ public:
     // construction properties
     bool m_building_graph;
     int m_last_source;
-    NodeID node; // current node that is constructed
-    EdgeID e;    // current edge that is constructed
+    NodeID node;  // current node that is constructed
+    EdgeID e;     // current edge that is constructed
 };
 
 class complete_boundary;
 
-// adapted from https://codereview.stackexchange.com/a/200013, + added operators for random access
+// adapted from https://codereview.stackexchange.com/a/200013,
+// + added operators for random access
 template <typename T>
-class iterator
-{
-private:
-    class iterator_base
-    {
-    private:
+class iterator {
+ private:
+    class iterator_base {
+ public:      // NOLINT
+        friend class iterator;
+
         T m_current;
 
-    public:
-        iterator_base(T current) : m_current(current) { }
+        explicit iterator_base(T current) : m_current(current) { }
 
-        bool operator != (iterator_base const& other_iter) const { return m_current != other_iter.m_current; }
+        bool operator != (iterator_base const& other_iter) const {
+            return m_current != other_iter.m_current;
+        }
 
-        bool operator == (iterator_base const& other_iter) const { return m_current == other_iter.m_current; }
+        bool operator == (iterator_base const& other_iter) const {
+            return m_current == other_iter.m_current;
+        }
 
         T const& operator * () const { return m_current; }
 
-        iterator_base& operator ++ () {
+        iterator_base& operator ++ () {  // NOLINT
             ++m_current;
             return *this;
         }
 
-        iterator_base& operator -- () {
+        iterator_base& operator -- () {  // NOLINT
             --m_current;
             return *this;
         }
 
-        friend bool operator < (const iterator_base& i1, const iterator_base& i2) {
+        friend bool operator < (const iterator_base& i1,
+                                const iterator_base& i2) {
             return i1 < i2;
         }
 
-        friend bool operator > (const iterator_base& i1, const iterator_base& i2) {
+        friend bool operator > (const iterator_base& i1,
+                                const iterator_base& i2) {
             return i1 > i2;
         }
 
-        friend bool operator <= (const iterator_base& i1, const iterator_base& i2) {
+        friend bool operator <= (const iterator_base& i1,
+                                 const iterator_base& i2) {
             return i1 <= i2;
         }
 
-        friend bool operator >= (const iterator_base& i1, const iterator_base& i2) {
+        friend bool operator >= (const iterator_base& i1,
+                                 const iterator_base& i2) {
             return i1 >= i2;
         }
 
@@ -253,7 +266,7 @@ private:
             return *i;
         }
 
-        iterator_base& operator [] (size_t s) const {
+        iterator_base& operator [] (size_t s) const {  // NOLINT
             return m_current;
         }
     };
@@ -261,17 +274,17 @@ private:
     T m_begin;
     T m_end;
 
-public:
-    iterator(T begin_value, T end_value) : m_begin(begin_value), m_end(end_value) { }
+ public:
+    iterator(T begin_value, T end_value)
+        : m_begin(begin_value), m_end(end_value) { }
     iterator_base begin() { return iterator_base(m_begin); }
     iterator_base end() { return iterator_base(m_end); }
 };
 
-class graph_access
-{
+class graph_access {
     friend class complete_boundary;
 
-public:
+ public:
     graph_access() {
         graphref = new basicGraph();
         m_separator_block_ID = 2;
@@ -297,19 +310,23 @@ public:
         return graphref->new_edge(source, target);
     }
 
-    auto nodes() {
+    EdgeID new_edge(NodeID source, NodeID target, EdgeWeight weight) {
+        return graphref->new_edge(source, target, weight);
+    }
+
+    auto nodes() const {
         return iterator<NodeID>(0, number_of_nodes());
     }
 
-    auto edges() {
+    auto edges() const {
         return iterator<EdgeID>(0, number_of_edges());
     }
 
-    auto edges_of(NodeID n) {
+    auto edges_of(NodeID n) const {
         return iterator<EdgeID>(get_first_edge(n), get_first_invalid_edge(n));
     }
 
-    auto edges_of_starting_at(NodeID n, EdgeID e) {
+    auto edges_of_starting_at(NodeID n, EdgeID e) const {
         return iterator<EdgeID>(e, get_first_invalid_edge(n));
     }
 
@@ -329,8 +346,8 @@ public:
     // creates an edge and its reverse edge in m_edges vector
     // need to call resize_m first, as this places the reverse edge in the
     // undiscovered part of m_edges - this is hacky but should be fast
-    // this only places edges in order to not clutter this class - intelligence should be
-    // outside of the function
+    // this only places edges in order to not clutter this class
+    // intelligence should be outside of the function
     EdgeID new_edge_and_reverse(NodeID source, NodeID target,
                                 EdgeID e, EdgeID e_rev, EdgeWeight wgt = 1) {
         return graphref->new_edge_and_reverse(source, target, e, e_rev, wgt);
@@ -384,7 +401,7 @@ public:
     PartitionID getSeparatorBlock();
     void setSeparatorBlock(PartitionID id);
 
-    PartitionID getPartitionIndex(NodeID node);
+    PartitionID getPartitionIndex(NodeID node) const;
     void setPartitionIndex(NodeID node, PartitionID id);
 
     PartitionID getSecondPartitionIndex(NodeID) const {
@@ -400,14 +417,14 @@ public:
     }
 
     EdgeWeight getNodeDegree(NodeID node) const {
-        return graphref->m_nodes[node + 1].firstEdge - graphref->m_nodes[node].firstEdge;
+        return graphref->m_nodes[node + 1].firstEdge
+               - graphref->m_nodes[node].firstEdge;
     }
 
     EdgeWeight getWeightedNodeDegree(NodeID node) const {
         if (m_degrees_computed) {
             return m_degree[node];
-        }
-        else {
+        } else {
             EdgeWeight degree = 0;
             for (unsigned e = graphref->m_nodes[node].firstEdge;
                  e < graphref->m_nodes[node + 1].firstEdge; ++e) {
@@ -426,7 +443,6 @@ public:
     }
 
     EdgeWeight getMaxUnweightedDegree() {
-
         EdgeWeight deg = 0;
         for (NodeID node : this->nodes()) {
             EdgeWeight deg_node = get_first_invalid_edge(node) -
@@ -473,14 +489,13 @@ public:
     }
 
     EdgeWeight getPercentile(double perc) {
-
         if (!m_degrees_computed) {
             computeDegrees();
         }
 
         std::vector<EdgeWeight> deg = m_degree;
 
-        size_t el = (double)deg.size() * perc;
+        size_t el = static_cast<double>(deg.size()) * perc;
 
         std::nth_element(deg.begin(), deg.begin() + el, deg.end());
 
@@ -557,14 +572,15 @@ public:
     int * UNSAFE_metis_style_adjwgt_array();
 
     int build_from_metis(int n, int* xadj, int* adjncy);
-    int build_from_metis_weighted(int n, int* xadj, int* adjncy, int* vwgt, int* adjwgt);
+    int build_from_metis_weighted(int n, int* xadj, int* adjncy,
+                                  int* vwgt, int* adjwgt);
 
     // void set_node_queue_index(NodeID node, Count queue_index);
     // Count get_node_queue_index(NodeID node);
 
-    void copy(graph_access& Gcopy);
+    graph_access copy();
 
-private:
+ private:
     void setGraph(basicGraph* graphref_new) {
         graphref = graphref_new;
         m_degrees_computed = false;
@@ -589,7 +605,7 @@ inline void graph_access::setSeparatorBlock(PartitionID id) {
     m_separator_block_ID = id;
 }
 
-inline PartitionID graph_access::getPartitionIndex(NodeID node) {
+inline PartitionID graph_access::getPartitionIndex(NodeID node) const {
 #ifdef NDEBUG
     return graphref->m_refinement_node_props[node].partitionIndex;
 #else
@@ -612,7 +628,8 @@ inline int* graph_access::UNSAFE_metis_style_xadj_array() {
         xadj[n] = graphref->m_nodes[n].firstEdge;
     }
 
-    xadj[graphref->number_of_nodes()] = graphref->m_nodes[graphref->number_of_nodes()].firstEdge;
+    xadj[graphref->number_of_nodes()] =
+        graphref->m_nodes[graphref->number_of_nodes()].firstEdge;
     return xadj;
 }
 
@@ -636,7 +653,7 @@ inline int* graph_access::UNSAFE_metis_style_adjwgt_array() {
     int* adjwgt = new int[graphref->number_of_edges()];
 
     for (EdgeID e : this->edges()) {
-        adjwgt[e] = (int)graphref->m_edges[e].weight;
+        adjwgt[e] = static_cast<int>(graphref->m_edges[e].weight);
     }
 
     return adjwgt;
@@ -661,7 +678,9 @@ inline int graph_access::build_from_metis(int n, int* xadj, int* adjncy) {
     return 0;
 }
 
-inline int graph_access::build_from_metis_weighted(int n, int* xadj, int* adjncy, int* vwgt, int* adjwgt) {
+inline int graph_access::build_from_metis_weighted(int n, int* xadj,
+                                                   int* adjncy, int* vwgt,
+                                                   int* adjwgt) {
     graphref = new basicGraph();
     start_construction(n, xadj[n]);
 
@@ -680,8 +699,8 @@ inline int graph_access::build_from_metis_weighted(int n, int* xadj, int* adjncy
     return 0;
 }
 
-inline void graph_access::copy(graph_access& G_bar) {
-
+inline graph_access graph_access::copy() {
+    graph_access G_bar;
     G_bar.start_construction(number_of_nodes(), number_of_edges());
 
     for (NodeID node : this->nodes()) {
@@ -694,4 +713,29 @@ inline void graph_access::copy(graph_access& G_bar) {
     }
 
     G_bar.finish_construction();
+    return G_bar;
+}
+
+[[maybe_unused]] static std::string toStringWeighted(
+    std::shared_ptr<graph_access> G) {
+    std::ostringstream oss;
+
+    for (NodeID n : G->nodes()) {
+        oss << n << ": [";
+        for (EdgeID e : G->edges_of(n)) {
+            oss << G->getEdgeTarget(e) << "(" << G->getEdgeWeight(e) << ")";
+            if (e < G->get_first_invalid_edge(n) - 1) {
+                oss << ",";
+            }
+        }
+        oss << "] \n";
+    }
+    return oss.str();
+}
+
+[[maybe_unused]] static std::ostream& operator << (
+    std::ostream& os, std::shared_ptr<graph_access> G) {
+    // return os << toStringUnweighted(G);
+    return os << toStringWeighted(G);
+    // return os << toStringCompact(G);
 }

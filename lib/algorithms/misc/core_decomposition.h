@@ -11,12 +11,13 @@
 
 #pragma once
 
-#include "algorithms/misc/strongly_connected_components.h"
-#include "data_structure/graph_access.h"
-#include "definitions.h"
 #include <cstdint>
 #include <memory>
-#include <stdint.h>
+#include <vector>
+
+#include "algorithms/misc/strongly_connected_components.h"
+#include "common/definitions.h"
+#include "data_structure/graph_access.h"
 
 struct k_cores {
     std::vector<NodeID> degrees;
@@ -24,7 +25,7 @@ struct k_cores {
     std::vector<NodeID> position;
     std::vector<NodeID> buckets;
 
-    k_cores(NodeID n) {
+    explicit k_cores(NodeID n) {
         degrees.resize(n);
         vertices.resize(n);
         position.resize(n);
@@ -32,10 +33,10 @@ struct k_cores {
     }
 };
 
-class core_decomposition
-{
-public:
-// Implementation of k-core decomposition global_mincut of Batagelj and Zaversnik (https://arxiv.org/abs/cs/0310049)
+class core_decomposition {
+ public:
+// Implementation of k-core decomposition global_mincut
+// of Batagelj and Zaversnik (https://arxiv.org/abs/cs/0310049)
     static k_cores batagelj_zaversnik(std::shared_ptr<graph_access> G) {
         k_cores kCores(G->number_of_nodes());
 
@@ -95,7 +96,8 @@ public:
         return kCores;
     }
 
-    static std::shared_ptr<graph_access> createCoreGraph(k_cores kCores, NodeID k, std::shared_ptr<graph_access> G) {
+    static std::shared_ptr<graph_access> createCoreGraph(
+        k_cores kCores, NodeID k, std::shared_ptr<graph_access> G) {
         size_t min_degree = kCores.degrees[kCores.vertices[kCores.buckets[k]]];
         std::vector<NodeID> reverse(G->number_of_nodes(), G->number_of_nodes());
         std::vector<NodeID> core;
@@ -105,20 +107,19 @@ public:
             if (kCores.position[node] >= kCores.buckets[k]) {
                 reverse[node] = static_cast<unsigned int>(core.size());
                 core.push_back(node);
-                num_edges += kCores.degrees[kCores.vertices[kCores.position[node]]];
+                num_edges += kCores.degrees[
+                    kCores.vertices[kCores.position[node]]];
             }
         }
         num_edges *= 2;
 
-        std::shared_ptr<graph_access> core_graph = std::make_shared<graph_access>();
+        auto core_graph = std::make_shared<graph_access>();
 
         core_graph->start_construction((NodeID)core.size(), num_edges);
 
         for (uint32_t i = 0; i < core.size(); ++i) {
-
             NodeID node = core[i];
             core_graph->new_node();
-
             for (EdgeID e : G->edges_of(node)) {
                 NodeID target = reverse[G->getEdgeTarget(e)];
                 if (target != G->number_of_nodes()) {

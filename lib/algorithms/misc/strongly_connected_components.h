@@ -10,53 +10,76 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#ifndef STRONGLY_CONNECTED_COMPONENTS_7ZJ8233R
-#define STRONGLY_CONNECTED_COMPONENTS_7ZJ8233R
+#pragma once
 
 #include <memory>
 #include <stack>
+#include <utility>
 #include <vector>
 
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
-#include "definitions.h"
+#include "data_structure/mutable_graph.h"
 #include "tools/graph_extractor.h"
 
-class strongly_connected_components
-{
-public:
-    const static bool debug = false;
+class strongly_connected_components {
+ public:
+    static const bool debug = false;
 
     strongly_connected_components() { }
     virtual ~strongly_connected_components() { }
 
-    size_t strong_components(graph_access& G, std::vector<int>& comp_num) {
-
-        m_dfsnum.resize(G.number_of_nodes());
-        m_comp_num.resize(G.number_of_nodes());
+    std::pair<std::vector<int>, size_t> strong_components(
+        std::shared_ptr<mutable_graph> G) {
+        m_dfsnum.resize(G->number_of_nodes());
+        m_comp_num.resize(G->number_of_nodes());
         m_dfscount = 0;
         m_comp_count = 0;
 
-        for (NodeID node : G.nodes()) {
-            // comp_num[node] = -1;
+        for (NodeID node : G->nodes()) {
             m_comp_num[node] = -1;
             m_dfsnum[node] = -1;
         }
 
-        for (NodeID node : G.nodes()) {
+        for (NodeID node : G->nodes()) {
             if (m_dfsnum[node] == -1) {
                 explicit_scc_dfs(node, G);
             }
         }
 
-        for (NodeID node : G.nodes()) {
+        return std::make_pair(m_comp_num, m_comp_count);
+    }
+
+    size_t strong_components(std::shared_ptr<graph_access> G,
+                             std::vector<int>* cn) {
+        std::vector<int>& comp_num = *cn;
+        m_dfsnum.resize(G->number_of_nodes());
+        m_comp_num.resize(G->number_of_nodes());
+        m_dfscount = 0;
+        m_comp_count = 0;
+
+        for (NodeID node : G->nodes()) {
+            // comp_num[node] = -1;
+            m_comp_num[node] = -1;
+            m_dfsnum[node] = -1;
+        }
+
+        for (NodeID node : G->nodes()) {
+            if (m_dfsnum[node] == -1) {
+                explicit_scc_dfs(node, G);
+            }
+        }
+
+        for (NodeID node : G->nodes()) {
             comp_num[node] = m_comp_num[node];
         }
 
         return m_comp_count;
     }
 
-    void explicit_scc_dfs(NodeID node, graph_access& G) {
-        iteration_stack.push(std::pair<NodeID, EdgeID>(node, G.get_first_edge(node)));
+    void explicit_scc_dfs(NodeID node, std::shared_ptr<mutable_graph> G) {
+        iteration_stack.push(
+            std::pair<NodeID, EdgeID>(node, G->get_first_edge(node)));
 
         // make node a tentative scc of its own
         m_dfsnum[node] = m_dfscount++;
@@ -68,22 +91,30 @@ public:
             EdgeID current_edge = iteration_stack.top().second;
             iteration_stack.pop();
 
-            for (EdgeID e : G.edges_of_starting_at(current_node, current_edge)) {
-                NodeID target = G.getEdgeTarget(e);
+            for (EdgeID e : G->edges_of_starting_at(current_node,
+                                                    current_edge)) {
+                if (G->getEdgeFlow(current_node, e)
+                    == static_cast<FlowType>(
+                        G->getEdgeWeight(current_node, e))) {
+                    // edges that have full flow do not exist in residual graph
+                    continue;
+                }
+
+                NodeID target = G->getEdgeTarget(current_node, e);
                 // explore edge (node, target)
                 if (m_dfsnum[target] == -1) {
-
-                    iteration_stack.push(std::pair<NodeID, EdgeID>(current_node, e));
-                    iteration_stack.push(std::pair<NodeID, EdgeID>(target, G.get_first_edge(target)));
+                    iteration_stack.push(std::pair<NodeID, EdgeID>(
+                                             current_node, e));
+                    iteration_stack.push(std::pair<NodeID, EdgeID>(target, 0));
 
                     m_dfsnum[target] = m_dfscount++;
                     m_unfinished.push(target);
                     m_roots.push(target);
                     break;
-                }
-                else if (m_comp_num[target] == -1) {
+                } else if (m_comp_num[target] == -1) {
                     // merge scc's
-                    while (m_dfsnum[m_roots.top()] > m_dfsnum[target]) m_roots.pop();
+                    while (m_dfsnum[m_roots.top()] > m_dfsnum[target])
+                        m_roots.pop();
                 }
             }
 
@@ -101,13 +132,62 @@ public:
         }
     }
 
-    std::shared_ptr<graph_access> largest_scc(std::shared_ptr<graph_access>& G) {
-        std::vector<int> components(G->number_of_nodes());
-        auto ct = strong_components(*G, components);
+    void explicit_scc_dfs(NodeID node, std::shared_ptr<graph_access> G) {
+        iteration_stack.push(std::pair<NodeID, EdgeID>(
+                                 node, G->get_first_edge(node)));
+        // make node a tentative scc of its own
+        m_dfsnum[node] = m_dfscount++;
+        m_unfinished.push(node);
+        m_roots.push(node);
+
+        while (!iteration_stack.empty()) {
+            NodeID current_node = iteration_stack.top().first;
+            EdgeID current_edge = iteration_stack.top().second;
+            iteration_stack.pop();
+
+            for (EdgeID e : G->edges_of_starting_at(current_node,
+                                                    current_edge)) {
+                NodeID target = G->getEdgeTarget(e);
+                // explore edge (node, target)
+                if (m_dfsnum[target] == -1) {
+                    iteration_stack.push(std::pair<NodeID, EdgeID>(
+                                             current_node, e));
+                    iteration_stack.push(std::pair<NodeID, EdgeID>(
+                                             target, G->get_first_edge(
+                                                 target)));
+
+                    m_dfsnum[target] = m_dfscount++;
+                    m_unfinished.push(target);
+                    m_roots.push(target);
+                    break;
+                } else if (m_comp_num[target] == -1) {
+                    // merge scc's
+                    while (m_dfsnum[m_roots.top()] > m_dfsnum[target])
+                        m_roots.pop();
+                }
+            }
+
+            // return from call of node node
+            if (current_node == m_roots.top()) {
+                NodeID w = 0;
+                do {
+                    w = m_unfinished.top();
+                    m_unfinished.pop();
+                    m_comp_num[w] = m_comp_count;
+                } while (w != current_node);
+                m_comp_count++;
+                m_roots.pop();
+            }
+        }
+    }
+
+    std::shared_ptr<graph_access> largest_scc(std::shared_ptr<graph_access> G) {
+        std::vector<int32_t> components(G->number_of_nodes());
+        auto ct = strong_components(G, &components);
         LOG << "count of connected components: " << ct;
 
-        std::vector<uint64_t> compsizes(static_cast<unsigned long>(ct));
-        for (int component : components) {
+        std::vector<uint64_t> compsizes(static_cast<uint64_t>(ct));
+        for (int32_t component : components) {
             ++compsizes[component];
         }
 
@@ -117,8 +197,7 @@ public:
         for (NodeID n : G->nodes()) {
             if (components[n] == max_comp) {
                 G->setPartitionIndex(n, 0);
-            }
-            else {
+            } else {
                 G->setPartitionIndex(n, 1);
             }
         }
@@ -127,8 +206,8 @@ public:
         return ge.extract_block(G, 0).first;
     }
 
-private:
-    int m_dfscount;
+ private:
+    int32_t m_dfscount;
     size_t m_comp_count;
 
     std::vector<int> m_dfsnum;
@@ -137,5 +216,3 @@ private:
     std::stack<NodeID> m_roots;
     std::stack<std::pair<NodeID, EdgeID> > iteration_stack;
 };
-
-#endif /* end of include guard: STRONGLY_CONNECTED_COMPONENTS_7ZJ8233R */

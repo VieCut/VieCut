@@ -16,13 +16,14 @@
 
 #include <limits>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
-#include "definitions.h"
-#include "priority_queue_interface.h"
+#include "common/definitions.h"
+#include "data_structure/priority_queues/priority_queue_interface.h"
 
-class node_bucket_pq : public priority_queue_interface
-{
-public:
+class node_bucket_pq : public priority_queue_interface {
+ public:
     node_bucket_pq(const NodeID& num_nodes, const EdgeWeight& gain_span);
 
     virtual ~node_bucket_pq() { }
@@ -43,24 +44,27 @@ public:
     void deleteNode(NodeID node);
 
     bool contains(NodeID node);
-    EdgeWeight gain(NodeID Node);
+    Gain gain(NodeID Node);
 
-private:
+ private:
     NodeID m_elements;
     EdgeWeight m_gain_span;
-    unsigned m_max_idx;               // points to the non-empty bucket with the largest gain
+    unsigned m_max_idx;
 
     std::vector<std::pair<Count, Gain> > m_queue_index;
     std::vector<std::vector<NodeID> > m_buckets;
 };
 
-inline node_bucket_pq::node_bucket_pq(const NodeID& num_nodes, const EdgeWeight& gain_span_input) {
+inline node_bucket_pq::node_bucket_pq(const NodeID& num_nodes,
+                                      const EdgeWeight& gain_span_input) {
     m_elements = 0;
     m_gain_span = gain_span_input;
     m_max_idx = 0;
 
     m_buckets.resize(2 * m_gain_span + 1);
-    m_queue_index.resize(num_nodes, std::make_pair((Count)UNDEFINED_COUNT, (Gain)0));
+    m_queue_index.resize(num_nodes,
+                         std::make_pair(static_cast<Count>(UNDEFINED_COUNT),
+                                        static_cast<Gain>(0)));
 }
 
 inline NodeID node_bucket_pq::size() {
@@ -74,7 +78,7 @@ inline void node_bucket_pq::insert(NodeID node, Gain gain) {
     }
 
     m_buckets[address].push_back(node);
-    m_queue_index[node].first = m_buckets[address].size() - 1;      // store position
+    m_queue_index[node].first = m_buckets[address].size() - 1;
     m_queue_index[node].second = gain;
 
     m_elements++;
@@ -137,11 +141,10 @@ inline void node_bucket_pq::deleteNode(NodeID node) {
 
     if (m_buckets[address].size() > 1) {
         // swap current element with last element and pop_back
-        m_queue_index[m_buckets[address].back()].first = in_bucket_idx;         // update helper structure
+        m_queue_index[m_buckets[address].back()].first = in_bucket_idx;
         std::swap(m_buckets[address][in_bucket_idx], m_buckets[address].back());
         m_buckets[address].pop_back();
-    }
-    else {
+    } else {
         // size is 1
         m_buckets[address].pop_back();
         if (address == m_max_idx) {
@@ -157,7 +160,6 @@ inline void node_bucket_pq::deleteNode(NodeID node) {
 
     m_elements--;
     m_queue_index[node].first = UNDEFINED_COUNT;
-    // m_queue_index.erase(node);
 }
 
 inline bool node_bucket_pq::contains(NodeID node) {
@@ -169,8 +171,7 @@ inline Gain node_bucket_pq::gain(NodeID node) {
 
     if (it_node.first == UNDEFINED_COUNT) {
         return 0;
-    }
-    else {
+    } else {
         return it_node.second;
     }
 }

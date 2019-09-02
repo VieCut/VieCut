@@ -13,13 +13,9 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
-#include <math.h>
 #include <memory>
-#include <regex.h>
 #include <sstream>
 #include <stdexcept>
-#include <stdio.h>
-#include <string.h>
 
 #ifdef PARALLEL
 #include "parallel/algorithm/exact_parallel_minimum_cut.h"
@@ -37,7 +33,6 @@
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {
-
     static constexpr bool debug = true;
     timer t;
     tlx::CmdlineParser cmdl;
@@ -51,7 +46,8 @@ int main(int argn, char** argv) {
 
     std::vector<std::shared_ptr<graph_access> > graphs;
 
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(graph_filename);
+    std::shared_ptr<graph_access> G =
+        graph_io::readGraphWeighted(graph_filename);
     graphs.push_back(G);
 
 #ifdef PARALLEL
@@ -87,12 +83,15 @@ int main(int argn, char** argv) {
         std::shared_ptr<graph_access> new_g = graphs.back();
 
         graphs.emplace_back(scc.largest_scc(new_g));
-        if (cut > last_cut && last_cut != 0 && cut < G->getMinDegree() && output) {
+        if (cut > last_cut && last_cut != 0 && cut <
+            G->getMinDegree() && output) {
             graph_io::writeGraph(G, graph_filename + "_" + std::to_string(cut));
         }
         G = graphs.back();
 
-        LOG1 << "New graph: (" << G->number_of_nodes() << ";" << G->number_of_edges() << ") " << cut << " < " << G->getMinDegree();
+        LOG1 << "New graph: (" << G->number_of_nodes()
+             << ";" << G->number_of_edges() << ") "
+             << cut << " < " << G->getMinDegree();
 
         last_cut = cut;
     }

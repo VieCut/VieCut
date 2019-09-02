@@ -11,12 +11,28 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
+#include <cstdlib>
+#include <functional>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "algorithms/global_mincut/minimum_cut.h"
+#include "algorithms/global_mincut/minimum_cut_helpers.h"
+#include "algorithms/multicut/multicut_problem.h"
+#include "common/configuration.h"
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
+#include "data_structure/mutable_graph.h"
+#include "data_structure/priority_queues/bucket_pq.h"
 #include "data_structure/priority_queues/fifo_node_bucket_pq.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"
 #include "data_structure/priority_queues/node_bucket_pq.h"
 #include "data_structure/priority_queues/vecMaxNodeHeap.h"
-#include "minimum_cut.h"
+#include "tools/random_functions.h"
 #include "tools/timer.h"
 
 #ifdef PARALLEL
@@ -29,97 +45,69 @@
 #include "data_structure/union_find.h"
 #endif
 
-#include "definitions.h"
-#include "minimum_cut_helpers.h"
-#include "tools/random_functions.h"
-
-#include <algorithm>
-#include <cstdint>
-#include <cstdlib>
-#include <data_structure/priority_queues/bucket_pq.h>
-#include <functional>
-#include <memory>
-#include <unordered_map>
-
-class noi_minimum_cut : public minimum_cut
-{
-public:
+class noi_minimum_cut : public minimum_cut {
+ public:
     noi_minimum_cut() { }
     ~noi_minimum_cut() { }
     static constexpr bool debug = false;
     static constexpr bool timing = true;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool save_cut) {
-        return perform_minimum_cut(G_ptr, save_cut, false, "default");
-    }
-
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool save_cut, bool indirect) {
-        return perform_minimum_cut(G_ptr, save_cut, indirect, "default");
-    }
-
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G_ptr, bool save_cut, std::string pq) {
-        return perform_minimum_cut(G_ptr, save_cut, false, pq);
+    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+        return perform_minimum_cut(G, false);
     }
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
-                                   bool save_cut,
-                                   bool __attribute__ ((unused)) indirect,
-                                   std::string pq) {
-
+                                   bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
 
         std::vector<std::shared_ptr<graph_access> > graphs;
-
         timer t;
-        EdgeWeight global_mincut = G->getMinDegree();
+        EdgeWeight mincut = G->getMinDegree();
         graphs.push_back(G);
+        minimum_cut_helpers::setInitialCutValues(graphs);
 
-        minimum_cut_helpers::setInitialCutValues(graphs, save_cut);
-
-        while (graphs.back()->number_of_nodes() > 2 && global_mincut > 0) {
-
-            union_find uf(graphs.back()->number_of_nodes());
-            global_mincut = std::min(global_mincut, modified_capforest(graphs.back(), global_mincut, uf, graphs, save_cut, pq));
-            graphs.emplace_back(contraction::contractFromUnionFind(graphs.back(), uf, save_cut));
-            global_mincut = minimum_cut_helpers::updateCutValueAfterContraction(graphs, global_mincut, save_cut);
+        while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
+            auto uf = modified_capforest(graphs.back(), mincut);
+            graphs.emplace_back(contraction::fromUnionFind(graphs.back(), uf));
+            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
         }
 
-        if (!indirect && save_cut)
+        if (!indirect && configuration::getConfig()->save_cut)
             minimum_cut_helpers::retrieveMinimumCut(graphs);
 
-        return global_mincut;
+        return mincut;
     }
 
-    static priority_queue_interface * selectPq(std::string pq_str, EdgeWeight mincut, std::shared_ptr<graph_access> G, bool limit) {
+    static priority_queue_interface * selectPq(std::shared_ptr<graph_access> G,
+                                               EdgeWeight mincut) {
         priority_queue_interface* pq;
 
         size_t max_deg = G->getMaxDegree();
 
-        if (!limit) {
+        if (configuration::getConfig()->disable_limiting) {
             mincut = max_deg;
         }
 
-        if (pq_str == "default") {
+        if (configuration::getConfig()->pq == "default") {
             if (mincut > 10000 && mincut > G->number_of_nodes()) {
                 pq = new vecMaxNodeHeap(G->number_of_nodes());
-            }
-            else {
+            } else {
                 pq = new fifo_node_bucket_pq(G->number_of_nodes(), mincut);
             }
-        }
-        else {
-            if (pq_str == "bqueue")
+        } else {
+            if (configuration::getConfig()->pq == "bqueue") {
                 pq = new fifo_node_bucket_pq(G->number_of_nodes(), mincut);
-            else {
-                if (pq_str == "heap")
+            } else {
+                if (configuration::getConfig()->pq == "heap") {
                     pq = new vecMaxNodeHeap(G->number_of_nodes());
-                else {
-                    if (pq_str == "bstack") {
+                } else {
+                    if (configuration::getConfig()->pq == "bstack") {
                         pq = new node_bucket_pq(G->number_of_nodes(), mincut);
-                    }
-                    else {
-                        std::cerr << "unknown pq type " << pq_str << std::endl;
+                    } else {
+                        std::cerr << "unknown pq type "
+                                  << configuration::getConfig()->pq
+                                  << std::endl;
                         exit(1);
                         pq = new maxNodeHeap();
                     }
@@ -129,20 +117,11 @@ public:
         return pq;
     }
 
-    EdgeWeight modified_capforest(
-        std::shared_ptr<graph_access> G, EdgeWeight mincut,
-        union_find& uf,
-        std::vector<std::shared_ptr<graph_access> >& all_graphs,
-        bool save_cut,
-        std::string pq_str = "default",
-        bool limit = true) {
+    union_find modified_capforest(std::shared_ptr<graph_access> G,
+                                  EdgeWeight mincut) {
+        union_find uf(G->number_of_nodes());
 
-        std::string aft;
-
-        size_t alphamin = mincut;
-        all_graphs.size();
-
-        priority_queue_interface* pq = selectPq(pq_str, mincut, G, limit);
+        priority_queue_interface* pq = selectPq(G, mincut);
 
         std::vector<bool> visited(G->number_of_nodes(), false);
         std::vector<bool> seen(G->number_of_nodes(), false);
@@ -153,117 +132,121 @@ public:
         NodeID current_node = starting_node;
 
         pq->insert(current_node, 0);
-        EdgeWeight alpha = 0;
 
-        timer t;
-        size_t elements = 0;
         while (!pq->empty()) {
-            elements++;
             current_node = pq->deleteMax();
             visited[current_node] = true;
-            alpha += G->getWeightedNodeDegree(current_node) - (2 * r_v[current_node]);
-            if (alpha < alphamin && (alpha > 0 || elements < G->number_of_nodes())) {
+            if (!configuration::getConfig()->disable_limiting) {
+                for (EdgeID e : G->edges_of(current_node)) {
+                    NodeID tgt = G->getEdgeTarget(e);
+                    if (!visited[tgt]) {
+                        bool increase = false;
 
-                alphamin = alpha;
-                if (save_cut) {
-                    for (NodeID idx : all_graphs[0]->nodes()) {
-                        NodeID coarseID = idx;
-                        for (size_t lv = 0; lv < all_graphs.size() - 1; ++lv) {
-                            coarseID = all_graphs[lv]->getPartitionIndex(coarseID);
+                        if (r_v[tgt] < mincut) {
+                            increase = true;
+                            if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
+                                uf.Union(current_node, tgt);
+                            }
                         }
 
-                        if (!visited[coarseID]) {
-                            all_graphs[0]->setNodeInCut(idx, false);
-                        }
-                        else {
-                            all_graphs[0]->setNodeInCut(idx, true);
+                        r_v[tgt] += G->getEdgeWeight(e);
+
+                        size_t new_rv = std::min(r_v[tgt], mincut);
+
+                        if (seen[tgt]) {
+                            if (increase && !visited[tgt]) {
+                                pq->increaseKey(tgt, new_rv);
+                            }
+                        } else {
+                            seen[tgt] = true;
+                            pq->insert(tgt, new_rv);
                         }
                     }
                 }
-            }
+            } else {
+                for (EdgeID e : G->edges_of(current_node)) {
+                    NodeID tgt = G->getEdgeTarget(e);
 
-            if (limit) {
-                processVertexLimited(G, current_node, visited, r_v, seen, mincut, uf, pq);
-            }
-            else {
-                processVertexUnlimited(G, current_node, visited, r_v, seen, mincut, uf, pq);
+                    if (!visited[tgt]) {
+                        if (r_v[tgt] < mincut) {
+                            if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
+                                uf.Union(current_node, tgt);
+                            }
+                        }
+
+                        r_v[tgt] += G->getEdgeWeight(e);
+
+                        if (seen[tgt]) {
+                            if (!visited[tgt]) {
+                                pq->increaseKey(tgt, r_v[tgt]);
+                            }
+                        } else {
+                            seen[tgt] = true;
+                            pq->insert(tgt, r_v[tgt]);
+                        }
+                    }
+                }
             }
         }
         delete pq;
-        return alphamin;
+        return uf;
     }
 
-    void processVertexLimited(std::shared_ptr<graph_access> G,
-                              NodeID current_node,
-                              std::vector<bool>& visited,
-                              std::vector<EdgeWeight>& r_v,
-                              std::vector<bool>& seen,
-                              EdgeWeight mincut,
-                              union_find& uf,
-                              priority_queue_interface* pq) {
+    // Terrible code duplication, but differences are too big for reuse
+    union_find modified_capforest(std::shared_ptr<multicut_problem> mcp,
+                                  EdgeWeight mincut) {
+        std::shared_ptr<mutable_graph> G = mcp->graph;
+        std::unordered_set<NodeID> terminal_set;
 
-        for (EdgeID e : G->edges_of(current_node)) {
-            NodeID tgt = G->getEdgeTarget(e);
+        for (const auto& t : mcp->terminals) {
+            terminal_set.insert(t.position);
+        }
 
-            if (!visited[tgt]) {
+        union_find uf(G->n());
 
-                bool increase = false;
+        vecMaxNodeHeap pq(G->n());
+        std::vector<bool> visited(G->number_of_nodes(), false);
+        std::vector<bool> seen(G->number_of_nodes(), false);
+        std::vector<EdgeWeight> r_v(G->number_of_nodes(), 0);
 
-                if (r_v[tgt] < mincut) {
-                    increase = true;
-                    if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
-                        uf.Union(current_node, tgt);
+        NodeID starting_node = random_functions::next() % G->number_of_nodes();
+        NodeID current_node = starting_node;
+        pq.insert(current_node, 0);
+        timer t;
+
+        while (!pq.empty()) {
+            current_node = pq.deleteMax();
+            visited[current_node] = true;
+            for (EdgeID e : G->edges_of(current_node)) {
+                NodeID tgt = G->getEdgeTarget(current_node, e);
+                if (!visited[tgt]) {
+                    bool increase = false;
+                    if (r_v[tgt] < mincut) {
+                        increase = true;
+                        if ((r_v[tgt] + G->getEdgeWeight(current_node, e)) >=
+                            mincut) {
+                            if (terminal_set.count(tgt) == 0
+                                && terminal_set.count(current_node) == 0) {
+                                uf.Union(current_node, tgt);
+                            }
+                        }
                     }
-                }
 
-                r_v[tgt] += G->getEdgeWeight(e);
+                    r_v[tgt] += G->getEdgeWeight(current_node, e);
 
-                size_t new_rv = std::min(r_v[tgt], mincut);
+                    size_t new_rv = std::min(r_v[tgt], mincut);
 
-                if (seen[tgt]) {
-                    if (increase && !visited[tgt]) {
-                        pq->increaseKey(tgt, new_rv);
+                    if (seen[tgt]) {
+                        if (increase && !visited[tgt]) {
+                            pq.increaseKey(tgt, new_rv);
+                        }
+                    } else {
+                        seen[tgt] = true;
+                        pq.insert(tgt, new_rv);
                     }
-                }
-                else {
-                    seen[tgt] = true;
-                    pq->insert(tgt, new_rv);
                 }
             }
         }
-    }
-
-    void processVertexUnlimited(std::shared_ptr<graph_access> G,
-                                NodeID current_node,
-                                std::vector<bool>& visited,
-                                std::vector<EdgeWeight>& r_v,
-                                std::vector<bool>& seen,
-                                EdgeWeight mincut,
-                                union_find& uf,
-                                priority_queue_interface* pq) {
-
-        for (EdgeID e : G->edges_of(current_node)) {
-            NodeID tgt = G->getEdgeTarget(e);
-
-            if (!visited[tgt]) {
-                if (r_v[tgt] < mincut) {
-                    if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
-                        uf.Union(current_node, tgt);
-                    }
-                }
-
-                r_v[tgt] += G->getEdgeWeight(e);
-
-                if (seen[tgt]) {
-                    if (!visited[tgt]) {
-                        pq->increaseKey(tgt, r_v[tgt]);
-                    }
-                }
-                else {
-                    seen[tgt] = true;
-                    pq->insert(tgt, r_v[tgt]);
-                }
-            }
-        }
+        return uf;
     }
 };

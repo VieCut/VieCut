@@ -20,9 +20,8 @@
 
 // A simple Union-Find datastructure implementation.
 // This is sometimes also caled "disjoint sets datastructure.
-class union_find
-{
-public:
+class union_find {
+ public:
     explicit union_find(unsigned n) : m_parent(n), m_rank(n) {
         for (unsigned i = 0; i < m_parent.size(); i++) {
             m_parent[i] = i;
@@ -74,6 +73,14 @@ public:
         }
     }
 
+    inline unsigned Find(unsigned element) const {
+        while (m_parent[element] != element) {
+            unsigned next = m_parent[element];
+            element = m_parent[next];
+        }
+        return element;
+    }
+
     inline unsigned Find(unsigned element) {
         while (m_parent[element] != element) {
             unsigned next = m_parent[element];
@@ -85,9 +92,8 @@ public:
         return element;
     }
 
-    inline unsigned n() {
+    inline unsigned n() const {
         std::vector<bool> found(m_parent.size(), false);
-
         unsigned n = 0;
         for (auto& e : m_parent) {
             if (!found[Find(e)]) {
@@ -98,9 +104,8 @@ public:
         return n;
     }
 
-private:
+ private:
     inline bool UpdateRoot(unsigned x, unsigned xr, unsigned y, unsigned yr) {
-
         unsigned old = x;
         if (m_parent[old] != x || m_rank[old] != xr) {
             return false;

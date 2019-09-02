@@ -9,22 +9,20 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#ifndef ADJLIST_GRAPH_EFRXO4X2
-#define ADJLIST_GRAPH_EFRXO4X2
+#pragma once
 
 #include <bitset>
 #include <cassert>
 #include <iostream>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
-#include "definitions.h"
 
-class adjlist_graph
-{
-
-public:
+class adjlist_graph {
+ public:
     adjlist_graph() { }
     virtual ~adjlist_graph() { }
 
@@ -73,11 +71,13 @@ public:
     }
 
     NodeID getEdgeTarget(EdgeID edge) {
-        return m_adjacencies[edge / m_num_nodes].second[edge % m_num_nodes].target;
+        return m_adjacencies[edge / m_num_nodes].second[
+            edge % m_num_nodes].target;
     }
 
     EdgeWeight getEdgeWeight(EdgeID edge) {
-        return m_adjacencies[edge / m_num_nodes].second[edge % m_num_nodes].weight;
+        return m_adjacencies[edge / m_num_nodes].second[
+            edge % m_num_nodes].weight;
     }
 
     EdgeWeight getNodeDegree(NodeID node) {
@@ -101,10 +101,8 @@ public:
         return false;
     }
 
-    void construct_from_graph(graph_access& G) {
-
+    void construct_from_graph(graph_access G) {
         start_construction(G.number_of_nodes(), G.number_of_edges());
-
         for (NodeID n : G.nodes()) {
             new_node(G.getNodeWeight(n));
             for (EdgeID e : G.edges_of(n)) {
@@ -130,18 +128,14 @@ public:
 
         for (Edge e : m_adjacencies[node2].second) {
             if (e.target != node1) {
-
                 new_wgt += e.weight;
                 if (edges.find(e.target) == edges.end()) {
                     edges.emplace(e.target, e.weight);
-                }
-                else {
+                } else {
                     edges[e.target] += e.weight;
                 }
             }
         }
-
-        assert(new_wgt < getWeightedNodeDegree(node1) + getWeightedNodeDegree(node2));
 
         m_adjacencies[node1].second.clear();
         for (auto e : edges) {
@@ -179,7 +173,7 @@ public:
     }
 
     EdgeWeight getMinDegree() {
-        if (m_min_degree == INT_MAX) {
+        if (m_min_degree == UNDEFINED_NODE) {
             for (NodeID node = 0; node < m_num_nodes; ++node) {
                 EdgeWeight deg = getWeightedNodeDegree(node);
                 if (deg < m_min_degree) {
@@ -190,7 +184,7 @@ public:
         return m_min_degree;
     }
 
-private:
+ private:
     std::vector<std::pair<NodeWeight, std::vector<Edge> > > m_adjacencies;
     std::vector<bool> deadnodes;
 
@@ -199,7 +193,5 @@ private:
     NodeID m_num_nodes_merged;
     EdgeID m_num_edges;
     EdgeWeight m_max_degree = 0;
-    EdgeWeight m_min_degree = INT_MAX;
+    EdgeWeight m_min_degree = UNDEFINED_NODE;
 };
-
-#endif /* end of include guard: GRAPH_ACCESS_EFRXO4X2 */

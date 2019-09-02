@@ -10,12 +10,12 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#ifndef MAX_NODE_HEAP_39CK1B8I
-#define MAX_NODE_HEAP_39CK1B8I
+#pragma once
 
 #include <execinfo.h>
 #include <limits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "data_structure/priority_queues/priority_queue_interface.h"
@@ -23,17 +23,17 @@
 typedef EdgeWeight Key;
 
 template <typename Data>
-class QElement
-{
-public:
-    QElement(Data data, Key key, int index) : m_data(data), m_key(key), m_index(index) { }
+class QElement {
+ public:
+    QElement(Data data, Key key, int index)
+        : m_data(data), m_key(key), m_index(index) { }
     virtual ~QElement() { }
 
     Data& get_data() {
         return m_data;
     }
 
-    void set_data(Data& data) {
+    void set_data(const Data& data) {
         m_data = data;
     }
 
@@ -53,18 +53,17 @@ public:
         m_index = index;
     }
 
-private:
+ private:
     Data m_data;
     Key m_key;
     int m_index;              // the index of the element in the heap
 };
 
-class maxNodeHeap : public priority_queue_interface
-{
-public:
+class maxNodeHeap : public priority_queue_interface {
+ public:
     struct Data {
         NodeID node;
-        Data(NodeID node) : node(node) { }
+        explicit Data(NodeID node) : node(node) { }
     };
 
     typedef QElement<Data> PQElement;
@@ -89,10 +88,10 @@ public:
     void changeKey(NodeID node, Gain gain);
     Gain getKey(NodeID node);
 
-private:
-    std::vector<PQElement> m_elements;                             // elements that contain the data
-    std::unordered_map<NodeID, int> m_element_index;               // stores index of the node in the m_elements array
-    std::vector<std::pair<Key, int> > m_heap;                      // key and index in elements (pointer)
+ private:
+    std::vector<PQElement> m_elements;
+    std::unordered_map<NodeID, int> m_element_index;
+    std::vector<std::pair<Key, int> > m_heap;
 
     void siftUp(int pos);
     void siftDown(int pos);
@@ -107,19 +106,16 @@ inline NodeID maxNodeHeap::maxElement() {
 }
 
 inline void maxNodeHeap::siftDown(int pos) {
-
     Gain curKey = m_heap[pos].first;
     int lhsChild = 2 * pos + 1;
     int rhsChild = 2 * pos + 2;
-    if (rhsChild < (int)m_heap.size()) {
-
+    if (rhsChild < static_cast<int>(m_heap.size())) {
         Gain lhsKey = m_heap[lhsChild].first;
         Gain rhsKey = m_heap[rhsChild].first;
 
         if (lhsKey < curKey && rhsKey < curKey) {
             return;             // we are done
-        }
-        else {
+        } else {
             // exchange with the larger one (maxHeap)
             int swap_pos = lhsKey > rhsKey ? lhsChild : rhsChild;
             std::swap(m_heap[pos], m_heap[swap_pos]);
@@ -133,8 +129,7 @@ inline void maxNodeHeap::siftDown(int pos) {
             siftDown(swap_pos);
             return;
         }
-    }
-    else if (lhsChild < (int)m_heap.size()) {
+    } else if (lhsChild < static_cast<int>(m_heap.size())) {
         if (m_heap[pos].first < m_heap[lhsChild].first) {
             std::swap(m_heap[pos], m_heap[lhsChild]);
 
@@ -146,8 +141,7 @@ inline void maxNodeHeap::siftDown(int pos) {
 
             siftDown(lhsChild);
             return;
-        }
-        else {
+        } else {
             return;             // we are done
         }
     }
@@ -155,7 +149,7 @@ inline void maxNodeHeap::siftDown(int pos) {
 
 inline void maxNodeHeap::siftUp(int pos) {
     if (pos > 0) {
-        int parentPos = (int)(pos - 1) / 2;
+        int parentPos = static_cast<int>(pos - 1) / 2;
         if (m_heap[parentPos].first < m_heap[pos].first) {
             // heap condition not fulfulled
             std::swap(m_heap[parentPos], m_heap[pos]);
@@ -202,8 +196,9 @@ inline void maxNodeHeap::deleteNode(NodeID node) {
     // update the position of its element in the element array
     m_elements[m_heap[heap_index].second].set_index(heap_index);
 
-    // we dont want holes in the elements array -- delete the deleted element from the array
-    if (element_index != (int)(m_elements.size() - 1)) {
+    // we dont want holes in the elements array
+    // delete the deleted element from the array
+    if (element_index != static_cast<int>(m_elements.size() - 1)) {
         std::swap(m_elements[element_index], m_elements[m_elements.size() - 1]);
         m_heap[m_elements[element_index].get_index()].second = element_index;
         int cnode = m_elements[element_index].get_data().node;
@@ -213,7 +208,7 @@ inline void maxNodeHeap::deleteNode(NodeID node) {
     m_elements.pop_back();
     m_heap.pop_back();
 
-    if (m_heap.size() > 1 && heap_index < (int)m_heap.size()) {
+    if (m_heap.size() > 1 && heap_index < static_cast<int>(m_heap.size())) {
         // fix the max heap property
         siftDown(heap_index);
         siftUp(heap_index);
@@ -230,10 +225,12 @@ inline NodeID maxNodeHeap::deleteMax() {
         // update the position of its element in the element array
         m_elements[m_heap[0].second].set_index(0);
 
-        // we dont want holes in the elements array -- delete the deleted element from the array
-        if (element_index != (int)(m_elements.size() - 1)) {
+        // we dont want holes in the elements array
+        // delete the deleted element from the array
+        if (element_index != static_cast<int>(m_elements.size() - 1)) {
             m_elements[element_index] = m_elements[m_elements.size() - 1];
-            m_heap[m_elements[element_index].get_index()].second = element_index;
+            m_heap[m_elements[element_index].get_index()].second
+                = element_index;
             int cnode = m_elements[element_index].get_data().node;
             m_element_index[cnode] = element_index;
         }
@@ -256,8 +253,7 @@ inline void maxNodeHeap::changeKey(NodeID node, Gain gain) {
     Gain old_gain = m_heap[m_elements[m_element_index[node]].get_index()].first;
     if (old_gain > gain) {
         decreaseKey(node, gain);
-    }
-    else if (old_gain < gain) {
+    } else if (old_gain < gain) {
         increaseKey(node, gain);
     }
 }
@@ -287,5 +283,3 @@ inline Gain maxNodeHeap::getKey(NodeID node) {
 inline bool maxNodeHeap::contains(NodeID node) {
     return m_element_index.find(node) != m_element_index.end();
 }
-
-#endif

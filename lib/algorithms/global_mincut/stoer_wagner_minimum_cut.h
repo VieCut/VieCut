@@ -11,22 +11,22 @@
 
 #pragma once
 
+#include <cstdint>
+#include <cstdlib>
+#include <vector>
+
 #include "data_structure/adjlist_graph.h"
 #include "data_structure/priority_queues/bucket_pq.h"
 
-#include <cstdint>
-#include <cstdlib>
-
-class stoer_wagner_minimum_cut
-{
-public:
+class stoer_wagner_minimum_cut {
+ public:
     stoer_wagner_minimum_cut() { }
     virtual ~stoer_wagner_minimum_cut() { }
 
     /**
      * perform minimum cut: right now wagner stoer algorithm
      */
-    uint64_t perform_minimum_cut(adjlist_graph& G) {
+    uint64_t perform_minimum_cut(adjlist_graph G) {
         srand(time(NULL));
         uint64_t global_mincut = UINT64_MAX;
         union_find uf(G.number_of_nodes());
@@ -40,12 +40,13 @@ public:
         return global_mincut;
     }
 
-private:
-    uint64_t contract(adjlist_graph& G, uint64_t size, union_find& uf) {
+ private:
+    uint64_t contract(adjlist_graph G, uint64_t size, union_find uf) {
         bucket_pq pq(G.getMaxDegree());
 
         std::vector<bool> visited(G.number_of_nodes());
-        NodeID starting_node = rand() % G.number_of_nodes();
+        NodeID starting_node =
+            random_functions::nextInt(0, G.number_of_nodes() - 1);
 
         NodeID current_node = uf.Find(starting_node);
 
@@ -62,8 +63,7 @@ private:
                     Gain gain = pq.gain(tgt);
                     if (gain > 0) {
                         pq.increaseKey(tgt, gain + G.getEdgeWeight(e));
-                    }
-                    else {
+                    } else {
                         num_inserts++;
                         assert(G.getEdgeWeight(e) > 0);
                         pq.insert(tgt, G.getEdgeWeight(e));
@@ -83,8 +83,7 @@ private:
                 Gain gain = pq.gain(tgt);
                 if (gain > 0) {
                     pq.increaseKey(tgt, gain + G.getEdgeWeight(e));
-                }
-                else {
+                } else {
                     num_inserts++;
                     assert(G.getEdgeWeight(e) > 0);
                     pq.insert(tgt, G.getEdgeWeight(e));
@@ -96,8 +95,7 @@ private:
 
         if (uf.Find(current_node) == current_node) {
             G.merge_nodes(current_node, pq.maxElement());
-        }
-        else {
+        } else {
             G.merge_nodes(pq.maxElement(), current_node);
         }
 

@@ -11,27 +11,26 @@
 
 #pragma once
 
-#include "data_structure/flow_graph.h"
-#include "data_structure/graph_access.h"
-#include "definitions.h"
-#include "tlx/logger.hpp"
-
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <queue>
+#include <utility>
+#include <vector>
 
-class unit_flow
-{
+#include "common/definitions.h"
+#include "data_structure/flow_graph.h"
+#include "data_structure/graph_access.h"
+#include "tlx/logger.hpp"
 
+class unit_flow {
+ public:
     static constexpr bool debug = false;
-
-public:
     unit_flow() { }
     virtual ~unit_flow() { }
 
-    void init(flow_graph& fg, std::vector<EdgeWeight>& delta_src,
+    void init(flow_graph fg, const std::vector<EdgeWeight>& delta_src,
               EdgeWeight unit_cap, NodeID max_height, FlowType w) {
-
         m_f.resize(fg.number_of_nodes());
         m_fg = &fg;
         m_delta_src = delta_src;
@@ -89,7 +88,7 @@ public:
         return m_height[v];
     }
 
-private:
+ private:
     struct cmp {
         bool operator () (const std::pair<EdgeWeight, NodeID>& p1,
                           const std::pair<EdgeWeight, NodeID>& p2) {
@@ -127,8 +126,7 @@ private:
             if (!Q.empty()) {
                 m_v = Q.top().second;
                 Q.pop();
-            }
-            else {
+            } else {
                 done = true;
             }
         }
@@ -167,8 +165,7 @@ private:
         if (!Q.empty()) {
             m_v = Q.top().second;
             Q.pop();
-        }
-        else {
+        } else {
             done = true;
         }
     }
@@ -179,23 +176,20 @@ private:
         if (m_fg->get_first_invalid_edge(v)) {
             if (applicable(v, e)) {
                 push(v, e);
-            }
-            else {
+            } else {
                 if (m_height[v] && e + 1 < m_fg->get_first_invalid_edge(v)) {
                     ++m_current_edge[v];
-                }
-                else {
+                } else {
                     relabel(v);
                     m_current_edge[v] = 0;
                 }
             }
-        }
-        else {
+        } else {
             Q.pop();
         }
     }
 
-private:
+ private:
     std::priority_queue<std::pair<EdgeWeight, NodeID>,
                         std::vector<std::pair<EdgeWeight, NodeID> >,
                         cmp> Q;

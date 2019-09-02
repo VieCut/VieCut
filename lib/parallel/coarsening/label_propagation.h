@@ -11,40 +11,41 @@
 
 #pragma once
 
-#include "omp.h"
-
-#include "data_structure/graph_access.h"
-#include "definitions.h"
-#include "tlx/logger.hpp"
-#include "tools/random_functions.h"
-#include "tools/string.h"
-
-#include <cstdint>
-#include <cstdlib>
+#include <omp.h>
 
 #include <algorithm>
 #include <deque>
+#include <functional>
 #include <map>
+#include <memory>
 #include <random>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
-class label_propagation
-{
+#include "common/definitions.h"
+#include "data_structure/graph_access.h"
+#include "tlx/logger.hpp"
+#include "tools/random_functions.h"
+#include "tools/string.h"
+#include "tools/timer.h"
+
+class label_propagation {
     static constexpr bool debug = false;
     static constexpr bool timing = true;
 
-public:
+ public:
     label_propagation() { }
     virtual ~label_propagation() { }
 
     std::vector<NodeID> propagate_labels(std::shared_ptr<graph_access> G) {
-
-        std::vector<NodeID> cluster_mapping;
+        timer t_start;
+        std::vector<uint32_t> cluster_mapping;
 
         cluster_mapping.resize(G->number_of_nodes());
         std::vector<NodeID> permutation(G->number_of_nodes());
 
-        random_functions::permutate_vector_local(permutation, true);
+        random_functions::permutate_vector_local(&permutation, true);
 
         for (size_t i = 0; i < cluster_mapping.size(); ++i) {
             cluster_mapping[i] = i;
@@ -53,6 +54,7 @@ public:
         int iterations = 2;
 
         LOG << "Number of iterations: " << iterations;
+        LOGC(timing) << "start " << t_start.elapsed();
 
         NodeID last_node = G->number_of_nodes();
 
@@ -60,12 +62,13 @@ public:
         {
             std::mt19937 m_mt;
 
-            m_mt.seed(random_functions::getSeed());// + omp_get_thread_num());
+            m_mt.seed(random_functions::getSeed() + omp_get_thread_num());
 
-            std::vector<std::pair<NodeID, NodeID> > wgt(G->number_of_nodes(), std::make_pair(0, 0));
+            std::vector<std::pair<NodeID, NodeID> >
+            wgt(G->number_of_nodes(), std::make_pair(0, 0));
             timer t;
             for (int j = 0; j < iterations; j++) {
-#pragma omp for schedule(dynamic,1024)
+#pragma omp for schedule(dynamic, 64)
                 for (NodeID node = 0; node < last_node; ++node) {
                     NodeID n = permutation[node];
                     PartitionID max_block = cluster_mapping[n];
@@ -85,7 +88,6 @@ public:
                         if (wgt[block].second > max_value ||
                             (wgt[block].second == max_value &&
                              m_mt() % 2)) {
-                            // random_functions::next() % 2)) {
                             max_value = wgt[block].second;
                             max_block = block;
                         }
@@ -94,15 +96,18 @@ public:
                     cluster_mapping[n] = max_block;
                 }
                 LOGC(timing && !omp_get_thread_num())
-                    << "LP: Iteration " << j << " -  Timer: " << t.elapsedToZero();
+                    << "LP: Iteration " << j
+                    << " -  Timer: " << t.elapsedToZero();
             }
         }
 
         return cluster_mapping;
     }
 
-    std::vector<std::vector<NodeID> > remap_cluster(
-        std::shared_ptr<graph_access> G, std::vector<NodeID>& cluster_mapping, bool save_cut) {
+    std::pair<std::vector<NodeID>, std::vector<std::vector<NodeID> > >
+    remap_cluster(std::shared_ptr<graph_access> G,
+                  const std::vector<NodeID>& cluster_mapping,
+                  bool save_cut) {
         PartitionID cur_no_clusters = 0;
         std::unordered_map<PartitionID, PartitionID> remap;
 
@@ -118,28 +123,29 @@ public:
                 reverse_mapping.emplace_back();
             }
 
-            cluster_mapping[node] = part[cur_cluster];
             if (save_cut) {
                 G->setPartitionIndex(node, part[cur_cluster]);
             }
             reverse_mapping[part[cur_cluster]].push_back(node);
         }
 
-        return reverse_mapping;
+        return std::make_pair(part, reverse_mapping);
     }
 
     void certify_clusters(
         std::shared_ptr<graph_access> G,
-        std::vector<NodeID>& cluster_id,
-        std::vector<std::vector<NodeID> >& reverse_mapping) {
+        std::vector<NodeID>* cid,
+        std::vector<std::vector<NodeID> >* rm) {
+        std::vector<NodeID>& cluster_id = *cid;
+        std::vector<std::vector<NodeID> > reverse_mapping = *rm;
 
         std::vector<bool> found(G->number_of_nodes(), false);
         NodeID clusters = reverse_mapping.size();
         std::vector<std::vector<NodeID> > marked;
         {
-            std::vector<long int> in (G->number_of_nodes(), 0);
-            std::vector<long int> out(G->number_of_nodes(), 0);
-            std::vector<int> cluster(G->number_of_nodes(), true);
+            std::vector<EdgeID> in_vec(G->number_of_nodes(), 0);
+            std::vector<EdgeID> out(G->number_of_nodes(), 0);
+            std::vector<NodeID> cluster(G->number_of_nodes(), true);
 
             for (size_t p = 0; p < reverse_mapping.size(); ++p) {
                 marked.emplace_back();
@@ -147,27 +153,24 @@ public:
 
 #pragma omp parallel for schedule(dynamic)
             for (size_t p = 0; p < clusters; ++p) {
-
                 bool change = false;
-
                 for (size_t i = 0; i < reverse_mapping[p].size(); ++i) {
                     NodeID node = reverse_mapping[p][i];
                     for (EdgeID e : G->edges_of(node)) {
                         if (cluster_id[G->getEdgeTarget(e)] == p) {
-                            in[node] += G->getEdgeWeight(e);
-                        }
-                        else {
+                            in_vec[node] += G->getEdgeWeight(e);
+                        } else {
                             out[node] += G->getEdgeWeight(e);
                         }
                     }
 
-                    if (out[node] > in [node]) {
+                    if (out[node] > in_vec[node]) {
                         cluster[node] = false;
                         change = true;
                         for (EdgeID e : G->edges_of(node)) {
                             NodeID tgt = G->getEdgeTarget(e);
                             if (cluster_id[tgt] == p) {
-                                in[tgt] -= G->getEdgeWeight(e);
+                                in_vec[tgt] -= G->getEdgeWeight(e);
                                 out[tgt] += G->getEdgeWeight(e);
                             }
                         }
@@ -180,12 +183,12 @@ public:
                     change = false;
                     for (size_t i = 0; i < reverse_mapping[p].size(); ++i) {
                         NodeID node = reverse_mapping[p][i];
-                        if (cluster[node] && out[node] > in [node]) {
+                        if (cluster[node] && out[node] > in_vec[node]) {
                             cluster[node] = false;
                             for (EdgeID e : G->edges_of(node)) {
                                 NodeID tgt = G->getEdgeTarget(e);
                                 if (cluster_id[tgt] == p) {
-                                    in[tgt] -= G->getEdgeWeight(e);
+                                    in_vec[tgt] -= G->getEdgeWeight(e);
                                     out[tgt] += G->getEdgeWeight(e);
                                 }
                             }
@@ -199,7 +202,8 @@ public:
 
             for (size_t p = 0; p < clusters; ++p) {
                 if (marked[p].size()) {
-                    std::sort(marked[p].begin(), marked[p].end(), std::greater<NodeID>());
+                    std::sort(marked[p].begin(), marked[p].end(),
+                              std::greater<NodeID>());
                     for (auto m : marked[p]) {
                         if (reverse_mapping[p].size() > 1) {
                             NodeID node = reverse_mapping[p][m];
@@ -258,7 +262,8 @@ public:
 
                         if (lower < upper) {
                             std::iter_swap(reverse_mapping[map].begin() + lower,
-                                           reverse_mapping[map].begin() + upper);
+                                           reverse_mapping[map].begin()
+                                           + upper);
                         }
                     }
 
@@ -269,14 +274,15 @@ public:
                         new_map = reverse_mapping.size() - 1;
                     }
 
-                    for (size_t i = lower; i < reverse_mapping[map].size(); ++i) {
-
+                    for (size_t i = lower;
+                         i < reverse_mapping[map].size(); ++i) {
                         NodeID el = reverse_mapping[map][i];
                         cluster_id[el] = new_map;
                         reverse_mapping[new_map].push_back(el);
                     }
-                    reverse_mapping[map].erase(reverse_mapping[map].begin() + lower,
-                                               reverse_mapping[map].end());
+                    reverse_mapping[map].erase(
+                        reverse_mapping[map].begin() + lower,
+                        reverse_mapping[map].end());
                     map = new_map;
                 }
             }

@@ -5,7 +5,10 @@
 This is the code repository to accompany our papers:
 
 *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms. arXiv preprint [arXiv:1708.06127.](https://arxiv.org/abs/1708.06127)*
+
 *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
+
+*Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory BRanch and Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
 
 The papers can be freely accessed online in the arXiv.
 
@@ -27,6 +30,12 @@ If you use this code in the context of an academic publication, we ask that you 
   year = {2019}
 }
 
+@article{henzinger2019branch,
+  title={Shared-Memory Branch-and-Reduce for Multiterminal Cuts},
+  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
+  journal={arXiv preprint arXiv:1908.04141},
+  year={2019}
+}
 ```
 
 ## Introduction
@@ -71,7 +80,9 @@ To compile the code use the following commands
 
 We also offer a compile script `compile.sh` which compiles the executables and runs tests.
 
-All of our programs are compiled both for single threaded and shared-memory parallel use. The name of the parallel executable is indicated by appending it with `_parallel`. The executables can be found in subfolder `build`.
+All of our programs are compiled both for single threaded and shared-memory parallel use. 
+The name of the parallel executable is indicated by appending it with `_parallel`. 
+The executables can be found in subfolder `build`.
 
 
 # Running the programs
@@ -85,6 +96,8 @@ Run any minimum cut algorithm using the following command
 
 ```
 ./build/mincut [options] /path/to/graph.metis <algorithm>
+
+./build/mincut_parallel [options] /path/to/graph.metis <algorithm>
 ```
 
 For <algorithm> use one of the following:
@@ -99,14 +112,14 @@ For <algorithm> use one of the following:
 when parallelism is enabled, use one of the following:
 
 * `inexact` - shared-memory parallel version of `VieCut` [HNSS'18]
-* `exact` - exact shared-memory parallel minimum cut [HNS'19]
+* `exact` - exact shared-memory parallel minimum cut [HNS'19a]
 * `cactus` - Find _all_ minimum cuts and give the cactus that represents them. [ongoing work]
 
 #### (Optional) Program Options:
 
-* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19] for details)
+* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19a] for details)
 * `-i` - Number of iterations (default: 1)
-* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19])
+* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19a])
 * `-p` - [Only for `mincut_parallel`] Use `p` processors (multiple values possible)
 * `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
 * `-b` - [Only for algorithm `cactus`, `-s` needs to be enabled as well] Find most balanced minimum cut and print its balance.
@@ -120,17 +133,48 @@ The following command
 runs algorithm `exact` using the `BQueue` priority queue implementation for 3 iterations both with 2 and 12 processors.
 For each of the runs we print running time and results, as well as a few informations about the graph and algorithm configuration.
 
-## Other Executables
 
 ### `multiterminal_cut`
 
-TODO!
+The multiterminal cut of a graph G and a set of terminals T is to find the minimum cut of G that separates all terminals from each other. 
+For $|T|=2$ this is equal to the minimum s-t-cut problem, for $|T|>2$, the problem is NP-hard. 
+We solve the problem using a branch-and-reduce approach which finds a hard kernel by applying reduction rules and then branching on edges adjacent to a terminal. For a more detailed description, we refer the reader to [HNS'19b]. The algorithm is shared-memory parallel and uses OpenMP.
+
+#### Usage:
+
+```
+./build/multiterminal_cut /path/to/graph.metis [options] 
+```
+
+#### (Optional) Program Options:
+* `-f` - Path to partition file. This file has one line for each vertex. A value of $0$ to $|T| - 1$ indicates which terminal a vertex belongs to, otherwise a value of $|T|$ indicates that the vertex does not belong to a terminal.
+* `-t` - Add vertex `t` as a terminal.
+* `-k` - Find multiterminal cut between `k` vertices with highest vertex degree.
+* `-r` - Find multiterminal cut between `r` random vertices.
+* `-b` - Run BFS around each terminal and add up to `b` vertices discovered first to each terminal.
+* `-p` - Number of threads (default: OMP_NUM_THREADS, which defaults to the number of hardware threads).
+* `-c` - Disable kernelization variants [values in 0-4] (default: 0 - all enabled). 
+
+
+The following command
+
+```
+./build/multiterminal_cut /path/to/my/graph.metis -f /path/to/my/partition_file -p 12 -c 1
+```
+
+finds the multiterminal cut as given by the graph and partition file using `12` cores and all except for the high-connectivity kernelization (see [HNS'19b] for further details) rules enabled.
+
+
+
+
+
+## Other Executables
 
 ### `kcore`
 
 As most real-world graphs contain vertices with degree 1 and multiple connected components, finding the minimum cut is
 as easy as finding the minimum degree or checking whether the graph has multiple connected components.
-In order to create harder instances for [HNS'19] and [HNSS'18] we use the cores decomposition of the graph.
+In order to create harder instances for [HNS'19a] and [HNSS'18] we use the cores decomposition of the graph.
 The k-core of a graph is the largest subgraph of the graph, in which every node has at least degree k in the k-core.
 We use the executable `kcore` to find k-cores of a graph where the minimum cut is not equal to the minimum degree.
 If the minimum cut is not equal to the minimum degree, the k-core graph is written both in METIS and in DIMACS format.

@@ -37,6 +37,7 @@ perf.data*
 config.log
 .#*
 
-.vscode/*
 cmake-build-*
 .idea/*
+.vscode/*
+*/.vscode/*

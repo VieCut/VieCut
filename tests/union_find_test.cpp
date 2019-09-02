@@ -9,10 +9,11 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <gtest/gtest.h>
 #include <omp.h>
 #include <random>
-#include <tlx/logger.hpp>
+
+#include "gtest/gtest.h"
+#include "tlx/logger.hpp"
 
 #ifdef PARALLEL
 #include "parallel/data_structure/union_find.h"
@@ -53,13 +54,15 @@ TEST(UnionFindTest, UnionTwoToOne) {
 
     for (size_t i = 0; i < 500; ++i) {
         ASSERT_EQ(uf.Find(2 * i), uf.Find((2 * i) + 1));
-        ASSERT_TRUE((uf.Find(2 * i) >= 2 * i) && (uf.Find((2 * i) + 1) <= (2 * i) + 1));
+        ASSERT_TRUE((uf.Find(2 * i) >= 2 * i)
+                    && (uf.Find((2 * i) + 1) <= (2 * i) + 1));
     }
 }
 
 TEST(UnionFindTest, UnionBlocks) {
     // In this test we want to Union() blocks of [i,i+50)
-    // we randomly swap the operations to ensure that this works correctly for all orderings.
+    // we randomly swap the operations to ensure
+    // that this works correctly for all orderings.
     size_t num_blocks = 50;
     size_t blocksize_outer = 5;
     size_t blocksize_inner = 10;
@@ -79,10 +82,12 @@ TEST(UnionFindTest, UnionBlocks) {
                 // union all in inner block
                 union_ops.emplace_back(inner_start + k, inner_start + k + 1);
             }
-            // union random element of inner block to random element of next block
+            // union random element of inner block to
+            // random element of next block
             if (j + 1 < blocksize_outer)
                 union_ops.emplace_back(inner_start + distribution(eng),
-                                       inner_start + blocksize_inner + distribution(eng));
+                                       inner_start + blocksize_inner
+                                       + distribution(eng));
         }
     }
 
@@ -101,7 +106,8 @@ TEST(UnionFindTest, UnionBlocks) {
         size_t block_start = i * blocksize;
         size_t blockval = uf.Find(block_start);
         // value is one of elements in block...
-        ASSERT_TRUE((blockval >= block_start) && (blockval < block_start + blocksize));
+        ASSERT_TRUE((blockval >= block_start)
+                    && (blockval < block_start + blocksize));
         // ..and all elements in block have same value
         for (size_t j = 0; j < blocksize; ++j) {
             ASSERT_EQ(blockval, uf.Find(block_start + j));

@@ -9,12 +9,11 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include "io/graph_io.h"
-#include <gtest/gtest.h>
 #include <type_traits>
 
 #include "data_structure/flow_graph.h"
 #include "data_structure/graph_access.h"
+#include "gtest/gtest.h"
 #include "io/graph_io.h"
 
 TEST(FlowGraphTest, EmptyGraph) {
@@ -26,7 +25,6 @@ TEST(FlowGraphTest, EmptyGraph) {
 }
 
 TEST(FlowGraphTest, NoEdges) {
-
     std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
     G->start_construction(10, 0);
     for (size_t i = 0; i < 10; ++i) {
@@ -40,7 +38,6 @@ TEST(FlowGraphTest, NoEdges) {
 }
 
 TEST(FlowGraphTest, Clique) {
-
     std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
     G->start_construction(10, 0);
     for (size_t i = 0; i < 10; ++i) {
@@ -59,7 +56,6 @@ TEST(FlowGraphTest, Clique) {
     for (size_t i = 0; i < 10; ++i) {
         ASSERT_EQ(fG->getCapacity(i), 9);
         for (size_t j = 0; j < 18; ++j) {
-
             NodeID tgt = 0;
             bool before = (j < i);
             bool behind = (j >= i + 9);
@@ -97,8 +93,7 @@ TEST(FlowGraphTest, SparseGraph) {
             ASSERT_EQ(fG->getEdgeCapacity(i, 0), 1);
             ASSERT_EQ(fG->getEdgeTarget(i, 1), i + 50);
             ASSERT_EQ(fG->getEdgeCapacity(i, 1), 0);
-        }
-        else {
+        } else {
             ASSERT_EQ(fG->getEdgeTarget(i, 0), i - 50);
             ASSERT_EQ(fG->getEdgeCapacity(i, 0), 0);
             ASSERT_EQ(fG->getEdgeTarget(i, 1), i - 50);

@@ -9,21 +9,23 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <random>
+#include <type_traits>
+
 #include "data_structure/priority_queues/bucket_pq.h"
 #include "data_structure/priority_queues/fifo_node_bucket_pq.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"
 #include "data_structure/priority_queues/node_bucket_pq.h"
 #include "data_structure/priority_queues/priority_queue_interface.h"
 #include "data_structure/priority_queues/vecMaxNodeHeap.h"
+#include "gtest/gtest.h"
 #include "tlx/logger.hpp"
-#include <gtest/gtest.h>
-#include <random>
-#include <type_traits>
 
 template <typename T>
 class PQTest : public testing::Test { };
 
-typedef testing::Types<vecMaxNodeHeap, maxNodeHeap, node_bucket_pq, fifo_node_bucket_pq, bucket_pq> PQTypes;// maxNodeHeap, vecMaxNodeHeap> PQTypes;
+typedef testing::Types<vecMaxNodeHeap, maxNodeHeap, node_bucket_pq,
+                       fifo_node_bucket_pq, bucket_pq> PQTypes;
 TYPED_TEST_CASE(PQTest, PQTypes);
 
 TYPED_TEST(PQTest, EmptyAtStart) {
@@ -56,7 +58,6 @@ TYPED_TEST(PQTest, AddElements) {
 }
 
 TYPED_TEST(PQTest, DeleteMax) {
-
     auto priority_queue = new TypeParam(10, 10);
 
     priority_queue->insert(5, 3);
@@ -99,7 +100,6 @@ TYPED_TEST(PQTest, ChangeKeys) {
 }
 
 TYPED_TEST(PQTest, HeapSortRandom) {
-
     size_t num_el = 1000;
     auto priority_queue = new TypeParam(num_el, num_el);
 

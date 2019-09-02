@@ -9,12 +9,12 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include "data_structure/graph_access.h"
-#include "tlx/logger.hpp"
-#include <cstdio>
-#include <gtest/gtest.h>
-#include <io/graph_io.h>
 #include <vector>
+
+#include "data_structure/graph_access.h"
+#include "gtest/gtest.h"
+#include "io/graph_io.h"
+#include "tlx/logger.hpp"
 
 graph_access make_circle() {
     graph_access G;
@@ -109,7 +109,8 @@ TEST(Graph_Test, Loops) {
 
 TEST(Graph_Test, GraphFromFile) {
     std::shared_ptr<graph_access> G =
-        graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small.metis");
+        graph_io::readGraphWeighted(std::string(VIECUT_PATH)
+                                    + "/graphs/small.metis");
 
     ASSERT_EQ(G->number_of_nodes(), 8);
     ASSERT_EQ(G->number_of_edges(), 28);
@@ -119,7 +120,8 @@ TEST(Graph_Test, GraphFromFile) {
 
 TEST(Graph_Test, HackyGraphCreation) {
     std::shared_ptr<graph_access> G1 =
-        graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small.metis");
+        graph_io::readGraphWeighted(std::string(VIECUT_PATH)
+                                    + "/graphs/small.metis");
 
     std::shared_ptr<graph_access> G2 = std::make_shared<graph_access>();
 
@@ -161,13 +163,14 @@ TEST(Graph_Test, HackyGraphCreation) {
 }
 
 TEST(Graph_Test, ReadWriteEqual) {
-
     std::vector<std::string> graphs = { "", "-wgt" };
     for (std::string graph : graphs) {
-        std::string copystr = (std::string(VIECUT_PATH) + "/graphs/copy" + graph + ".metis");
+        std::string copystr = (std::string(VIECUT_PATH)
+                               + "/graphs/copy" + graph + ".metis");
 
         std::shared_ptr<graph_access> G1 =
-            graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small" + graph + ".metis");
+            graph_io::readGraphWeighted(std::string(VIECUT_PATH)
+                                        + "/graphs/small" + graph + ".metis");
         graph_io::writeGraphWeighted(G1, copystr);
         std::shared_ptr<graph_access> G2 = graph_io::readGraphWeighted(copystr);
         remove(copystr.c_str());
@@ -186,7 +189,8 @@ TEST(Graph_Test, ReadWriteEqual) {
 
 TEST(Graph_Test, ReadWeighted) {
     std::shared_ptr<graph_access> G =
-        graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
+        graph_io::readGraphWeighted(std::string(VIECUT_PATH)
+                                    + "/graphs/small-wgt.metis");
 
     ASSERT_EQ(G->number_of_nodes(), 8);
     ASSERT_EQ(G->number_of_edges(), 28);

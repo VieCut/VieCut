@@ -9,15 +9,13 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include "data_structure/graph_access.h"
-#include "tlx/logger.hpp"
 #include <cstdio>
-#include <gtest/gtest.h>
-#include <io/graph_io.h>
+
 #ifdef PARALLEL
 #include "algorithms/global_mincut/viecut.h"
 #include "parallel/algorithm/exact_parallel_minimum_cut.h"
 #else
+#include "algorithms/global_mincut/cactus/cactus_mincut.h"
 #include "algorithms/global_mincut/ks_minimum_cut.h"
 #include "algorithms/global_mincut/matula_approx.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
@@ -26,22 +24,30 @@
 #include "algorithms/global_mincut/viecut.h"
 #endif
 
+#include "data_structure/graph_access.h"
+#include "gtest/gtest.h"
+#include "io/graph_io.h"
+#include "tlx/logger.hpp"
+
 template <typename T>
 class SaveCutTest : public testing::Test { };
 
 #ifdef PARALLEL
 typedef testing::Types<viecut, exact_parallel_minimum_cut> MCAlgTypes;
 #else
-typedef testing::Types<viecut, noi_minimum_cut, matula_approx, ks_minimum_cut> MCAlgTypes;
+typedef testing::Types<viecut, noi_minimum_cut, matula_approx, ks_minimum_cut>
+    MCAlgTypes;
 #endif
 
 TYPED_TEST_CASE(SaveCutTest, MCAlgTypes);
 
 TYPED_TEST(SaveCutTest, UnweightedGraph) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small.metis");
+    configuration::getConfig()->save_cut = true;
+    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        std::string(VIECUT_PATH) + "/graphs/small.metis");
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G, true);
+    EdgeWeight cut = mc.perform_minimum_cut(G);
 
 #ifdef PARALLEL
     if (std::is_same<TypeParam, exact_parallel_minimum_cut>::value) {
@@ -58,9 +64,9 @@ TYPED_TEST(SaveCutTest, UnweightedGraph) {
         for (size_t i = 0; i < e.size(); ++i) {
             ASSERT_EQ(G->getNodeInCut(i), e[i]);
         }
-    }
-    else {
-        // we cannot guarantee that cut is correct in exact algorithms, however, not all vertices can be on same side of cut
+    } else {
+        // we cannot guarantee that cut is correct in exact algorithms,
+        // however, not all vertices can be on same side of cut
 
         ASSERT_LE(cut, (EdgeWeight)3);
         ASSERT_GE(cut, (EdgeWeight)2);
@@ -75,10 +81,12 @@ TYPED_TEST(SaveCutTest, UnweightedGraph) {
 }
 
 TYPED_TEST(SaveCutTest, WeightedGraph) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
+    configuration::getConfig()->save_cut = true;
+    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G, true);
+    EdgeWeight cut = mc.perform_minimum_cut(G);
 
 #ifdef PARALLEL
     if (std::is_same<TypeParam, exact_parallel_minimum_cut>::value) {
@@ -95,9 +103,9 @@ TYPED_TEST(SaveCutTest, WeightedGraph) {
         for (size_t i = 0; i < e.size(); ++i) {
             ASSERT_EQ(G->getNodeInCut(i), e[i]);
         }
-    }
-    else {
-        // we cannot guarantee that cut is correct in exact algorithms, however, not all vertices can be on same side of cut
+    } else {
+        // we cannot guarantee that cut is correct in exact algorithms
+        // however, not all vertices can be on same side of cut
 
         ASSERT_LE(cut, (EdgeWeight)10);
         ASSERT_GE(cut, (EdgeWeight)3);
@@ -112,6 +120,7 @@ TYPED_TEST(SaveCutTest, WeightedGraph) {
 }
 
 TYPED_TEST(SaveCutTest, LargerGraph) {
+    configuration::getConfig()->save_cut = true;
     std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
     G->start_construction(200, 0);
 
@@ -120,8 +129,7 @@ TYPED_TEST(SaveCutTest, LargerGraph) {
             if (j == 0) {
                 if (i == 0) {
                     G->new_edge(0, 100);
-                }
-                else {
+                } else {
                     G->new_edge(100, 0);
                 }
             }
@@ -129,8 +137,7 @@ TYPED_TEST(SaveCutTest, LargerGraph) {
             if (j == 1) {
                 if (i == 0) {
                     G->new_edge(1, 101);
-                }
-                else {
+                } else {
                     G->new_edge(101, 1);
                 }
             }
@@ -148,7 +155,7 @@ TYPED_TEST(SaveCutTest, LargerGraph) {
 
     TypeParam mc;
 
-    EdgeWeight cut = mc.perform_minimum_cut(G, true);
+    EdgeWeight cut = mc.perform_minimum_cut(G);
 
     ASSERT_EQ(cut, 2);
 

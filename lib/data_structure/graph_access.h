@@ -189,7 +189,7 @@ template <typename T>
 class iterator {
  private:
     class iterator_base {
- public:      // NOLINT
+ public:  // NOLINT
         friend class iterator;
 
         T m_current;

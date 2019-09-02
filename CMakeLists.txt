@@ -103,7 +103,7 @@ set(SOURCE_FILES
         lib/tools/vector.h 
         lib/algorithms/misc/graph_algorithms.h)
 
-FIND_PACKAGE(OpenMP Required)
+FIND_PACKAGE(OpenMP REQUIRED)
 
 add_library(viecut ${SOURCE_FILES})
 

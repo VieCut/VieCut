@@ -58,7 +58,7 @@ include_directories(
 )
 
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -fopenmp")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -ltcmalloc -lgomp")
 set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -g -fno-omit-frame-pointer -DNDEBUG -pthread")
 
@@ -102,8 +102,6 @@ set(SOURCE_FILES
         lib/data_structure/flow_graph.h
         lib/tools/vector.h 
         lib/algorithms/misc/graph_algorithms.h)
-
-#FIND_PACKAGE(OpenMP REQUIRED)
 
 add_library(viecut ${SOURCE_FILES})
 

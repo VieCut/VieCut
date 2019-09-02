@@ -3,7 +3,7 @@
 import glob
 import subprocess
 
-for folder in ['app','lib','tests']:
+for folder in ['../app','../lib','../tests']:
     files = glob.glob(folder+'/**/*', recursive=True)
 
     for filename in files:

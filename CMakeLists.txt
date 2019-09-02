@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 project(vc)
 
 macro(bal_seq TARGETNAME)
     set (SEQ_NAME "${TARGETNAME}") 
     add_executable(${SEQ_NAME} app/${TARGETNAME}.cpp)
-    target_link_libraries(${SEQ_NAME} ${LIBS})
+    target_link_libraries(${SEQ_NAME} PUBLIC ${LIBS} OpenMP::OpenMP_CXX)
 endmacro(bal_seq)
 
 macro(bal_par TARGETNAME)
     set (PAR_NAME "${TARGETNAME}_parallel")
     add_executable(${PAR_NAME} app/${TARGETNAME}.cpp)
-    target_link_libraries(${PAR_NAME} ${LIBS})
+    target_link_libraries(${PAR_NAME} PUBLIC ${LIBS} OpenMP::OpenMP_CXX)
     target_compile_definitions(${PAR_NAME} PUBLIC -DPARALLEL)
 endmacro(bal_par)
 
@@ -103,13 +103,13 @@ set(SOURCE_FILES
         lib/tools/vector.h 
         lib/algorithms/misc/graph_algorithms.h)
 
-FIND_PACKAGE(OpenMP REQUIRED)
+FIND_PACKAGE(OpenMP)
 #include_directories(${OPENMP_INCLUDE_DIRS})
 
 add_library(viecut ${SOURCE_FILES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 set(EXTLIBS tlx)
 set(LIBS viecut ${EXTLIBS})
@@ -122,9 +122,9 @@ build_and_link(mincut)
 bal_seq(multiterminal_cut)
 bal_seq(largest_cc)
 
-target_link_libraries(mincut /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
-target_link_libraries(mincut_parallel /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
-target_link_libraries(multiterminal_cut /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
+target_link_libraries(mincut PUBLIC /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
+target_link_libraries(mincut_parallel PUBLIC /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
+target_link_libraries(multiterminal_cut PUBLIC /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
 
 if(RUN_TESTS)
     enable_testing()

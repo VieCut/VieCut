@@ -49,11 +49,12 @@ These algorithms significantly outperform the state of the art.
 
 ### Prerequisites
 
-In order to compile the code you need a version of the GCC that supports `c++-17`, such as `g++-7`, and `cmake`.
+In order to compile the code you need a version of the GCC that supports `c++-17`, such as `g++-7`, and `cmake`. 
+As we use TCMalloc to allocate and deallocate memory, you need to have `google-perftools` installed.
 If you haven't installed these dependencies, please do so via your package manager
 
 ```
-sudo apt install gcc-7 g++-7 cmake
+sudo apt install gcc-7 g++-7 cmake libgoogle-perftools-dev
 ```
 
 ### Compiling
@@ -77,7 +78,7 @@ All of our programs are compiled both for single threaded and shared-memory para
 
 ## `mincut`
 
-The main executable in our program is `mincut`.
+The main executable in our program is `mincut`. The shared-memory parallel executable using OpenMP is `mincut_parallel`
 This executable can be used to compute the minimum cut of a given graph with different algorithms.
 We use the [METIS graph format](http://people.sc.fsu.edu/~jburkardt/data/metis_graph/metis_graph.html) for all graphs.
 Run any minimum cut algorithm using the following command
@@ -93,19 +94,22 @@ For <algorithm> use one of the following:
 * `ks` - Algorithm of Karger and Stein [KS'96]
 * `matula` - Approximation Algorithm of Matula [Matula'93]
 * `pr` - Repeated application of Padberg-Rinaldi contraction rules [PR'91]
+* `cactus` - Find _all_ minimum cuts and give the cactus that represents them. [ongoing work]
 
 when parallelism is enabled, use one of the following:
 
 * `inexact` - shared-memory parallel version of `VieCut` [HNSS'18]
 * `exact` - exact shared-memory parallel minimum cut [HNS'19]
+* `cactus` - Find _all_ minimum cuts and give the cactus that represents them. [ongoing work]
 
 #### (Optional) Program Options:
 
 * `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19] for details)
 * `-i` - Number of iterations (default: 1)
 * `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19])
-* `-p` - Use `p` processors (multiple values possible)
+* `-p` - [Only for `mincut_parallel`] Use `p` processors (multiple values possible)
 * `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
+* `-b` - [Only for algorithm `cactus`, `-s` needs to be enabled as well] Find most balanced minimum cut and print its balance.
 
 The following command
 
@@ -117,6 +121,10 @@ runs algorithm `exact` using the `BQueue` priority queue implementation for 3 it
 For each of the runs we print running time and results, as well as a few informations about the graph and algorithm configuration.
 
 ## Other Executables
+
+### `multiterminal_cut`
+
+TODO!
 
 ### `kcore`
 

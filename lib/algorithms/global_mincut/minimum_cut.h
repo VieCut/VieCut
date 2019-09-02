@@ -20,7 +20,7 @@ class minimum_cut {
  public:
     virtual ~minimum_cut() { }
 
-    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>&) {
+    virtual EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access>) {
 #ifdef PARALLEL
         LOG1 << "Please select a parallel minimum cut"
              << " algorithm [inexact, exact, cactus]!";

@@ -15,8 +15,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-            - libtcmalloc-minimal4
-            - google-perftools
+            - libgoogle-perftools-dev
 
 # gcc 8.x, Debug
     - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && OMP_NUM_THREADS=4"
@@ -27,8 +26,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-8
-            - libtcmalloc-minimal4
-            - google-perftools
+            - libgoogle-perftools-dev
 
 # gcc 7.x, Release
     - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && OMP_NUM_THREADS=4"
@@ -39,8 +37,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-            - libtcmalloc-minimal4
-            - google-perftools
+            - libgoogle-perftools-dev
 
 # gcc 8.x, Release
     - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && OMP_NUM_THREADS=4"
@@ -51,8 +48,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-8
-            - libtcmalloc-minimal4
-            - google-perftools
+            - libgoogle-perftools-dev
 
 before_install:
     - eval "${MATRIX_EVAL}"

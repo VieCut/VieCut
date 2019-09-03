@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.9)
 project(vc)
 
+find_package(OpenMP REQUIRED)
+
 macro(bal_seq TARGETNAME)
     set (SEQ_NAME "${TARGETNAME}") 
     add_executable(${SEQ_NAME} app/${TARGETNAME}.cpp)
-    target_link_libraries(${SEQ_NAME} PUBLIC ${LIBS})
+    target_link_libraries(${SEQ_NAME} PUBLIC ${LIBS} OpenMP::OpenMP_CXX)
 endmacro(bal_seq)
 
 macro(bal_par TARGETNAME)
     set (PAR_NAME "${TARGETNAME}_parallel")
     add_executable(${PAR_NAME} app/${TARGETNAME}.cpp)
-    target_link_libraries(${PAR_NAME} PUBLIC ${LIBS})
+    target_link_libraries(${PAR_NAME} PUBLIC ${LIBS} OpenMP::OpenMP_CXX)
     target_compile_definitions(${PAR_NAME} PUBLIC -DPARALLEL)
 endmacro(bal_par)
 
@@ -59,7 +61,7 @@ include_directories(
 
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -fopenmp")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -ltcmalloc -lgomp")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -ltcmalloc")
 set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -g -fno-omit-frame-pointer -DNDEBUG -pthread")
 
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")

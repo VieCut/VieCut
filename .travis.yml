@@ -16,6 +16,7 @@ matrix:
           packages:
             - g++-7
             - libgoogle-perftools-dev
+            - libomp-dev
 
 # gcc 8.x, Debug
     - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && OMP_NUM_THREADS=4"
@@ -27,6 +28,31 @@ matrix:
           packages:
             - g++-8
             - libgoogle-perftools-dev
+            - libomp-dev
+
+# gcc 9.x, Debug
+    - env: CMAKE_CC="gcc-9" CMAKE_CXX="g++-9" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-9 && CXX=g++-9 && OMP_NUM_THREADS=4"
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+            - libgoogle-perftools-dev
+            - libomp-dev
+            
+# clang++-6, Debug
+    - env: CMAKE_CC="clang-6" CMAKE_CXX="clang++-6" BUILD_TYPE="Debug" MATRIX_EVAL="CC=clang-6 && CXX=clang++-6 && OMP_NUM_THREADS=4"
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-6.0
+            - libgoogle-perftools-dev
+            - libomp-dev
 
 # gcc 7.x, Release
     - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && OMP_NUM_THREADS=4"
@@ -38,6 +64,7 @@ matrix:
           packages:
             - g++-7
             - libgoogle-perftools-dev
+            - libomp-dev
 
 # gcc 8.x, Release
     - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && OMP_NUM_THREADS=4"
@@ -49,6 +76,31 @@ matrix:
           packages:
             - g++-8
             - libgoogle-perftools-dev
+            - libomp-dev
+
+# gcc 9.x, Release
+    - env: CMAKE_CC="gcc-9" CMAKE_CXX="g++-9" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-9 && CXX=g++-9 && OMP_NUM_THREADS=4"
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+            - libgoogle-perftools-dev
+            - libomp-dev
+
+# clang++-6, Release
+    - env: CMAKE_CC="clang-6" CMAKE_CXX="clang++-6" BUILD_TYPE="Release" MATRIX_EVAL="CC=clang-6 && CXX=clang++-6 && OMP_NUM_THREADS=4"
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-6.0
+            - libgoogle-perftools-dev
+            - libomp-dev
 
 before_install:
     - eval "${MATRIX_EVAL}"

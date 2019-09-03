@@ -27,7 +27,6 @@
 #include <memory>
 #include <sstream>
 
-// #include <malloc_extension>
 #include "algorithms/multicut/multicut_problem.h"
 #include "algorithms/multicut/multiterminal_cut.h"
 #include "data_structure/graph_access.h"

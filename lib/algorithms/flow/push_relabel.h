@@ -280,7 +280,7 @@ class push_relabel {
                                           NodeID curr_source,
                                           bool compute_source_set) {
         // this exists to be called by std::async.
-        // thus, parallel_flows is set to true   
+        // thus, parallel_flows is set to true
         auto source_set = solve_max_flow_min_cut(
             G, sources, curr_source, compute_source_set, true).second;
 

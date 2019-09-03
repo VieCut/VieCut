@@ -133,6 +133,8 @@ class minimum_cut_helpers {
                      std::vector<std::vector<NodeID> > > remap_cluster(
         std::shared_ptr<graph_access> G,
         const std::vector<NodeID>& cluster_id) {
+
+        std::vector<NodeID> mapping;
         std::vector<std::vector<NodeID> > reverse_mapping;
 
         PartitionID cur_no_clusters = 0;
@@ -148,13 +150,15 @@ class minimum_cut_helpers {
                 reverse_mapping.emplace_back();
             }
 
+            mapping.emplace_back(part[cur_cluster]);
+
             if (configuration::getConfig()->save_cut) {
                 G->setPartitionIndex(node, part[cur_cluster]);
             }
             reverse_mapping[part[cur_cluster]].push_back(node);
         }
 
-        return std::make_pair(part, reverse_mapping);
+        return std::make_pair(mapping, reverse_mapping);
     }
 
     static std::pair<std::vector<NodeID>, std::unordered_map<NodeID, NodeID> >

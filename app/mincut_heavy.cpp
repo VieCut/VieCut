@@ -67,10 +67,10 @@ int main(int argn, char** argv) {
 
     std::vector<int> numthreads;
 
+    timer t;
     std::shared_ptr<graph_access> G =
         graph_io::readGraphWeighted(configuration::getConfig()->graph_filename);
 
-    timer t;
     LOG << "io time: " << t.elapsed();
     t.restart();
 

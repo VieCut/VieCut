@@ -63,11 +63,10 @@ int main(int argn, char** argv) {
         return -1;
 
     std::vector<int> numthreads;
-
+    timer t;
     std::shared_ptr<graph_access> G =
         graph_io::readGraphWeighted(
             configuration::getConfig()->graph_filename);
-    timer t;
 
     if (G->getMinDegree() == 0) {
         LOG1 << "empty nodes are bad, exiting";

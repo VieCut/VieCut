@@ -60,7 +60,7 @@ class string {
     template <typename T>
     static typename std::enable_if<!std::is_integral<T>::value,
                                    std::string>::type
-    NonZeroVecToStr(const std::vector<T>& data) {
+    NonZeroVecToStr(const std::vector<T>&) {
         return "This method only works for integral types. Use VecToStr()";
     }
 

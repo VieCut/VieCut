@@ -266,7 +266,7 @@ class iterator {
             return *i;
         }
 
-        iterator_base& operator [] (size_t s) const {  // NOLINT
+        iterator_base& operator [] (size_t) const {  // NOLINT
             return m_current;
         }
     };

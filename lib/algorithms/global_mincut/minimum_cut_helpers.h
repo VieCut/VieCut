@@ -133,7 +133,6 @@ class minimum_cut_helpers {
                      std::vector<std::vector<NodeID> > > remap_cluster(
         std::shared_ptr<graph_access> G,
         const std::vector<NodeID>& cluster_id) {
-
         std::vector<NodeID> mapping;
         std::vector<std::vector<NodeID> > reverse_mapping;
 

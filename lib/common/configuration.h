@@ -29,6 +29,7 @@ class configuration {
     // don't change in program when not necessary
     std::string graph_filename;
     std::string partition_file = "";
+    std::string output_path = "";
     size_t seed = 0;
 
     // multiterminal cut parameters

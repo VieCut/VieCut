@@ -141,7 +141,7 @@ class cactus_mincut : public minimum_cut {
 
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut mbmc;
-            mbmc.findCutFromCactus(out_graph, mincut);
+            mbmc.findCutFromCactus(out_graph, mincut, G);
         }
 
         return std::make_pair(mincut, out_graph);

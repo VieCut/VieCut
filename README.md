@@ -8,7 +8,7 @@ This is the code repository to accompany our papers:
 
 *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
 
-*Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory BRanch and Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
+*Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
 
 The papers can be freely accessed online in the arXiv.
 

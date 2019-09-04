@@ -96,19 +96,19 @@ class cactus_mincut : public minimum_cut {
                 }
             }
 
-            auto newg = contraction::fromUnionFind(current_graph, uf);
+            auto newg = contraction::fromUnionFind(current_graph, &uf);
             if (newg->number_of_nodes() < current_graph->number_of_nodes())
                 graphs.emplace_back(newg);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
             union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
-            auto g12 = contraction::fromUnionFind(graphs.back(), uf12);
+            auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
             if (g12->number_of_nodes() < newg->number_of_nodes())
                 graphs.push_back(g12);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
             union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
-            auto g34 = contraction::fromUnionFind(graphs.back(), uf34);
+            auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
             if (g34->number_of_nodes() < g12->number_of_nodes())
                 graphs.push_back(g34);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);

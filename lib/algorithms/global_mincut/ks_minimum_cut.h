@@ -188,7 +188,7 @@ class ks_minimum_cut : public minimum_cut {
         // sample_contractible_weighted(G, currentN, uf, 0.4, iteration);
         LOG << "Contracted to " << uf.n();
 
-        std::shared_ptr<graph_access> G2 = contraction::fromUnionFind(G, uf);
+        std::shared_ptr<graph_access> G2 = contraction::fromUnionFind(G, &uf);
 
         graphs.push_back(G2);
         size_t current_position = graphs.size() - 1;

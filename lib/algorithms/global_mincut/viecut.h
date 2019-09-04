@@ -88,10 +88,10 @@ class viecut : public minimum_cut {
                          << " nodes): " << t.elapsedToZero();
 
             union_find uf = tests::prTests12(graphs.back(), cut);
-            graphs.push_back(contraction::fromUnionFind(graphs.back(), uf));
+            graphs.push_back(contraction::fromUnionFind(graphs.back(), &uf));
             cut = minimum_cut_helpers::updateCut(graphs, cut);
             union_find uf2 = tests::prTests34(graphs.back(), cut);
-            graphs.push_back(contraction::fromUnionFind(graphs.back(), uf2));
+            graphs.push_back(contraction::fromUnionFind(graphs.back(), &uf2));
             cut = minimum_cut_helpers::updateCut(graphs, cut);
             LOGC(timing) << "Padberg-Rinaldi Tests (to "
                          << graphs.back()->number_of_nodes()

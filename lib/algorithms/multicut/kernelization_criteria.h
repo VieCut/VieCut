@@ -45,19 +45,19 @@ class kernelization_criteria {
             num_vtcs = mcp->graph->n();
             if (contraction_type < 4) {
                 auto uf_lowdegree = lowDegreeContraction(mcp);
-                contractIfImproved(uf_lowdegree, mcp, "lowdeg", &active_next);
+                contractIfImproved(&uf_lowdegree, mcp, "lowdeg", &active_next);
             }
 
             if (contraction_type < 3) {
                 union_find uf_highdeg =
                     highDegreeContraction(mcp, active_current);
                 contractIfImproved(
-                    uf_highdeg, mcp, "high_degree", &active_next);
+                    &uf_highdeg, mcp, "high_degree", &active_next);
             }
 
             if (contraction_type < 2) {
                 auto uf_tri = triangleDetection(mcp, active_current);
-                contractIfImproved(uf_tri, mcp, "triangle", &active_next);
+                contractIfImproved(&uf_tri, mcp, "triangle", &active_next);
             }
 
             if (contraction_type < 1) {
@@ -68,7 +68,7 @@ class kernelization_criteria {
 
                 if (first_run) {
                     auto uf_noi = noi.modified_capforest(mcp, noi_limit);
-                    contractIfImproved(uf_noi, mcp, "noi", &active_next);
+                    contractIfImproved(&uf_noi, mcp, "noi", &active_next);
                 }
             }
 
@@ -79,24 +79,24 @@ class kernelization_criteria {
     }
 
  private:
-    void contractIfImproved(const union_find& uf,
+    void contractIfImproved(union_find* uf,
                             std::shared_ptr<multicut_problem> problem,
                             const std::string& str,
                             std::vector<bool>* active_vertices) {
         std::vector<bool>& active = *active_vertices;
 
-        if (uf.n() < problem->graph->number_of_nodes()) {
+        if (uf->n() < problem->graph->number_of_nodes()) {
             LOGC(logs) << str << " contracts "
-                       << problem->graph->n() << " to " << uf.n();
+                       << problem->graph->n() << " to " << uf->n();
 
-            std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
+            std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
             // code duplicated from contract graph
             // as we need access to vertex sets
             std::vector<NodeID> part(
                 problem->graph->number_of_nodes(), UNDEFINED_NODE);
             NodeID current_pid = 0;
             for (NodeID n : problem->graph->nodes()) {
-                NodeID part_id = uf.Find(n);
+                NodeID part_id = uf->Find(n);
                 if (part[part_id] == UNDEFINED_NODE) {
                     part[part_id] = current_pid++;
                 }

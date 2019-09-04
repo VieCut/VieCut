@@ -54,7 +54,7 @@ class matula_approx : public minimum_cut {
             noi_minimum_cut noi;
             auto uf = noi.modified_capforest(graphs.back(),
                                              std::max(mincut / 2, 1UL));
-            graphs.emplace_back(contraction::fromUnionFind(graphs.back(), uf));
+            graphs.emplace_back(contraction::fromUnionFind(graphs.back(), &uf));
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
         }
 

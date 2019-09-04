@@ -36,7 +36,7 @@ class test_wrapper {
         std::vector<std::shared_ptr<graph_access> > graphs, EdgeWeight mincut) {
         timer t;
         auto uf = tests::prTests12(graphs.back(), mincut);
-        auto G_out = contraction::fromUnionFind(graphs.back(), uf);
+        auto G_out = contraction::fromUnionFind(graphs.back(), &uf);
         mincut = minimum_cut_helpers::updateCut(graphs, mincut);
         LOGC(timing) << "Padberg-Rinaldi Tests 1-2 (to "
                      << G_out->number_of_nodes()
@@ -49,7 +49,7 @@ class test_wrapper {
         std::vector<std::shared_ptr<graph_access> > graphs, EdgeWeight mincut) {
         timer t;
         auto uf = tests::prTests34(graphs.back(), mincut);
-        auto G_out = contraction::fromUnionFind(graphs.back(), uf);
+        auto G_out = contraction::fromUnionFind(graphs.back(), &uf);
         mincut = minimum_cut_helpers::updateCut(graphs, mincut);
         LOGC(timing) << "Padberg-Rinaldi Tests 3-4 (to "
                      << G_out->number_of_nodes()

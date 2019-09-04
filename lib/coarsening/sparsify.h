@@ -41,7 +41,7 @@ class sparsify {
 
         LOG1 << "sample: " << t.elapsedToZero();
 
-        std::shared_ptr<graph_access> G2 = contraction::fromUnionFind(G_in, uf);
+        auto G2 = contraction::fromUnionFind(G_in, &uf);
 
         LOG1 << "contract: " << t.elapsedToZero();
 

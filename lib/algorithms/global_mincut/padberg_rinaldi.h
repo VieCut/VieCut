@@ -51,12 +51,12 @@ class padberg_rinaldi : public minimum_cut {
                && graphs.back()->number_of_nodes() < last_nodes) {
             last_nodes = graphs.back()->number_of_nodes();
             union_find uf_34 = tests::prTests34(graphs.back(), cut);
-            auto G_34 = contraction::fromUnionFind(graphs.back(), uf_34);
+            auto G_34 = contraction::fromUnionFind(graphs.back(), &uf_34);
             graphs.push_back(G_34);
             cut = minimum_cut_helpers::updateCut(graphs, cut);
 
             union_find uf_12 = tests::prTests12(graphs.back(), cut);
-            auto G_12 = contraction::fromUnionFind(graphs.back(), uf_12);
+            auto G_12 = contraction::fromUnionFind(graphs.back(), &uf_12);
             graphs.push_back(G_12);
             cut = minimum_cut_helpers::updateCut(graphs, cut);
         }

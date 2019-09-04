@@ -62,7 +62,7 @@ class contraction {
         union_find uf(G->number_of_nodes());
         uf.Union(src, tgt);
 
-        std::shared_ptr<graph_access> G_out = contraction::fromUnionFind(G, uf);
+        auto G_out = contraction::fromUnionFind(G, &uf);
         std::vector<NodeID> terminals_out;
         for (NodeID t : terminals) {
             terminals_out.emplace_back(G->getPartitionIndex(t));
@@ -178,14 +178,14 @@ class contraction {
 
     static std::shared_ptr<mutable_graph> fromUnionFind(
         std::shared_ptr<mutable_graph> G,
-        const union_find& uf) {
-        std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
+        union_find* uf) {
+        std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
 
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
 
         for (NodeID n : G->nodes()) {
-            NodeID part_id = uf.Find(n);
+            NodeID part_id = uf->Find(n);
 
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
@@ -215,15 +215,15 @@ class contraction {
 
     static std::shared_ptr<graph_access> fromUnionFind(
         std::shared_ptr<graph_access> G,
-        const union_find& uf) {
-        std::vector<std::vector<NodeID> > reverse_mapping(uf.n());
+        union_find* uf) {
+        std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
 
         std::vector<NodeID> mapping(G->number_of_nodes());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
 
         for (NodeID n : G->nodes()) {
-            NodeID part_id = uf.Find(n);
+            NodeID part_id = uf->Find(n);
 
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;

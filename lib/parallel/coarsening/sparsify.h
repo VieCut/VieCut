@@ -33,13 +33,13 @@ class sparsify {
     }
 
     auto createMappings(std::shared_ptr<graph_access> G,
-                        const union_find& uf) {
+                        union_find* uf) {
         timer t;
         std::vector<NodeID> mapping(G->number_of_nodes());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
         for (size_t n = 0; n < G->number_of_nodes(); ++n) {
-            NodeID part_id = uf.Find(n);
+            NodeID part_id = uf->Find(n);
 
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
@@ -271,7 +271,7 @@ class sparsify {
 
         LOG1 << "t " << t.elapsed() << " sample";
 
-        auto [map, rev_map] = createMappings(G_in, uf);
+        auto [map, rev_map] = createMappings(G_in, &uf);
 
         std::shared_ptr<graph_access> G2 =
             contraction::contractGraph(G_in, map, rev_map);

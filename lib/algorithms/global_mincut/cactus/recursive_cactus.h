@@ -624,7 +624,7 @@ class recursive_cactus {
             }
         }
 
-        contraction::fromUnionFind(contract, uf);
+        contraction::fromUnionFind(contract, &uf);
 
         auto stcactus = std::make_shared<mutable_graph>();
 

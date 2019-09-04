@@ -73,14 +73,6 @@ class union_find {
         }
     }
 
-    inline unsigned Find(unsigned element) const {
-        while (m_parent[element] != element) {
-            unsigned next = m_parent[element];
-            element = m_parent[next];
-        }
-        return element;
-    }
-
     inline unsigned Find(unsigned element) {
         while (m_parent[element] != element) {
             unsigned next = m_parent[element];
@@ -92,7 +84,7 @@ class union_find {
         return element;
     }
 
-    inline unsigned n() const {
+    inline unsigned n() {
         std::vector<bool> found(m_parent.size(), false);
         unsigned n = 0;
         for (auto& e : m_parent) {

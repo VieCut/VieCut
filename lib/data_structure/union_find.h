@@ -51,14 +51,6 @@ class union_find {
         return element;
     }
 
-    inline unsigned Find(unsigned element) const {
-        if (m_parent[element] != element) {
-            unsigned retValue = Find(m_parent[element]);
-            return retValue;
-        }
-        return element;
-    }
-
     // Returns:
     //   The total number of sets.
     inline unsigned n() const

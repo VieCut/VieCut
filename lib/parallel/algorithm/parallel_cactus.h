@@ -132,12 +132,12 @@ class parallel_cactus : public minimum_cut {
             LOG << "t " << t.elapsed() << " contract "
                 << graphs.back()->number_of_nodes() << " to " << uf.n();
 
-            graphs.push_back(contraction::fromUnionFind(curr_g, uf));
+            graphs.push_back(contraction::fromUnionFind(curr_g, &uf));
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
             union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
 
-            auto g12 = contraction::fromUnionFind(graphs.back(), uf12);
+            auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
             LOG << "t12 " << t.elapsed() << " contract "
                 << graphs.back()->number_of_nodes() << " to " << uf12.n();
             if (g12->number_of_nodes() < graphs.back()->number_of_nodes())
@@ -145,7 +145,7 @@ class parallel_cactus : public minimum_cut {
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
             union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
-            auto g34 = contraction::fromUnionFind(graphs.back(), uf34);
+            auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
             LOG << "t34 " << t.elapsed() << " contract "
                 << graphs.back()->number_of_nodes() << " to " << uf34.n();
             if (g34->number_of_nodes() < g12->number_of_nodes())

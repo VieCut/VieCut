@@ -180,14 +180,14 @@ class contraction {
 
     static std::shared_ptr<mutable_graph> fromUnionFind(
         std::shared_ptr<mutable_graph> G,
-        const union_find& uf) {
-        std::vector<std::vector<NodeID> > rev_mapping(uf.n());
+        union_find* uf) {
+        std::vector<std::vector<NodeID> > rev_mapping(uf->n());
 
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
 
         for (NodeID n : G->nodes()) {
-            NodeID part_id = uf.Find(n);
+            NodeID part_id = uf->Find(n);
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
             }
@@ -209,14 +209,14 @@ class contraction {
 
     static std::shared_ptr<graph_access> fromUnionFind(
         std::shared_ptr<graph_access> G,
-        const union_find& uf) {
+        union_find* uf) {
         std::vector<std::vector<NodeID> > rev_mapping;
 
         std::vector<NodeID> mapping(G->number_of_nodes());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
         for (NodeID n : G->nodes()) {
-            NodeID part_id = uf.Find(n);
+            NodeID part_id = uf->Find(n);
 
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
@@ -229,7 +229,6 @@ class contraction {
             }
             rev_mapping[part[part_id]].push_back(n);
         }
-
         return contractGraph(G, mapping, rev_mapping.size());
     }
 

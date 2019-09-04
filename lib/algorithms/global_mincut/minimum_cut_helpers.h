@@ -187,7 +187,7 @@ class minimum_cut_helpers {
 
                 NodeID neighbour = e.second;
 
-                for (size_t j = current_id; j < graphs.size() - 1; ++j) {
+                for (size_t j = current_id; j < graphs.size(); ++j) {
                     neighbour = graphs[j]->getPartitionIndex(neighbour);
                     if (neighbour == UNDEFINED_NODE) {
                         NodeID deleted_id = n0 * j + neighbour;

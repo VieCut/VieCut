@@ -128,7 +128,7 @@ when parallelism is enabled, use one of the following:
 The following command
 
 ```
-./build/mincut -q bqueue -i 3 -p 2 -p 12 /path/to/my/graph.metis exact
+./build/mincut_parallel -q bqueue -i 3 -p 2 -p 12 /path/to/my/graph.metis exact
 ```
 
 runs algorithm `exact` using the `BQueue` priority queue implementation for 3 iterations both with 2 and 12 processors.

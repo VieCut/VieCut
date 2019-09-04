@@ -58,6 +58,8 @@ int main(int argn, char** argv) {
                     "sampling variant for pre-run of viecut");
     cmdl.add_flag('b', "balanced", cfg->find_most_balanced_cut,
                   "find most balanced minimum cut");
+    cmdl.add_string('o', "output_path", cfg->output_path,
+                    "print minimum cut to file");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -112,8 +114,13 @@ int main(int argn, char** argv) {
             EdgeWeight cut;
             cut = mc->perform_minimum_cut(G);
 
-            if (cfg->save_cut && false) {
-                graph_io::writeCut(G, cfg->graph_filename + ".cut");
+            if (cfg->output_path != "") {
+                if (!cfg->save_cut) {
+                    LOG1 << "Please enable -s to save cut. "
+                         << "Otherwise it cannot be printed";
+                    exit(1);
+                }
+                graph_io::writeCut(G, cfg->output_path);
             }
 
             std::string graphname = string::basename(cfg->graph_filename);

@@ -122,6 +122,7 @@ when parallelism is enabled, use one of the following:
 * `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19a])
 * `-p` - [Only for `mincut_parallel`] Use `p` processors (multiple values possible)
 * `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
+* `-o` - [`-s` needs to be enabled as well] Path of output file. If this is set, we print the minimum cut to file.
 * `-b` - [Only for algorithm `cactus`, `-s` needs to be enabled as well] Find most balanced minimum cut and print its balance.
 
 The following command

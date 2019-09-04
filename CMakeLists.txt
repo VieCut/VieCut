@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.9)
 project(vc)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
+find_package(Tcmalloc REQUIRED)
 find_package(OpenMP REQUIRED)
 
 macro(bal_seq TARGETNAME)
@@ -26,19 +29,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-
 add_definitions("-DVIECUT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
-
-INCLUDE(CheckCXXCompilerFlag)
-
-check_cxx_compiler_flag("-std=c++17" HAS_MODERN_COMPILER)
-MESSAGE(Status: " Compiler supports c++17: " ${HAS_MODERN_COMPILER})
-
-IF (HAS_MODERN_COMPILER)
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++17)
-ELSE (HAS_MODERN_COMPILER)
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++14)
-ENDIF (HAS_MODERN_COMPILER)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 OPTION(RUN_TESTS "Compile and run tests" ON)
 
@@ -59,12 +51,13 @@ include_directories(
     extlib/tlx
 )
 
-
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -fopenmp")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -ltcmalloc")
-set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -g -fno-omit-frame-pointer -DNDEBUG -pthread")
-
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
+set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -g -DNDEBUG")
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
+
+#TCMalloc
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 
 set(SOURCE_FILES
         lib/algorithms/global_mincut/algorithms.h
@@ -103,12 +96,14 @@ set(SOURCE_FILES
         lib/algorithms/flow/push_relabel.h
         lib/data_structure/flow_graph.h
         lib/tools/vector.h 
-        lib/algorithms/misc/graph_algorithms.h)
+        lib/algorithms/misc/graph_algorithms.h
+
+        )
 
 add_library(viecut ${SOURCE_FILES})
 
 set(EXTLIBS tlx)
-set(LIBS viecut ${EXTLIBS})
+set(LIBS viecut ${EXTLIBS} ${Tcmalloc_LIBRARIES})
 
 build_and_link(kcore)
 build_and_link(mincut_contract)
@@ -118,9 +113,12 @@ build_and_link(mincut)
 bal_seq(multiterminal_cut)
 bal_seq(largest_cc)
 
-target_link_libraries(mincut PUBLIC /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
-target_link_libraries(mincut_parallel PUBLIC /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
-target_link_libraries(multiterminal_cut PUBLIC /usr/lib/x86_64-linux-gnu/libtcmalloc_and_profiler.so)
+target_link_libraries(mincut PUBLIC ${Tcmalloc_LIBRARIES})
+target_link_libraries(mincut_parallel PUBLIC ${Tcmalloc_LIBRARIES})
+target_link_libraries(multiterminal_cut PUBLIC ${Tcmalloc_LIBRARIES})
+
+message(STATUS "CXX Flags ${CMAKE_CXX_FLAGS}")
+message(STATUS "Linker flags ${CMAKE_EXE_LINKER_FLAGS}")
 
 if(RUN_TESTS)
     enable_testing()

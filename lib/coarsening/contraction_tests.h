@@ -107,7 +107,7 @@ class tests {
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
-        std::vector<EdgeID> marked(G->number_of_nodes(), false);
+        std::vector<EdgeID> marked(G->number_of_nodes(), UNDEFINED_EDGE);
         std::vector<bool> finished(G->number_of_nodes(), false);
         std::vector<bool> contracted(G->number_of_nodes(), false);
 
@@ -127,16 +127,22 @@ class tests {
             for (EdgeID e1 : G->edges_of(n)) {
                 NodeID tgt = G->getEdgeTarget(e1);
                 EdgeWeight deg_tgt = G->getWeightedNodeDegree(tgt);
-                if (finished[tgt])
+                if (finished[tgt]) {
+                    marked[tgt] = UNDEFINED_EDGE;
                     continue;
+                }
 
                 finished[tgt] = true;
                 EdgeWeight wgt_sum = G->getEdgeWeight(e1);
                 if (tgt > n) {
                     for (EdgeID e2 : G->edges_of(tgt)) {
                         NodeID tgt2 = G->getEdgeTarget(e2);
-                        if (!marked[tgt2])
+                        if (marked[tgt2] == UNDEFINED_EDGE)
                             continue;
+
+                        if (marked[tgt2] >= G->get_first_invalid_edge(n) || marked[tgt2] < G->get_first_edge(n)) {
+                            continue;
+                        }
 
                         EdgeWeight w1 = G->getEdgeWeight(e1);
                         EdgeWeight w2 = G->getEdgeWeight(e2);
@@ -172,7 +178,7 @@ class tests {
                         contracted[n] = true;
                         contracted[tgt] = true;
                     }
-                    marked[tgt] = 0;
+                    marked[tgt] = UNDEFINED_EDGE;
                 }
             }
         }

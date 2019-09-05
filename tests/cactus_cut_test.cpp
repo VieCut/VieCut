@@ -481,6 +481,10 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
         cactus_mincut mc;
 #endif
 
+        std::string outfile = std::string(VIECUT_PATH) + "/build/tests/tempcut";
+        configuration::getConfig()->output_path = outfile;
+        configuration::getConfig()->save_cut = true;
+        configuration::getConfig()->find_most_balanced_cut = true;
         auto [cut, mg] = mc.findAllMincuts(G);
         ASSERT_EQ(cut, 4);
         ASSERT_EQ(mg->number_of_nodes(), 21);
@@ -492,5 +496,44 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
             sizes[mg->containedVertices(n).size()]++;
         }
         ASSERT_EQ(sizes, desired_sizes);
+
+        auto solution_vec = graph_io::readVector<size_t>(outfile);
+
+        // four possible most balanced mincuts
+        std::vector<size_t> vec_to_compare1 = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+                                                1, 1, 1, 1, 1, 1, 1, 1, 1 };
+        std::vector<size_t> vec_to_compare2 = { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+                                                0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        std::vector<size_t> vec_to_compare3 = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                0, 1, 1, 1, 1, 1, 1, 1, 1 };
+        std::vector<size_t> vec_to_compare4 = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                1, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        size_t vec1 = 0;
+        size_t vec2 = 0;
+        size_t vec3 = 0;
+        size_t vec4 = 0;
+
+        for (size_t i = 0; i < solution_vec.size(); ++i) {
+            if (solution_vec[i] == vec_to_compare1[i]) {
+                vec1++;
+            }
+
+            if (solution_vec[i] == vec_to_compare2[i]) {
+                vec2++;
+            }
+
+            if (solution_vec[i] == vec_to_compare3[i]) {
+                vec3++;
+            }
+
+            if (solution_vec[i] == vec_to_compare4[i]) {
+                vec4++;
+            }
+        }
+
+        graph_io::writeGraphWeighted(G, "testgraph");
+
+        ASSERT_EQ(19, std::max({ vec1, vec2, vec3, vec4 }));
     }
 }

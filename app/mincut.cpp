@@ -120,7 +120,10 @@ int main(int argn, char** argv) {
                          << "Otherwise it cannot be printed";
                     exit(1);
                 }
-                graph_io::writeCut(G, cfg->output_path);
+                if (cfg->find_most_balanced_cut == false) {
+                    // most balanced cut already prints inside of algorithm
+                    graph_io::writeCut(G, cfg->output_path);
+                }
             }
 
             std::string graphname = string::basename(cfg->graph_filename);

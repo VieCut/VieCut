@@ -18,6 +18,7 @@
 #include "algorithms/global_mincut/cactus/balanced_cut_dfs.h"
 #include "common/configuration.h"
 #include "data_structure/mutable_graph.h"
+#include "io/graph_io.h"
 
 class most_balanced_minimum_cut {
  public:
@@ -75,6 +76,9 @@ class most_balanced_minimum_cut {
                     }
                 }
             }
+
+            graph_io::writeCut(original_graph,
+                               configuration::getConfig()->output_path);
         }
     }
 };

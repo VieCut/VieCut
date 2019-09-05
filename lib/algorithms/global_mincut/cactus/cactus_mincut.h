@@ -75,7 +75,7 @@ class cactus_mincut : public minimum_cut {
             guaranteed_edges.emplace_back();
 
             LOG1 << "t " << t.elapsed()
-                 << " n " << graphs.back()->number_of_nodes()
+                 << " n " << current_graph->number_of_nodes()
                  << " m " << current_graph->number_of_edges()
                  << " cut " << mincut;
 

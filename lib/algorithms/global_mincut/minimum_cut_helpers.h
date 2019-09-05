@@ -186,20 +186,22 @@ class minimum_cut_helpers {
                 deleted_vertex_mappings[vertex_id] = new_node;
 
                 NodeID neighbour = e.second;
+                bool found_undefined = false;
 
-                for (size_t j = current_id; j < graphs.size(); ++j) {
-                    neighbour = graphs[j]->getPartitionIndex(neighbour);
-                    if (neighbour == UNDEFINED_NODE) {
+                for (size_t j = current_id; j < graphs.size() - 1; ++j) {
+                    if (graphs[j]->getPartitionIndex(neighbour)
+                        == UNDEFINED_NODE) {
                         NodeID deleted_id = n0 * j + neighbour;
                         neighbour = deleted_vertex_mappings[deleted_id];
+                        found_undefined = true;
                         break;
                     }
+                    neighbour = graphs[j]->getPartitionIndex(neighbour);
                 }
 
+                if (!found_undefined)
+                    neighbour = out_graph->getCurrentPosition(neighbour);
                 out_graph->new_edge_order(new_node, neighbour, global_mincut);
-                for (NodeID n : out_graph->containedVertices(neighbour)) {
-                    out_graph->setCurrentPosition(n, UNDEFINED_NODE);
-                }
             }
         }
         return std::make_pair(out_graph_mapping, deleted_vertex_mappings);

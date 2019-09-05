@@ -33,7 +33,9 @@ int main(int argn, char** argv) {
 
     tlx::CmdlineParser cmdl;
     std::string path;
+    bool weighted = false;
     cmdl.add_param_string("graph", path, "path to graph file");
+    cmdl.add_flag('w', "weighted", weighted, "weighted graph");
     configuration::getConfig()->graph_filename = path;
 
     if (!cmdl.process(argn, argv))
@@ -45,5 +47,9 @@ int main(int argn, char** argv) {
     strongly_connected_components scc;
 
     auto out = scc.largest_scc(G);
-    graph_io::writeGraph(out, tlx::split(".", path)[0] + ".cc");
+    if (weighted) {
+        graph_io::writeGraphWeighted(out, tlx::split(".", path)[0] + ".cc");
+    } else {
+        graph_io::writeGraph(out, tlx::split(".", path)[0] + ".cc");
+    }
 }

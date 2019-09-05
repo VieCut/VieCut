@@ -45,5 +45,7 @@ build_and_test(multiterminal_cut_test FALSE)
 build_and_test(cactus_cut_test FALSE)
 build_and_test(cactus_cut_test TRUE)
 
+find_package(Tcmalloc REQUIRED)
 target_link_libraries(multiterminal_cut_test -lpthread)
-target_link_libraries(multiterminal_cut_test /usr/lib/x86_64-linux-gnu/libtcmalloc.so)
+target_link_libraries(multiterminal_cut_test ${Tcmalloc_LIBRARIES})
+

@@ -140,7 +140,8 @@ class tests {
                         if (marked[tgt2] == UNDEFINED_EDGE)
                             continue;
 
-                        if (marked[tgt2] >= G->get_first_invalid_edge(n) || marked[tgt2] < G->get_first_edge(n)) {
+                        if (marked[tgt2] >= G->get_first_invalid_edge(n)
+                            || marked[tgt2] < G->get_first_edge(n)) {
                             continue;
                         }
 

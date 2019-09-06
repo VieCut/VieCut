@@ -154,6 +154,7 @@ build_and_link(mincut_recursive)
 build_and_link(mincut)
 bal_seq(multiterminal_cut)
 bal_seq(largest_cc)
+bal_seq(make_graph_weighted)
 
 message(STATUS "CXX Flags ${CMAKE_CXX_FLAGS}")
 message(STATUS "Linker flags ${CMAKE_EXE_LINKER_FLAGS}")

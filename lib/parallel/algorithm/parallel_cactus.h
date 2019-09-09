@@ -37,6 +37,7 @@
 #include "tools/timer.h"
 
 #ifdef PARALLEL
+#include "parallel/algorithm/exact_parallel_minimum_cut.h"
 #include "parallel/coarsening/contract_graph.h"
 #include "parallel/coarsening/contraction_tests.h"
 #include "parallel/coarsening/sparsify.h"

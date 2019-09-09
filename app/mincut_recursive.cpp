@@ -59,9 +59,7 @@ int main(int argn, char** argv) {
 #endif
     LOG1 << "io time: " << t.elapsed();
 
-    EdgeWeight minimum_degree = G->getMinDegree();
     EdgeWeight cut = 0;
-    EdgeWeight last_cut = 0;
     timer t_this;
     size_t ct = 0;
 
@@ -86,20 +84,6 @@ int main(int argn, char** argv) {
             }
         }
 
-        EdgeID internal_edges = 0;
-        for (NodeID n : G->nodes()) {
-            bool found_one = false;
-            for (EdgeID e : G->edges_of(n)) {
-                NodeID tgt = G->getEdgeTarget(e);
-
-                if (G->getPartitionIndex(n) == largest_id
-                    && G->getPartitionIndex(tgt) == largest_id) {
-                    internal_edges++;
-                    found_one = true;
-                }
-            }
-        }
-
         cut = current_cut;
 
         graph_extractor ge;
@@ -112,10 +96,8 @@ int main(int argn, char** argv) {
             graph_io::writeGraphWeighted(G, name);
         }
 
-        LOG1 << "New graph: (" << G->number_of_nodes()
-             << ";" << G->number_of_edges() << ") "
-             << cut << " < " << G->getMinDegree();
-
-        last_cut = cut;
+        LOG << "New graph: (" << G->number_of_nodes()
+            << ";" << G->number_of_edges() << ") "
+            << cut << " < " << G->getMinDegree();
     }
 }

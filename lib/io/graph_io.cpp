@@ -193,7 +193,8 @@ std::shared_ptr<graph_access> graph_io::readGraphWeighted(std::string file) {
     if (edge_counter != (EdgeID)nmbEdges) {
         std::cerr << "number of specified edges mismatch" << std::endl;
         std::cerr << edge_counter << " " << nmbEdges << std::endl;
-        exit(3);
+        // As we discard self-loops, this might happen. Thus, no exiting!
+        // Node counter not matching is however probably a problem with G.
     }
 
     if (node_counter != (NodeID)nmbNodes) {

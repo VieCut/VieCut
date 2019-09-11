@@ -22,16 +22,16 @@
 #include <vector>
 
 #include "algorithms/flow/push_relabel.h"
+#include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/misc/graph_algorithms.h"
 #include "algorithms/misc/strongly_connected_components.h"
+#include "algorithms/multicut/multicut_problem.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
 #include "data_structure/priority_queues/node_bucket_pq.h"
 #include "tlx/logger.hpp"
 #include "tools/string.h"
-#include "algorithms/global_mincut/noi_minimum_cut.h"
-#include "algorithms/multicut/multicut_problem.h"
 
 #ifdef PARALLEL
 #include "parallel/coarsening/contract_graph.h"
@@ -40,7 +40,6 @@
 #include "coarsening/contract_graph.h"
 #include "data_structure/union_find.h"
 #endif
-
 
 class recursive_cactus {
  public:
@@ -269,14 +268,14 @@ class recursive_cactus {
         }
 
         // inside block to free all memory afterwards
-        {   
+        {
             // create empty multicut problem to be able to run mod_capforest
-            
+
             multicut_problem mcp(G);
             auto problem = std::make_shared<multicut_problem>(mcp);
             noi_minimum_cut noi;
-            auto uf = noi.modified_capforest(problem, mincut+1);
-            
+            auto uf = noi.modified_capforest(problem, mincut + 1);
+
             if (uf.n() < G->n()) {
                 G = contraction::fromUnionFind(G, &uf);
             }

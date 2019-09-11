@@ -163,9 +163,11 @@ class parallel_cactus : public minimum_cut {
         }
 
         // check whether there is a small cut hidden in graphs.back()
-        if (graphs.back()->number_of_nodes() > 1)
+        if (graphs.back()->number_of_nodes() > 1) {
+            LOG1 << "Searching for minimum cut in remaining graph...";
             mincut = std::min(mincut,
                               epmc.perform_minimum_cut(graphs.back(), true));
+        }
 
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);

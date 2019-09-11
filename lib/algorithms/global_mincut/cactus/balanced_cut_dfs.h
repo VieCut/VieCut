@@ -39,7 +39,7 @@ class balanced_cut_dfs {
         processVertex(start_vertex);
 
         LOG1 << "Most balanced cut has weight "
-             << best_weight << "on lighter side!";
+             << best_weight << " on lighter side!";
 
         // Return cut edge(s) for most balanced mincut.
         // If most balanced mincut is on a cycle, we return both edges.

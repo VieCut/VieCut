@@ -67,6 +67,7 @@ class parallel_cactus : public minimum_cut {
 
     std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
         std::shared_ptr<graph_access> G) {
+        configuration::getConfig()->blacklist = false;
         std::vector<std::shared_ptr<graph_access> > graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();

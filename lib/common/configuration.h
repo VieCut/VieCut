@@ -56,6 +56,7 @@ class configuration {
     bool disable_limiting = false;
     double contraction_factor = 0.0;
     bool find_most_balanced_cut = false;
+    bool blacklist = true;
 
     // karger-stein:
     size_t optimal = 0;

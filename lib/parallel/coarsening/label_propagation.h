@@ -32,7 +32,7 @@
 
 class label_propagation {
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
+    bool timing = configuration::getConfig()->verbose;
 
  public:
     label_propagation() { }

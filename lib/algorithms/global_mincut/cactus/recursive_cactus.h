@@ -48,7 +48,7 @@ class recursive_cactus {
     ~recursive_cactus() { }
 
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
+    bool timing = configuration::getConfig()->verbose;
 
     void setMincut(EdgeWeight mc) {
         mincut = mc;
@@ -258,7 +258,8 @@ class recursive_cactus {
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
         if (depth % 100 == 0) {
-            LOG1 << "G n " << G->n() << " m " << G->m() << " depth " << depth;
+            LOGC(configuration::getConfig()->verbose)
+                << "G n " << G->n() << " m " << G->m() << " depth " << depth;
         }
 
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;

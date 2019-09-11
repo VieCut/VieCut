@@ -34,23 +34,21 @@ class balanced_cut_dfs {
           outgoing_cycles(G->n()) { }
 
     std::tuple<NodeID, EdgeID, NodeID, EdgeID> runDFS() {
-        LOG << G;
         start_vertex = random_functions::nextInt(0, G->n() - 1);
 
         processVertex(start_vertex);
 
         LOG1 << "Most balanced cut has weight "
-             << best_weight << " and heavier has weight "
-             << G->getOriginalNodes() - best_weight;
+             << best_weight << "on lighter side!";
 
         // Return cut edge(s) for most balanced mincut.
         // If most balanced mincut is on a cycle, we return both edges.
         // If it is a tree edge, we return it twice (simpler handling outside)
-        LOG1 << "n " << best_n << " with edge " << best_e
-             << " to " << G->getEdgeTarget(best_n, best_e);
+        LOG << "n " << best_n << " with edge " << best_e
+            << " to " << G->getEdgeTarget(best_n, best_e);
         if (best_in_cycle) {
-            LOG1 << "n " << best_n2 << " with edge " << best_e2
-                 << " to " << G->getEdgeTarget(best_n2, best_e2);
+            LOG << "n " << best_n2 << " with edge " << best_e2
+                << " to " << G->getEdgeTarget(best_n2, best_e2);
             return std::make_tuple(best_n, best_e, best_n2, best_e2);
         } else {
             return std::make_tuple(best_n, best_e, best_n, best_e);

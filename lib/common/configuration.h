@@ -31,6 +31,7 @@ class configuration {
     std::string partition_file = "";
     std::string output_path = "";
     size_t seed = 0;
+    bool verbose = false;
 
     // multiterminal cut parameters
     std::string edge_selection = "heavy_vertex";

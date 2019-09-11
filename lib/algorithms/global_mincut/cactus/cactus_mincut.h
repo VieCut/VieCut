@@ -43,6 +43,8 @@ class cactus_mincut : public minimum_cut {
     virtual ~cactus_mincut() { }
     static constexpr bool debug = false;
 
+    bool timing = configuration::getConfig()->verbose;
+
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
@@ -74,10 +76,10 @@ class cactus_mincut : public minimum_cut {
             ge_ids.emplace_back(graphs.size() - 1);
             guaranteed_edges.emplace_back();
 
-            LOG1 << "t " << t.elapsed()
-                 << " n " << current_graph->number_of_nodes()
-                 << " m " << current_graph->number_of_edges()
-                 << " cut " << mincut;
+            LOGC(timing) << "t " << t.elapsed()
+                         << " n " << current_graph->number_of_nodes()
+                         << " m " << current_graph->number_of_edges()
+                         << " cut " << mincut;
 
             std::vector<std::pair<NodeID, NodeID> > contractable;
 
@@ -137,7 +139,8 @@ class cactus_mincut : public minimum_cut {
                 out_graph, graphs, out_graph_mapping, deleted_vertex_mappings);
         }
 
-        LOG1 << "unpacked - n " << out_graph->n() << " m " << out_graph->m();
+        LOGC(timing)
+            << "unpacked - n " << out_graph->n() << " m " << out_graph->m();
 
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut mbmc;

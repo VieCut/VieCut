@@ -51,7 +51,7 @@ int main(int argn, char** argv) {
     cmdl.add_bool('l', "disable_limiting", cfg->disable_limiting,
                   "disable limiting of PQ values");
     cmdl.add_bool('s', "save_cut", cfg->save_cut,
-                  "compute and store minimum cut");
+                  "find which vertices are on which side of minimum cut");
     cmdl.add_double('c', "contraction_factor", cfg->contraction_factor,
                     "contraction factor for pre-run of viecut");
     cmdl.add_string('k', "sampling_type", cfg->sampling_type,
@@ -60,6 +60,7 @@ int main(int argn, char** argv) {
                   "find most balanced minimum cut");
     cmdl.add_string('o', "output_path", cfg->output_path,
                     "print minimum cut to file");
+    cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
 
     if (!cmdl.process(argn, argv))
         return -1;

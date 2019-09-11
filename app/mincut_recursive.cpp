@@ -33,13 +33,13 @@
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {
-    static constexpr bool debug = true;
     timer t;
     tlx::CmdlineParser cmdl;
     auto cfg = configuration::getConfig();
     bool output = false;
     cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
     cmdl.add_bool('o', "output", output, "Write intermediate graphs to disk");
+    cmdl.add_flag('v', "verbose", cfg->verbose, "Verbose output.");
     cfg->find_most_balanced_cut = true;
     cfg->save_cut = true;
 
@@ -85,10 +85,8 @@ int main(int argn, char** argv) {
         }
 
         cut = current_cut;
-
         graph_extractor ge;
         strongly_connected_components scc;
-
         G = scc.largest_scc(ge.extract_block(G, largest_id).first);
 
         if (output) {
@@ -96,8 +94,9 @@ int main(int argn, char** argv) {
             graph_io::writeGraphWeighted(G, name);
         }
 
-        LOG << "New graph: (" << G->number_of_nodes()
-            << ";" << G->number_of_edges() << ") "
-            << cut << " < " << G->getMinDegree();
+        LOG1 << "Minimum cut " << cut;
+        LOG1 << "-------------------------------";
+        LOG1 << "Next graph: G=(" << G->number_of_nodes()
+             << "," << G->number_of_edges() << ")";
     }
 }

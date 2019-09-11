@@ -282,7 +282,7 @@ class recursive_cactus {
             }
         }
 
-        if (G->number_of_nodes() == 1) {
+        if (G->number_of_nodes() == 1 || G->number_of_edges() == 0) {
             reInsertVertices(G, cactusEdge);
             return G;
         }

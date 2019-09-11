@@ -30,6 +30,12 @@ class most_balanced_minimum_cut {
                  << "when save_cut is not set";
             exit(1);
         }
+
+        if (mincut == 0) {
+            LOG1 << "G has multiple connected components and mincut is 0.";
+            return;
+        }
+
         balanced_cut_dfs dfs(G, mincut);
         auto [n1, e1, n2, e2] = dfs.runDFS();
 

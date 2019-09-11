@@ -198,6 +198,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
             fifo_node_bucket_pq pq(G->number_of_nodes(), mincut + 1);
             std::vector<bool> blacklisted(G->number_of_nodes(), false);
             std::vector<NodeID> r_v(G->number_of_nodes(), 0);
+            std::vector<bool> local_visited(G->number_of_nodes(), false);
 
             NodeID starting_node = start_nodes[i];
             NodeID current_node = starting_node;
@@ -210,12 +211,15 @@ class exact_parallel_minimum_cut : public minimum_cut {
             while (!pq.empty()) {
                 current_node = pq.deleteMax();
 
-                blacklisted[current_node] = true;
-                if (visited[current_node]) {
-                    continue;
-                } else {
-                    visited[current_node] = true;
+                if (configuration::getConfig()->blacklist) {
+                    blacklisted[current_node] = true;
+                    if (visited[current_node]) {
+                        continue;
+                    } else {
+                        visited[current_node] = true;
+                    }
                 }
+                local_visited[current_node] = true;
 
                 elements++;
 
@@ -224,12 +228,13 @@ class exact_parallel_minimum_cut : public minimum_cut {
 
                     if (r_v[tgt] < mincut) {
                         if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
-                            if (!blacklisted[tgt]) {
+                            if (!blacklisted[tgt] && !local_visited[tgt]) {
                                 uf.Union(current_node, tgt);
                             }
                         }
 
-                        if (!visited[tgt]) {
+                        if (!visited[tgt]
+                            && !local_visited[tgt]) {
                             size_t new_rv =
                                 std::min(r_v[tgt] + G->getEdgeWeight(e),
                                          mincut);

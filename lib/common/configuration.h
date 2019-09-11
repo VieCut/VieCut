@@ -45,6 +45,7 @@ class configuration {
     size_t total_terminals = 0;
     bool noBranching = false;
     size_t print_cc = 0;
+    bool blacklist = true;
 
     // minimum cut parameters
     bool save_cut = false;

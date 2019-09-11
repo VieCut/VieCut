@@ -251,11 +251,19 @@ class minimum_cut_helpers {
                 ++b[coarseID];
             }
 
-            static constexpr bool cut_logs = true;
+            bool cut_logs = configuration::getConfig()->verbose;
 
             if (cut_logs) {
                 std::sort(b.begin(), b.end());
                 printLogs(b);
+            } else {
+                std::sort(b.begin(), b.end());
+
+                NodeID id0 = b.end() - std::upper_bound(b.begin(), b.end(), 0);
+                NodeID id1 = b.end() - std::upper_bound(b.begin(), b.end(), 1);
+                LOG1 << "Largest block: " << b.back();
+                LOG1 << "Nonempty blocks: " << id0;
+                LOG1 << "Nontrivial blocks: " << id1;
             }
         }
     }

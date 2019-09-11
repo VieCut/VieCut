@@ -103,8 +103,9 @@ int main(int argn, char** argv) {
                                        std::to_string(target_core);
                 LOG1 << "small min cut " << result << " -> saving";
                 graph_io::writeGraph(connected_graph, out_path);
-                graph_io::writeGraphDimacsKS(connected_graph,
-                                             out_path + "_ks", "cut");
+
+                // Lowest core only finds one graph where cut != degree.
+                // As its found we can exit now.
                 if (lowest_core)
                     exit(0);
             } else {

@@ -22,8 +22,10 @@
 #include <vector>
 
 #include "algorithms/flow/push_relabel.h"
+#include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/misc/graph_algorithms.h"
 #include "algorithms/misc/strongly_connected_components.h"
+#include "algorithms/multicut/multicut_problem.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
@@ -46,7 +48,7 @@ class recursive_cactus {
     ~recursive_cactus() { }
 
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
+    bool timing = configuration::getConfig()->verbose;
 
     void setMincut(EdgeWeight mc) {
         mincut = mc;
@@ -256,13 +258,28 @@ class recursive_cactus {
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
         if (depth % 100 == 0) {
-            LOG1 << "G n " << G->n() << " m " << G->m() << " depth " << depth;
+            LOGC(configuration::getConfig()->verbose)
+                << "G n " << G->n() << " m " << G->m() << " depth " << depth;
         }
 
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
 
         if (depth % 10 == 0) {
             cactusEdge = removeHeavyEdges(G);
+        }
+
+        // inside block to free all memory afterwards
+        {
+            // create empty multicut problem to be able to run mod_capforest
+
+            multicut_problem mcp(G);
+            auto problem = std::make_shared<multicut_problem>(mcp);
+            noi_minimum_cut noi;
+            auto uf = noi.modified_capforest(problem, mincut + 1);
+
+            if (uf.n() < G->n()) {
+                G = contraction::fromUnionFind(G, &uf);
+            }
         }
 
         if (G->number_of_nodes() == 1) {

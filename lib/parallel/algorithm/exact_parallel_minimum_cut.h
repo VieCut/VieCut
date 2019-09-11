@@ -54,7 +54,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
     ~exact_parallel_minimum_cut() { }
 
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
+    bool timing = configuration::getConfig()->verbose;
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
         return perform_minimum_cut(G, false);
@@ -92,7 +92,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
             auto uf = parallel_modified_capforest(curr_g, mincut);
             if (uf.n() == curr_g->number_of_nodes()) {
                 uf = noi.modified_capforest(curr_g, mincut);
-                LOG1 << "seq capforest needed";
+                LOGC(timing) << "seq capforest needed";
             }
 
 #else

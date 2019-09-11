@@ -31,6 +31,7 @@ class configuration {
     std::string partition_file = "";
     std::string output_path = "";
     size_t seed = 0;
+    bool verbose = false;
 
     // multiterminal cut parameters
     std::string edge_selection = "heavy_vertex";
@@ -56,6 +57,7 @@ class configuration {
     bool disable_limiting = false;
     double contraction_factor = 0.0;
     bool find_most_balanced_cut = false;
+    bool blacklist = true;
 
     // karger-stein:
     size_t optimal = 0;

@@ -53,7 +53,7 @@ include_directories(
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
-set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -g -DNDEBUG")
+set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG")
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
 
 #TCMalloc
@@ -154,13 +154,20 @@ build_and_link(mincut_recursive)
 build_and_link(mincut)
 bal_seq(multiterminal_cut)
 bal_seq(largest_cc)
-
-target_link_libraries(mincut PUBLIC ${Tcmalloc_LIBRARIES})
-target_link_libraries(mincut_parallel PUBLIC ${Tcmalloc_LIBRARIES})
-target_link_libraries(multiterminal_cut PUBLIC ${Tcmalloc_LIBRARIES})
+bal_seq(make_graph_weighted)
 
 message(STATUS "CXX Flags ${CMAKE_CXX_FLAGS}")
 message(STATUS "Linker flags ${CMAKE_EXE_LINKER_FLAGS}")
+
+if (CMAKE_BUILD_TYPE STREQUAL Release)
+    message (STATUS "Release build!")
+    message (STATUS "Release CXX Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+    message (STATUS "Debug build!")
+    message (STATUS "Debug CXX Flags: ${CMAKE_CXX_FLAGS_DEBUG}")
+endif()
 
 if(RUN_TESTS)
     enable_testing()

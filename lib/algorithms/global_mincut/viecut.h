@@ -44,7 +44,7 @@
 class viecut : public minimum_cut {
  public:
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
+    bool timing = configuration::getConfig()->verbose;
     viecut() { }
 
     virtual ~viecut() { }

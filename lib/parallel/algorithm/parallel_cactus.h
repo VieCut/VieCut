@@ -37,6 +37,7 @@
 #include "tools/timer.h"
 
 #ifdef PARALLEL
+#include "parallel/algorithm/exact_parallel_minimum_cut.h"
 #include "parallel/coarsening/contract_graph.h"
 #include "parallel/coarsening/contraction_tests.h"
 #include "parallel/coarsening/sparsify.h"
@@ -55,7 +56,7 @@ class parallel_cactus : public minimum_cut {
     ~parallel_cactus() { }
 
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
+    bool timing = configuration::getConfig()->verbose;
 
     EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
         if (!minimum_cut_helpers::graphValid(G))
@@ -99,9 +100,9 @@ class parallel_cactus : public minimum_cut {
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0 &&
                graphs.back()->number_of_nodes() < previous_size) {
             previous_size = graphs.back()->number_of_nodes();
-            LOG1 << "t " << t.elapsed() << " n "
-                 << graphs.back()->number_of_nodes()
-                 << " m " << graphs.back()->number_of_edges();
+            LOGC(timing) << "t " << t.elapsed() << " n "
+                         << graphs.back()->number_of_nodes()
+                         << " m " << graphs.back()->number_of_edges();
             std::shared_ptr<graph_access> curr_g = graphs.back();
 
 #ifdef PARALLEL
@@ -130,8 +131,9 @@ class parallel_cactus : public minimum_cut {
                 }
             }
 
-            LOG << "t " << t.elapsed() << " contract "
-                << graphs.back()->number_of_nodes() << " to " << uf.n();
+            LOGC(timing) << "t " << t.elapsed() << " contract "
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf.n();
 
             graphs.push_back(contraction::fromUnionFind(curr_g, &uf));
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
@@ -139,16 +141,18 @@ class parallel_cactus : public minimum_cut {
             union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
 
             auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
-            LOG << "t12 " << t.elapsed() << " contract "
-                << graphs.back()->number_of_nodes() << " to " << uf12.n();
+            LOGC(timing) << "t12 " << t.elapsed() << " contract "
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf12.n();
             if (g12->number_of_nodes() < graphs.back()->number_of_nodes())
                 graphs.push_back(g12);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
             union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
             auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
-            LOG << "t34 " << t.elapsed() << " contract "
-                << graphs.back()->number_of_nodes() << " to " << uf34.n();
+            LOGC(timing) << "t34 " << t.elapsed() << " contract "
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf34.n();
             if (g34->number_of_nodes() < g12->number_of_nodes())
                 graphs.push_back(g34);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
@@ -163,9 +167,11 @@ class parallel_cactus : public minimum_cut {
         }
 
         // check whether there is a small cut hidden in graphs.back()
-        if (graphs.back()->number_of_nodes() > 1)
+        if (graphs.back()->number_of_nodes() > 1) {
+            LOGC(timing) << "Searching for minimum cut in remaining graph...";
             mincut = std::min(mincut,
                               epmc.perform_minimum_cut(graphs.back(), true));
+        }
 
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);
@@ -179,8 +185,8 @@ class parallel_cactus : public minimum_cut {
                 out_graph, graphs, out_graph_mapping, deleted_vertex_mappings);
         }
 
-        LOG1 << "t " << t.elapsed() << " unpacked - n "
-             << out_graph->n() << " m " << out_graph->m();
+        LOGC(timing) << "t " << t.elapsed() << " unpacked - n "
+                     << out_graph->n() << " m " << out_graph->m();
 
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut mbmc;

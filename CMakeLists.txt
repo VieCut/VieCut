@@ -51,10 +51,10 @@ include_directories(
     extlib/tlx
 )
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp -g")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
 set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG")
-set (CMAKE_CXX_FLAGS_DEBUG "-g3")
+set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
 
 #TCMalloc
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")

@@ -67,25 +67,29 @@ class parallel_cactus : public minimum_cut {
 
     std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
         std::shared_ptr<graph_access> G) {
+        std::vector<std::shared_ptr<graph_access> > v = { G };
+        return findAllMincuts(v);
+    }
+
+    std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
+        std::vector<std::shared_ptr<graph_access> > graphs) {
         configuration::getConfig()->blacklist = false;
-        std::vector<std::shared_ptr<graph_access> > graphs;
         timer t;
-        EdgeWeight mincut = G->getMinDegree();
+        EdgeWeight mincut = graphs.back()->getMinDegree();
         recursive_cactus rc;
         exact_parallel_minimum_cut epmc;
 #ifdef PARALLEL
         viecut heuristic_mc;
         sparsify sf;
-        auto G2 = G;
+        auto G2 = graphs.back();
         if (configuration::getConfig()->contraction_factor > 0.0) {
-            G2 = sf.one_ks(G);
+            G2 = sf.one_ks(G2);
         }
         mincut = heuristic_mc.perform_minimum_cut(G2, true);
         LOGC(timing) << "VieCut found cut " << mincut
                      << " [Time: " << t.elapsed() << "s]";
 #endif
 
-        graphs.push_back(G);
         std::vector<std::vector<std::pair<NodeID, NodeID> > > guaranteed_edges;
         std::vector<size_t> ge_ids;
 
@@ -190,7 +194,7 @@ class parallel_cactus : public minimum_cut {
 
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut mbmc;
-            mbmc.findCutFromCactus(out_graph, mincut, G);
+            mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
         }
 
         return std::make_pair(mincut, out_graph);

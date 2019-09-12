@@ -54,10 +54,14 @@ class cactus_mincut : public minimum_cut {
 
     std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
         std::shared_ptr<graph_access> G) {
-        std::vector<std::shared_ptr<graph_access> > graphs;
+        std::vector<std::shared_ptr<graph_access> > v = { G };
+        return findAllMincuts(v);
+    }
+
+    std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
+        std::vector<std::shared_ptr<graph_access> > graphs) {
         recursive_cactus rc;
-        EdgeWeight mincut = G->getMinDegree();
-        graphs.push_back(G);
+        EdgeWeight mincut = graphs.back()->getMinDegree();
         noi_minimum_cut noi;
         timer t;
 
@@ -144,7 +148,7 @@ class cactus_mincut : public minimum_cut {
 
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut mbmc;
-            mbmc.findCutFromCactus(out_graph, mincut, G);
+            mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
         }
 
         return std::make_pair(mincut, out_graph);

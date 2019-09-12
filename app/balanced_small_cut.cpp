@@ -1,10 +1,10 @@
 /******************************************************************************
- * mincut_recursive.cpp
+ * balanced_small_cut.cpp
  *
  * Source of VieCut.
  *
  ******************************************************************************
- * Copyright (C) 2017-2019 Alexander Noe <alexander.noe@univie.ac.at>
+ * Copyright (C) 2019 Alexander Noe <alexander.noe@univie.ac.at>
  *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
@@ -46,11 +46,8 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
-    std::vector<std::shared_ptr<graph_access> > graphs;
-
-    std::shared_ptr<graph_access> G =
+    std::shared_ptr<graph_access> original_graph =
         graph_io::readGraphWeighted(cfg->graph_filename);
-    graphs.push_back(G);
 
 #ifdef PARALLEL
     parallel_cactus mc;
@@ -63,9 +60,14 @@ int main(int argn, char** argv) {
     timer t_this;
     size_t ct = 0;
 
-    while (G->number_of_nodes() > 1000) {
+    auto G = original_graph;
+    std::vector<std::shared_ptr<graph_access> > graph_vec = { original_graph };
+
+    union_find uf(original_graph->number_of_nodes());
+
+    while (G->number_of_nodes() > 1) {
         t_this.restart();
-        auto [current_cut, mg] = mc.findAllMincuts(G);
+        auto [current_cut, mg] = mc.findAllMincuts(graph_vec);
 
         NodeWeight largest_block = 0;
         NodeID largest_id = 0;
@@ -74,16 +76,31 @@ int main(int argn, char** argv) {
                 largest_block = mg->containedVertices(n).size();
                 largest_id = n;
             }
+        }
 
-            for (NodeID c : mg->containedVertices(n)) {
-                G->setPartitionIndex(c, n);
+
+        for (NodeID n : mg->nodes()) {
+            std::vector<bool> contracted(mg->n(), false);
+            if (n != largest_id) {
+                NodeID v0 = mg->containedVertices(n)[0];
+                for (NodeID v : mg->containedVertices(n)) {
+                    uf.Union(v0, v);
+                    for (EdgeID e : original_graph->edges_of(v)) {
+                        NodeID t = original_graph->getEdgeTarget(e);
+                        NodeID pos = mg->getCurrentPosition(t);
+                        if (!contracted[pos]) {
+                            contracted[pos] = true;
+                            uf.Union(v, t);
+                        }
+                    }
+                }                
             }
         }
 
+        G = contraction::fromUnionFind(original_graph, &uf);
+        graph_vec = {original_graph, G};
+
         cut = current_cut;
-        graph_extractor ge;
-        strongly_connected_components scc;
-        G = scc.largest_scc(ge.extract_block(G, largest_id).first);
 
         if (output) {
             std::string name = cfg->graph_filename + "_" + std::to_string(ct++);

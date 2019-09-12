@@ -54,7 +54,7 @@ include_directories(
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
 set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG")
-set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
+set (CMAKE_CXX_FLAGS_DEBUG "-g3")
 
 #TCMalloc
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
@@ -152,6 +152,7 @@ build_and_link(mincut_contract)
 build_and_link(mincut_heavy)
 build_and_link(mincut_recursive)
 build_and_link(mincut)
+build_and_link(balanced_small_cut)
 bal_seq(multiterminal_cut)
 bal_seq(largest_cc)
 bal_seq(make_graph_weighted)

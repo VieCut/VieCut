@@ -183,8 +183,9 @@ class exact_parallel_minimum_cut : public minimum_cut {
     union_find parallel_modified_capforest(
         std::shared_ptr<graph_access> G, const EdgeWeight mincut) {
         union_find uf(G->number_of_nodes());
-        LOG << "Contract all edges with value at least " << mincut;
+        LOG1 << "Contract all edges with value at least " << mincut;
         timer t;
+        LOG1 << omp_get_num_threads() << " THREADS!";
 
         timer timer2;
         std::vector<NodeID> start_nodes = randomStartNodes(G);
@@ -219,27 +220,23 @@ class exact_parallel_minimum_cut : public minimum_cut {
                         visited[current_node] = true;
                     }
                 }
-                local_visited[current_node] = true;
-
-                elements++;
 
                 for (EdgeID e : G->edges_of(current_node)) {
                     NodeID tgt = G->getEdgeTarget(e);
-
+                    if (!local_visited[tgt]) {
                     if (r_v[tgt] < mincut) {
                         if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
-                            if (!blacklisted[tgt] && !local_visited[tgt]) {
+                                if (!blacklisted[tgt]) {
                                 uf.Union(current_node, tgt);
                             }
                         }
 
-                        if (!visited[tgt]
-                            && !local_visited[tgt]) {
+                            if (!visited[tgt]) {
                             size_t new_rv =
                                 std::min(r_v[tgt] + G->getEdgeWeight(e),
                                          mincut);
                             r_v[tgt] = new_rv;
-                            if (!visited[tgt] && !blacklisted[tgt]) {
+                                if (!visited[tgt] && !local_visited[tgt]) {
                                 if (pq.contains(tgt)) {
                                     pq.increaseKey(tgt, new_rv);
                                 } else {
@@ -250,6 +247,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
                     }
                 }
             }
+        }
         }
         return uf;
     }

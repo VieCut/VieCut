@@ -72,7 +72,7 @@ class tests {
                 EdgeWeight wgt = G->getEdgeWeight(e);
 
                 if (target != source &&
-                    (wgt > limit ||
+                    (wgt >= limit ||
                      ((2 * wgt > degrees[source] || 2 * wgt > degrees[target])
                       // if we want to find all cuts
                       // we are not allowed to contract an edge

@@ -107,13 +107,19 @@ class cactus_mincut : public minimum_cut {
                 graphs.emplace_back(newg);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
-            union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
+            union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);   
+            LOGC(timing) << "t12 " << t.elapsed() << " contract "
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf12.n();
             auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
             if (g12->number_of_nodes() < newg->number_of_nodes())
                 graphs.push_back(g12);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
             union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
+            LOGC(timing) << "t34 " << t.elapsed() << " contract "
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf34.n();
             auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
             if (g34->number_of_nodes() < g12->number_of_nodes())
                 graphs.push_back(g34);

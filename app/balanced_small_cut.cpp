@@ -80,7 +80,6 @@ int main(int argn, char** argv) {
 
 
         for (NodeID n : mg->nodes()) {
-            std::vector<bool> contracted(mg->n(), false);
             if (n != largest_id) {
                 if (mg->containedVertices(n).size() > 0) {
                     NodeID v0 = mg->containedVertices(n)[0];
@@ -88,11 +87,7 @@ int main(int argn, char** argv) {
                         uf.Union(v0, v);
                         for (EdgeID e : original_graph->edges_of(v)) {
                             NodeID t = original_graph->getEdgeTarget(e);
-                            NodeID pos = mg->getCurrentPosition(t);
-                            if (!contracted[pos]) {
-                                contracted[pos] = true;
-                                uf.Union(v, t);
-                            }
+                            uf.Union(v, t);
                         }
                     }
                 }                

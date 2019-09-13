@@ -142,24 +142,35 @@ class parallel_cactus : public minimum_cut {
             graphs.push_back(contraction::fromUnionFind(curr_g, &uf));
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
-            union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
+            bool contracted_some_edges = true;
+            while (contracted_some_edges) {
+                contracted_some_edges = false;
+                auto uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
+                LOGC(timing) << "t12 " << t.elapsed() << " contract "
+                             << graphs.back()->number_of_nodes()
+                             << " to " << uf12.n();
+                if (uf12.n() < graphs.back()->number_of_nodes()) {
+                    contracted_some_edges = true;
+                    auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
+                    graphs.push_back(g12);
+                    mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                }
+            }
 
-            auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
-            LOGC(timing) << "t12 " << t.elapsed() << " contract "
-                         << graphs.back()->number_of_nodes()
-                         << " to " << uf12.n();
-            if (g12->number_of_nodes() < graphs.back()->number_of_nodes())
-                graphs.push_back(g12);
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
-
-            union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
-            auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
-            LOGC(timing) << "t34 " << t.elapsed() << " contract "
-                         << graphs.back()->number_of_nodes()
-                         << " to " << uf34.n();
-            if (g34->number_of_nodes() < g12->number_of_nodes())
-                graphs.push_back(g34);
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            contracted_some_edges = true;
+            while (contracted_some_edges) {
+                contracted_some_edges = false;
+                auto uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
+                LOGC(timing) << "t34 " << t.elapsed() << " contract "
+                             << graphs.back()->number_of_nodes()
+                             << " to " << uf34.n();
+                if (uf34.n() < graphs.back()->number_of_nodes()) {
+                    contracted_some_edges = true;
+                    auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
+                    graphs.push_back(g34);
+                    mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                }
+            }
 
             if (current_mincut > mincut) {
                 // mincut has improved, so all the edges that

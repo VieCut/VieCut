@@ -73,11 +73,10 @@ class parallel_cactus : public minimum_cut {
 
     std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
         std::vector<std::shared_ptr<graph_access> > graphs) {
-        configuration::getConfig()->blacklist = false;
         timer t;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         recursive_cactus rc;
-        exact_parallel_minimum_cut epmc;
+        exact_parallel_minimum_cut mc;
 #ifdef PARALLEL
         viecut heuristic_mc;
         sparsify sf;
@@ -100,6 +99,7 @@ class parallel_cactus : public minimum_cut {
 #endif
 
         NodeID previous_size = UNDEFINED_NODE;
+        bool disable_blacklist = false;
 
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0 &&
                graphs.back()->number_of_nodes() < previous_size) {
@@ -110,7 +110,11 @@ class parallel_cactus : public minimum_cut {
             std::shared_ptr<graph_access> curr_g = graphs.back();
 
 #ifdef PARALLEL
-            auto uf = epmc.parallel_modified_capforest(curr_g, mincut + 1);
+            // all runs after first disable blacklist so that every thread
+            // runs capforest on the whole graph
+            auto uf = mc.parallel_modified_capforest(curr_g, mincut + 1,
+                                                     disable_blacklist);
+            disable_blacklist = true;
 #else
             LOG1 << "Error: Running exact_parallel_minimum_cut without PARALLEL"
                  << "Using normal noi_minimum_cut instead!";
@@ -185,7 +189,7 @@ class parallel_cactus : public minimum_cut {
         if (graphs.back()->number_of_nodes() > 1) {
             LOGC(timing) << "Searching for minimum cut in remaining graph...";
             mincut = std::min(mincut,
-                              epmc.perform_minimum_cut(graphs.back(), true));
+                              mc.perform_minimum_cut(graphs.back(), true));
         }
 
         rc.setMincut(mincut);

@@ -181,11 +181,11 @@ class exact_parallel_minimum_cut : public minimum_cut {
     }
 
     union_find parallel_modified_capforest(
-        std::shared_ptr<graph_access> G, const EdgeWeight mincut) {
+        std::shared_ptr<graph_access> G,
+        const EdgeWeight mincut,
+        const bool disable_blacklist = false) {
         union_find uf(G->number_of_nodes());
-        LOG1 << "Contract all edges with value at least " << mincut;
         timer t;
-        LOG1 << omp_get_num_threads() << " THREADS!";
 
         timer timer2;
         std::vector<NodeID> start_nodes = randomStartNodes(G);
@@ -211,8 +211,10 @@ class exact_parallel_minimum_cut : public minimum_cut {
 
             while (!pq.empty()) {
                 current_node = pq.deleteMax();
+                elements++;
+                local_visited[current_node] = true;
 
-                if (configuration::getConfig()->blacklist) {
+                if (!disable_blacklist) {
                     blacklisted[current_node] = true;
                     if (visited[current_node]) {
                         continue;

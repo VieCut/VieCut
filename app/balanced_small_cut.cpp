@@ -40,6 +40,8 @@ int main(int argn, char** argv) {
     cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
     cmdl.add_bool('o', "output", output, "Write intermediate graphs to disk");
     cmdl.add_flag('v', "verbose", cfg->verbose, "Verbose output.");
+    cmdl.add_size_t('p', "processes", cfg->threads, "Number of processes!");
+
     cfg->find_most_balanced_cut = true;
     cfg->save_cut = true;
 

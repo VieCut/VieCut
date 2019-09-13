@@ -79,30 +79,32 @@ class tests {
                     contracted[tgt] = true;
                 }
 
-                if (((2 * wgt) > n_wgt || (2 * wgt) > tgt_wgt)
-                    && G->getNodeDegree(tgt) > 1 && G->getNodeDegree(n) > 1
+                //if (((2 * wgt) > n_wgt || (2 * wgt) > tgt_wgt)
                     // if we want to find all cuts
                     // we are not allowed to contract an edge
                     // when an incident vertex has degree mincut
                     // (as the singleton cut might be important)
-                    && (!find_all_cuts ||
-                        (n_wgt >= weight_limit && tgt_wgt >= weight_limit))) {
+                if (!find_all_cuts ||
+                    (n_wgt >= weight_limit && tgt_wgt >= weight_limit)) {
                     // node degrees change when we contract edges.
                     // thus, we only use PR 2 or 3
                     // when the incident vertices haven't been contracted yet
                     // keeping a data structure with current degrees
                     // would be too expensive in parallel
-                    if (__sync_bool_compare_and_swap(&contracted[n],
-                                                     false, true)) {
-                        if (__sync_bool_compare_and_swap(&contracted[tgt],
-                                                         false, true)) {
+                    if ((2*wgt) > n_wgt) {
+                        if (__sync_bool_compare_and_swap(&contracted[n], false, true)) {
+                            contracted[tgt] = true;
+                            uf.Union(n, tgt);
+                        }
+                    } else if ((2*wgt) > tgt_wgt) {
+                        if (__sync_bool_compare_and_swap(&contracted[tgt], false, true)) {
+                            contracted[n] = true;
                             uf.Union(n, tgt);
                         }
                     }
                 }
             }
         }
-
         return uf;
     }
 

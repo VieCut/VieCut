@@ -13,4 +13,3 @@ for folder in ['../app','../lib','../tests']:
                 print("No errors!")
             except:
                 print("ERRORS!")
-                exit(1)

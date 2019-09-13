@@ -78,7 +78,6 @@ int main(int argn, char** argv) {
             }
         }
 
-
         for (NodeID n : mg->nodes()) {
             if (n != largest_id) {
                 if (mg->containedVertices(n).size() > 0) {
@@ -90,12 +89,12 @@ int main(int argn, char** argv) {
                             uf.Union(v, t);
                         }
                     }
-                }                
+                }
             }
         }
 
         G = contraction::fromUnionFind(original_graph, &uf);
-        graph_vec = {original_graph, G};
+        graph_vec = { original_graph, G };
 
         cut = current_cut;
 

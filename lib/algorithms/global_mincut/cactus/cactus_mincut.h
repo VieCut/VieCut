@@ -107,7 +107,7 @@ class cactus_mincut : public minimum_cut {
                 graphs.emplace_back(newg);
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
 
-            union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);   
+            union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
             LOGC(timing) << "t12 " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf12.n();

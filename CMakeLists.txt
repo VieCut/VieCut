@@ -4,6 +4,7 @@ project(vc)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(Tcmalloc REQUIRED)
+find_package(Profiler)
 find_package(OpenMP REQUIRED)
 
 macro(bal_seq TARGETNAME)
@@ -28,6 +29,7 @@ if(NOT CMAKE_BUILD_TYPE)
   message("Defaulting CMAKE_BUILD_TYPE to Release")
   set(CMAKE_BUILD_TYPE "Release")
 endif()
+
 
 add_definitions("-DVIECUT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -145,7 +147,11 @@ set(SOURCE_FILES
 add_library(viecut ${SOURCE_FILES})
 
 set(EXTLIBS tlx)
+if(USE_PROFILER)
+set(LIBS viecut ${EXTLIBS} ${Profiler_LIBRARIES})
+else()
 set(LIBS viecut ${EXTLIBS} ${Tcmalloc_LIBRARIES})
+endif()
 
 build_and_link(kcore)
 build_and_link(mincut_contract)

@@ -152,6 +152,42 @@ class recursive_cactus {
     }
 
  private:
+    std::tuple<NodeID, EdgeID, NodeID> maximumFlowEdge(
+        std::shared_ptr<mutable_graph> G) {
+        NodeWeight max_degree = 0;
+        NodeID s = UNDEFINED_NODE;
+
+        for (NodeID n : G->nodes()) {
+            if (G->getWeightedNodeDegree(n) > max_degree &&
+                !G->isEmpty(n)) {
+                max_degree = G->getWeightedNodeDegree(n);
+                s = n;
+            }
+        }
+
+        NodeID t = UNDEFINED_NODE;
+        EdgeID e = UNDEFINED_EDGE;
+        NodeWeight max_ngbr = 0;
+
+        for (EdgeID edge : G->edges_of(s)) {
+            NodeID ngbr = G->getEdgeTarget(s, edge);
+            if (G->getWeightedNodeDegree(ngbr) > max_ngbr &&
+                !G->isEmpty(ngbr)) {
+                max_ngbr = G->getWeightedNodeDegree(ngbr);
+                t = ngbr;
+                e = edge;
+            }
+        }
+
+        if (t == UNDEFINED_NODE) {
+            LOG1 << "Heaviest vertex has only empty neighbours!";
+            return findFlowEdge(G);
+        } else {
+            return std::make_tuple(s, e, t);
+        }
+    }
+
+
     std::tuple<NodeID, EdgeID, NodeID> findFlowEdge(
         std::shared_ptr<mutable_graph> G) {
         NodeID s = random_functions::nextInt(0, G->n() - 1);
@@ -266,10 +302,6 @@ class recursive_cactus {
 
         if (depth % 10 == 0) {
             cactusEdge = removeHeavyEdges(G);
-        }
-
-        // inside block to free all memory afterwards
-        {
             // create empty multicut problem to be able to run mod_capforest
 
             multicut_problem mcp(G);
@@ -290,7 +322,8 @@ class recursive_cactus {
         VIECUT_ASSERT_TRUE(isCNCR(G));
         FlowType max_flow;
 
-        auto [s, e, tgt] = findFlowEdge(G);
+        //auto [s, e, tgt] = findFlowEdge(G);
+        auto [s, e, tgt] = maximumFlowEdge(G);
 
         {
             std::vector<NodeID> vtcs = { s, tgt };

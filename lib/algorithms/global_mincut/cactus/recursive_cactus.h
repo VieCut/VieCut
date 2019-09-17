@@ -187,7 +187,6 @@ class recursive_cactus {
         }
     }
 
-
     std::tuple<NodeID, EdgeID, NodeID> findFlowEdge(
         std::shared_ptr<mutable_graph> G) {
         NodeID s = random_functions::nextInt(0, G->n() - 1);
@@ -322,7 +321,7 @@ class recursive_cactus {
         VIECUT_ASSERT_TRUE(isCNCR(G));
         FlowType max_flow;
 
-        //auto [s, e, tgt] = findFlowEdge(G);
+        // auto [s, e, tgt] = findFlowEdge(G);
         auto [s, e, tgt] = maximumFlowEdge(G);
 
         {

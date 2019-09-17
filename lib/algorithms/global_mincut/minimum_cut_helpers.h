@@ -224,31 +224,41 @@ class minimum_cut_helpers {
 
             std::vector<NodeID> b(out_graph->n(), 0);
 
-            bool broken = false;
-            for (NodeID idx : graphs[0]->nodes()) {
-                broken = false;
-                NodeID coarseID = idx;
-                for (size_t lv = 0; lv < graphs.size() - 1; ++lv) {
-                    if (graphs[lv]->getPartitionIndex(coarseID)
-                        == UNDEFINED_NODE) {
-                        NodeID deleted_id = (n0 * lv) + coarseID;
-                        coarseID = deleted_vertex_mappings.at(deleted_id);
-                        broken = true;
-                        break;
+            for (NodeID n = 0; n < graphs.back()->number_of_nodes(); ++n) {
+                graphs.back()->setPartitionIndex(n, out_graph_mapping[n]);
+            }
+
+            for (auto i = graphs.size() - 2; i > 0 && graphs.size() > 2; --i) {
+#ifdef PARALLEL
+#pragma omp parallel for
+#endif
+                for (NodeID n = 0; n < graphs[i]->number_of_nodes(); ++n) {
+                    NodeID index = graphs[i]->getPartitionIndex(n);
+                    if (index == UNDEFINED_NODE) {
+                        NodeID deleted_id = (n0 * i) + n;
+                        NodeID id_new = deleted_vertex_mappings.at(deleted_id);
+                        graphs[i]->setPartitionIndex(n, id_new);
+                    } else {
+                        NodeID id_new = graphs[i + 1]->getPartitionIndex(index);
+                        graphs[i]->setPartitionIndex(n, id_new);
                     }
-                    coarseID = graphs[lv]->getPartitionIndex(coarseID);
+                }
+            }
+
+            for (NodeID n : graphs[0]->nodes()) {
+                NodeID position = graphs[0]->getPartitionIndex(n);
+                if (graphs.size() > 1) {
+                    if (position == UNDEFINED_NODE) {
+                        position = deleted_vertex_mappings.at(n);
+                    } else {
+                        position = graphs[1]->getPartitionIndex(position);
+                    }
                 }
 
-                // if the vertex was deleted previously, it was readded
-                // and deleted_vertex_mappings holds the correct id
-                if (!broken) {
-                    coarseID = out_graph_mapping[coarseID];
-                }
+                out_graph->setCurrentPosition(n, position);
+                out_graph->addContainedVertex(position, n);
 
-                out_graph->setCurrentPosition(idx, coarseID);
-                out_graph->addContainedVertex(coarseID, idx);
-
-                ++b[coarseID];
+                ++b[position];
             }
 
             bool cut_logs = configuration::getConfig()->verbose;

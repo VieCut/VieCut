@@ -138,7 +138,7 @@ class parallel_cactus : public minimum_cut {
                     }
                 }
             }
-            
+
             LOGC(timing) << "t " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf.n();
@@ -147,8 +147,8 @@ class parallel_cactus : public minimum_cut {
 
             auto uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
             LOGC(timing) << "t12 " << t.elapsed() << " contract "
-                            << graphs.back()->number_of_nodes()
-                            << " to " << uf12.n();
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf12.n();
             if (uf12.n() < graphs.back()->number_of_nodes()) {
                 auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
                 graphs.push_back(g12);
@@ -157,8 +157,8 @@ class parallel_cactus : public minimum_cut {
 
             auto uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
             LOGC(timing) << "t34 " << t.elapsed() << " contract "
-                            << graphs.back()->number_of_nodes()
-                            << " to " << uf34.n();
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf34.n();
             if (uf34.n() < graphs.back()->number_of_nodes()) {
                 auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
                 graphs.push_back(g34);

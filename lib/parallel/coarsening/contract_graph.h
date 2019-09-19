@@ -408,7 +408,7 @@ class contraction {
         for (size_t i = 0; i < mapping.size(); ++i) {
             rev_map[mapping[i]].push_back(i);
         }
-        
+
         auto contracted = std::make_shared<graph_access>();
 
         std::vector<std::vector<std::pair<NodeID, EdgeWeight> > > edges;

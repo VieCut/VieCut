@@ -78,8 +78,8 @@ class label_propagation {
                         NodeID target = G->getEdgeTarget(e);
                         PartitionID block = cluster_mapping[target];
 
-                        wgt[block].second =  
-                            ((wgt[block].first == n) * wgt[block].second) 
+                        wgt[block].second =
+                            ((wgt[block].first == n) * wgt[block].second)
                             + G->getEdgeWeight(e);
                         wgt[block].first = n;
 

@@ -200,7 +200,7 @@ class sparsify {
             EdgeID e = prev;
             NodeID src = 0;
             while (e < G->number_of_edges()) {
-                while (e >= G->get_first_edge(src+1)) {
+                while (e >= G->get_first_edge(src + 1)) {
                     ++src;
                 }
 

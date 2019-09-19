@@ -175,8 +175,6 @@ class sparsify {
         timer t;
     #pragma omp parallel
         {
-            NodeID local_samples = 0;
-            NodeID contracted = 0;
             double n = G->number_of_nodes();
             double m = G->number_of_edges();
             double samples = n * configuration::getConfig()->contraction_factor;
@@ -200,14 +198,14 @@ class sparsify {
 
             EdgeID prev = 0;
             EdgeID e = prev;
+            NodeID src = 0;
             while (e < G->number_of_edges()) {
-                const NodeID src = G->getEdgeSource(e);
-                const NodeID tgt = G->getEdgeTarget(e);
-
-                ++local_samples;
-                if (uf->Union(src, tgt)) {
-                    ++contracted;
+                while (e >= G->get_first_edge(src+1)) {
+                    ++src;
                 }
+
+                const NodeID tgt = G->getEdgeTarget(e);
+                uf->Union(src, tgt);
 
                 e += (distribution(generator) + 1);
             }

@@ -211,6 +211,7 @@ class contraction {
         std::shared_ptr<graph_access> G,
         union_find* uf) {
         std::vector<std::vector<NodeID> > rev_mapping;
+        const bool save_cut = configuration::getConfig()->save_cut;
 
         std::vector<NodeID> mapping(G->number_of_nodes());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
@@ -224,7 +225,7 @@ class contraction {
             }
 
             mapping[n] = part[part_id];
-            if (configuration::getConfig()->save_cut) {
+            if (save_cut) {
                 G->setPartitionIndex(n, part[part_id]);
             }
             rev_mapping[part[part_id]].push_back(n);
@@ -301,8 +302,13 @@ class contraction {
             for (NodeID n = 0; n < G->number_of_nodes(); ++n) {
                 NodeID p = mapping[n];
                 for (EdgeID e : G->edges_of(n)) {
-                    NodeID contracted_target = mapping[G->getEdgeTarget(e)];
-                    if (contracted_target <= p) {
+                    NodeID tgt = G->getEdgeTarget(e);
+                    if (tgt > n) {
+                        continue;
+                    }
+
+                    NodeID contracted_target = mapping[tgt];
+                    if (contracted_target == p) {
                         // self-loops are not in graph
                         // smaller do not need to be stored
                         // as their other side will be
@@ -396,19 +402,13 @@ class contraction {
     static std::shared_ptr<graph_access>
     contractGraphSparseNoHash(std::shared_ptr<graph_access> G,
                               const std::vector<NodeID>& mapping,
-                              const std::vector<std::vector<NodeID> >&
-                              rev_mapping, size_t num_nodes) {
+                              size_t num_nodes) {
         std::vector<std::vector<NodeID> > rev_map;
-        if (rev_mapping.size() == 0) {
-            // create reverse mapping if it wasnt before
-            rev_map.resize(num_nodes);
-            for (size_t i = 0; i < mapping.size(); ++i) {
-                rev_map[mapping[i]].push_back(i);
-            }
-        } else {
-            rev_map = rev_mapping;
+        rev_map.resize(num_nodes);
+        for (size_t i = 0; i < mapping.size(); ++i) {
+            rev_map[mapping[i]].push_back(i);
         }
-
+        
         auto contracted = std::make_shared<graph_access>();
 
         std::vector<std::vector<std::pair<NodeID, EdgeWeight> > > edges;

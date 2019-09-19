@@ -64,8 +64,8 @@ class label_propagation {
 
             m_mt.seed(random_functions::getSeed() + omp_get_thread_num());
 
-            std::vector<std::pair<NodeID, NodeID> >
-            wgt(G->number_of_nodes(), std::make_pair(0, 0));
+            std::vector<std::pair<NodeID, NodeID> > wgt(
+                G->number_of_nodes(), std::make_pair(0, 0));
             timer t;
             for (int j = 0; j < iterations; j++) {
 #pragma omp for schedule(dynamic, 64)
@@ -78,12 +78,10 @@ class label_propagation {
                         NodeID target = G->getEdgeTarget(e);
                         PartitionID block = cluster_mapping[target];
 
-                        if (wgt[block].first != n) {
-                            wgt[block].first = n;
-                            wgt[block].second = 0;
-                        }
-
-                        wgt[block].second += G->getEdgeWeight(e);
+                        wgt[block].second =  
+                            ((wgt[block].first == n) * wgt[block].second) 
+                            + G->getEdgeWeight(e);
+                        wgt[block].first = n;
 
                         if (wgt[block].second > max_value ||
                             (wgt[block].second == max_value &&

@@ -53,12 +53,13 @@ class ks_minimum_cut : public minimum_cut {
         EdgeWeight mincut = std::numeric_limits<EdgeWeight>::max();
         std::vector<PartitionID> best_partition(G->number_of_nodes());
         timer t;
+        const bool save_cut = configuration::getConfig()->save_cut;
         for (size_t i = 0; i < std::log2(G->number_of_nodes())
              && mincut > configuration::getConfig()->optimal; ++i) {
             graphs.push_back(G);
             EdgeWeight curr_cut = recurse(0, i).first;
 
-            if (configuration::getConfig()->save_cut) {
+            if (save_cut) {
                 if (curr_cut < mincut) {
                     for (NodeID n : G->nodes()) {
                         best_partition[n] = G->getNodeInCut(n);

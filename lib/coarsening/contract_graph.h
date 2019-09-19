@@ -222,6 +222,7 @@ class contraction {
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
 
+        const bool save_cut = configuration::getConfig()->save_cut;
         for (NodeID n : G->nodes()) {
             NodeID part_id = uf->Find(n);
 
@@ -230,7 +231,7 @@ class contraction {
             }
 
             mapping[n] = part[part_id];
-            if (configuration::getConfig()->save_cut) {
+            if (save_cut) {
                 G->setPartitionIndex(n, part[part_id]);
             }
             reverse_mapping[part[part_id]].push_back(n);

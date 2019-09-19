@@ -141,6 +141,7 @@ class minimum_cut_helpers {
 
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
 
+        const bool save_cut = configuration::getConfig()->save_cut;
         for (NodeID node : G->nodes()) {
             PartitionID cur_cluster = cluster_id[node];
             // check whether we already had that
@@ -151,7 +152,7 @@ class minimum_cut_helpers {
 
             mapping.emplace_back(part[cur_cluster]);
 
-            if (configuration::getConfig()->save_cut) {
+            if (save_cut) {
                 G->setPartitionIndex(node, part[cur_cluster]);
             }
             reverse_mapping[part[cur_cluster]].push_back(node);

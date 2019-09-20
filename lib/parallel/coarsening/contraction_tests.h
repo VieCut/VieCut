@@ -160,17 +160,16 @@ class tests {
 
                             wgt_sum += std::min(w2, w3);
 
-
                             bool contractible_one_cut =
-                                !find_all_cuts 
+                                !find_all_cuts
                                 && 2 * (w1 + w3) >= deg_n
                                 && 2 * (w1 + w2) >= deg_tgt;
 
                             bool contractible_all_cuts =
-                                find_all_cuts 
+                                find_all_cuts
                                 && 2 * (w1 + w3) > deg_n
                                 && 2 * (w1 + w2) > deg_tgt
-                                && deg_n >= weight_limit 
+                                && deg_n >= weight_limit
                                 && deg_tgt >= weight_limit;
 
                             if (contractible_one_cut || contractible_all_cuts) {
@@ -180,9 +179,9 @@ class tests {
                                 // keeping a data structure with current
                                 // degrees would be too expensive in parallel
                                 if (__sync_bool_compare_and_swap(
-                                    &contracted[n], false, true)) {
+                                        &contracted[n], false, true)) {
                                     if (__sync_bool_compare_and_swap(
-                                        &contracted[tgt], false, true)) {
+                                            &contracted[tgt], false, true)) {
                                         uf.Union(n, tgt);
                                         break;
                                     }

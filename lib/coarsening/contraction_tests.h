@@ -80,7 +80,6 @@ class tests {
                       // (as the singleton cut might be important)
                       && (!find_all_cuts || (degrees[source] >= limit
                                              && degrees[target] >= limit))))) {
-
                     EdgeWeight new_w =
                         degrees[source] + degrees[target] - (2 * wgt);
 

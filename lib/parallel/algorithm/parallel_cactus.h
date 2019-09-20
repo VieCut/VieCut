@@ -101,8 +101,7 @@ class parallel_cactus : public minimum_cut {
         NodeID previous_size = UNDEFINED_NODE;
         bool disable_blacklist = false;
 
-        while (graphs.back()->number_of_nodes() > 2 && mincut > 0 &&
-               graphs.back()->number_of_nodes() < previous_size) {
+        while (graphs.back()->number_of_nodes() < previous_size) {
             previous_size = graphs.back()->number_of_nodes();
             LOGC(timing) << "t " << t.elapsed() << " n "
                          << graphs.back()->number_of_nodes()
@@ -184,14 +183,10 @@ class parallel_cactus : public minimum_cut {
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);
 
-        auto [out_graph_mapping, deleted_vertex_mappings] =
-            minimum_cut_helpers::reInsertVertices(
-                out_graph, graphs, ge_ids, guaranteed_edges, mincut);
+        LOG1 << "out graph " << out_graph->n();
 
-        if (configuration::getConfig()->save_cut) {
-            minimum_cut_helpers::setVertexLocations(
-                out_graph, graphs, out_graph_mapping, deleted_vertex_mappings);
-        }
+        minimum_cut_helpers::setVertexLocations(out_graph, graphs, ge_ids,
+                                                guaranteed_edges, mincut);
 
         LOGC(timing) << "t " << t.elapsed() << " unpacked - n "
                      << out_graph->n() << " m " << out_graph->m();

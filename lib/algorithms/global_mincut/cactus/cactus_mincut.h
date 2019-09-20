@@ -102,6 +102,11 @@ class cactus_mincut : public minimum_cut {
                 }
             }
 
+            LOG1 << " AYOOOO!";
+            for (auto e : guaranteed_edges.back()) {
+                LOG1 << "GEEE " << e;
+            }
+
             auto newg = contraction::fromUnionFind(current_graph, &uf);
             if (newg->number_of_nodes() < current_graph->number_of_nodes())
                 graphs.emplace_back(newg);
@@ -140,14 +145,8 @@ class cactus_mincut : public minimum_cut {
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);
 
-        auto [out_graph_mapping, deleted_vertex_mappings] =
-            minimum_cut_helpers::reInsertVertices(
-                out_graph, graphs, ge_ids, guaranteed_edges, mincut);
-
-        if (configuration::getConfig()->save_cut) {
-            minimum_cut_helpers::setVertexLocations(
-                out_graph, graphs, out_graph_mapping, deleted_vertex_mappings);
-        }
+        minimum_cut_helpers::setVertexLocations(
+            out_graph, graphs, ge_ids, guaranteed_edges, mincut);
 
         LOGC(timing)
             << "unpacked - n " << out_graph->n() << " m " << out_graph->m();

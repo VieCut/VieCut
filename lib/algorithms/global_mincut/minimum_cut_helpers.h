@@ -161,104 +161,60 @@ class minimum_cut_helpers {
         return std::make_pair(mapping, reverse_mapping);
     }
 
-    static std::pair<std::vector<NodeID>, std::unordered_map<NodeID, NodeID> >
-    reInsertVertices(std::shared_ptr<mutable_graph> out_graph,
-                     const std::vector<std::shared_ptr<graph_access> >& graphs,
-                     const std::vector<size_t>& ge_ids,
-                     const std::vector<std::vector<
-                                           std::pair<NodeID, NodeID> > >&
-                     guaranteed_edges,
-                     const EdgeWeight global_mincut) {
-        NodeID n0 = graphs[0]->number_of_nodes();
+    static void setVertexLocations(
+        std::shared_ptr<mutable_graph> out_graph,
+        const std::vector<std::shared_ptr<graph_access> >& graphs,
+        const std::vector<size_t>& ge_ids,
+        const std::vector<std::vector<std::pair<NodeID, NodeID> > >& g_edges,
+        const EdgeWeight mincut) {
         std::vector<NodeID> out_graph_mapping;
 
+        // TODO: IS THIS EASIER?!
         for (size_t i = 0; i < out_graph->getOriginalNodes(); ++i) {
             out_graph_mapping.emplace_back(out_graph->getCurrentPosition(i));
         }
 
-        std::unordered_map<NodeID, NodeID> deleted_vertex_mappings;
+        out_graph->setOriginalNodes(graphs[0]->number_of_nodes());
+        std::vector<NodeID> final;
 
-        for (size_t i = ge_ids.size(); i--; ) {
-            size_t current_id = ge_ids[i];
-            for (auto e : guaranteed_edges[i]) {
-                graphs[current_id]->setPartitionIndex(e.first, UNDEFINED_NODE);
-                NodeID vertex_id = n0 * current_id + e.first;
-                NodeID new_node = out_graph->new_empty_node();
-                deleted_vertex_mappings[vertex_id] = new_node;
-
-                NodeID neighbour = e.second;
-                bool found_undefined = false;
-
-                for (size_t j = current_id; j < graphs.size() - 1; ++j) {
-                    if (graphs[j]->getPartitionIndex(neighbour)
-                        == UNDEFINED_NODE) {
-                        NodeID deleted_id = n0 * j + neighbour;
-                        neighbour = deleted_vertex_mappings[deleted_id];
-                        found_undefined = true;
-                        break;
-                    }
-                    neighbour = graphs[j]->getPartitionIndex(neighbour);
-                }
-
-                if (!found_undefined)
-                    neighbour = out_graph->getCurrentPosition(neighbour);
-                out_graph->new_edge_order(new_node, neighbour, global_mincut);
-            }
+        for (NodeID n : out_graph->nodes()) {
+            std::vector<NodeID> empty;
+            out_graph->setContainedVertices(n, empty);
         }
-        return std::make_pair(out_graph_mapping, deleted_vertex_mappings);
-    }
 
-    static void setVertexLocations(
-        std::shared_ptr<mutable_graph> out_graph,
-        const std::vector<std::shared_ptr<graph_access> >& graphs,
-        const std::vector<NodeID>& out_graph_mapping,
-        const std::unordered_map<NodeID, NodeID>& deleted_vertex_mappings) {
-        if (configuration::getConfig()->save_cut) {
-            NodeID n0 = graphs[0]->number_of_nodes();
-            out_graph->setOriginalNodes(graphs[0]->number_of_nodes());
-            std::vector<NodeID> final;
+        for (NodeID n = 0; n < graphs.back()->number_of_nodes(); ++n) {
+            graphs.back()->setPartitionIndex(n, out_graph_mapping[n]);
+        }
 
-            for (NodeID n : out_graph->nodes()) {
-                std::vector<NodeID> empty;
-                out_graph->setContainedVertices(n, empty);
-            }
-
-            std::vector<NodeID> b(out_graph->n(), 0);
-
-            for (NodeID n = 0; n < graphs.back()->number_of_nodes(); ++n) {
-                graphs.back()->setPartitionIndex(n, out_graph_mapping[n]);
-            }
-
-            for (auto i = graphs.size() - 2; i > 0 && graphs.size() > 2; --i) {
+        // last one is empty, otherwise we would not have left the loop then
+        int32_t g_id = ge_ids.size() - 2;
+        for (auto i = graphs.size() - 1; i-- > 0 && graphs.size() > 1; ) {
 #ifdef PARALLEL
 #pragma omp parallel for
 #endif
-                for (NodeID n = 0; n < graphs[i]->number_of_nodes(); ++n) {
-                    NodeID index = graphs[i]->getPartitionIndex(n);
-                    if (index == UNDEFINED_NODE) {
-                        NodeID deleted_id = (n0 * i) + n;
-                        NodeID id_new = deleted_vertex_mappings.at(deleted_id);
-                        graphs[i]->setPartitionIndex(n, id_new);
-                    } else {
-                        NodeID id_new = graphs[i + 1]->getPartitionIndex(index);
-                        graphs[i]->setPartitionIndex(n, id_new);
-                    }
-                }
+            for (NodeID n = 0; n < graphs[i]->number_of_nodes(); ++n) {
+                NodeID index = graphs[i]->getPartitionIndex(n);
+                NodeID id_new = graphs[i + 1]->getPartitionIndex(index);
+                graphs[i]->setPartitionIndex(n, id_new);
             }
 
+            if (g_id != -1 && i == ge_ids[g_id]) {
+                for (auto e : g_edges[g_id]) {
+                    NodeID new_node = out_graph->new_empty_node();
+                    NodeID neighbour = graphs[i]->getPartitionIndex(e.second);
+                    out_graph->new_edge_order(new_node, neighbour, mincut);
+                    graphs[i]->setPartitionIndex(e.first, new_node);
+                }
+                --g_id;
+            }
+        }
+
+        if (configuration::getConfig()->save_cut) {
+            std::vector<NodeID> b(out_graph->n(), 0);
             for (NodeID n : graphs[0]->nodes()) {
                 NodeID position = graphs[0]->getPartitionIndex(n);
-                if (graphs.size() > 1) {
-                    if (position == UNDEFINED_NODE) {
-                        position = deleted_vertex_mappings.at(n);
-                    } else {
-                        position = graphs[1]->getPartitionIndex(position);
-                    }
-                }
-
                 out_graph->setCurrentPosition(n, position);
                 out_graph->addContainedVertex(position, n);
-
                 ++b[position];
             }
 

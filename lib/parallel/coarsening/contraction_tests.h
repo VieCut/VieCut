@@ -126,8 +126,6 @@ class tests {
 
                 finished[n] = true;
 
-                NodeID deg_n = G->getWeightedNodeDegree(n);
-
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID tgt = G->getEdgeTarget(e);
                     if (tgt > n) {
@@ -135,18 +133,24 @@ class tests {
                     }
                 }
 
+                NodeID deg_n = G->getWeightedNodeDegree(n);
                 for (EdgeID e1 : G->edges_of(n)) {
                     NodeID tgt = G->getEdgeTarget(e1);
                     NodeID deg_tgt = G->getWeightedNodeDegree(tgt);
                     EdgeWeight w1 = G->getEdgeWeight(e1);
-                    if (finished[tgt])
+                    if (finished[tgt]) {
+                        marked[tgt] = UNDEFINED_EDGE;
                         continue;
+                    }
 
                     finished[tgt] = true;
                     EdgeWeight wgt_sum = G->getEdgeWeight(e1);
                     if (tgt > n) {
                         for (EdgeID e2 : G->edges_of(tgt)) {
                             NodeID tgt2 = G->getEdgeTarget(e2);
+                            if (marked[tgt2] == UNDEFINED_EDGE)
+                                continue;
+
                             if (marked[tgt2] < G->get_first_edge(n)
                                 || marked[tgt2] >= G->get_first_invalid_edge(n))
                                 continue;
@@ -156,24 +160,29 @@ class tests {
 
                             wgt_sum += std::min(w2, w3);
 
-                            if (2 * (w1 + w3) >= deg_n
-                                && 2 * (w1 + w2) >= deg_tgt
-                                // if we want to find all cuts,
-                                // we are not allowed to contract an edge
-                                // when an incident vertex has degree mincut
-                                // (as the singleton cut might be important)
-                                && (!find_all_cuts ||
-                                    (deg_n >= weight_limit
-                                     && deg_tgt >= weight_limit))) {
+
+                            bool contractible_one_cut =
+                                !find_all_cuts 
+                                && 2 * (w1 + w3) >= deg_n
+                                && 2 * (w1 + w2) >= deg_tgt;
+
+                            bool contractible_all_cuts =
+                                find_all_cuts 
+                                && 2 * (w1 + w3) > deg_n
+                                && 2 * (w1 + w2) > deg_tgt
+                                && deg_n >= weight_limit 
+                                && deg_tgt >= weight_limit;
+
+                            if (contractible_one_cut || contractible_all_cuts) {
                                 // node degrees change when we contract edges.
                                 // thus, we only use PR 2 or 3 when the
                                 // incident vertices haven't been contracted yet
                                 // keeping a data structure with current
                                 // degrees would be too expensive in parallel
-                                if (__sync_bool_compare_and_swap(&contracted[n],
-                                                                 false, true)) {
+                                if (__sync_bool_compare_and_swap(
+                                    &contracted[n], false, true)) {
                                     if (__sync_bool_compare_and_swap(
-                                            &contracted[tgt], false, true)) {
+                                        &contracted[tgt], false, true)) {
                                         uf.Union(n, tgt);
                                         break;
                                     }
@@ -182,9 +191,9 @@ class tests {
                         }
 
                         if (wgt_sum >= weight_limit) {
-                            uf.Union(n, tgt);
                             contracted[n] = true;
                             contracted[tgt] = true;
+                            uf.Union(n, tgt);
                         }
                         marked[tgt] = UNDEFINED_EDGE;
                     }

@@ -102,11 +102,6 @@ class cactus_mincut : public minimum_cut {
                 }
             }
 
-            LOG1 << " AYOOOO!";
-            for (auto e : guaranteed_edges.back()) {
-                LOG1 << "GEEE " << e;
-            }
-
             auto newg = contraction::fromUnionFind(current_graph, &uf);
             if (newg->number_of_nodes() < current_graph->number_of_nodes())
                 graphs.emplace_back(newg);

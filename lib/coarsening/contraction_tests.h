@@ -80,23 +80,13 @@ class tests {
                       // (as the singleton cut might be important)
                       && (!find_all_cuts || (degrees[source] >= limit
                                              && degrees[target] >= limit))))) {
-                    if (wgt == degrees[source] || wgt == degrees[target])
-                        continue;
 
-                    NodeID min = degrees[source] < degrees[target]
-                                 ? source : target;
-
-                    if (wgt <= limit && contracted[min])
-                        continue;
-
-                    EdgeWeight new_w = degrees[source]
-                                       + degrees[target] - (2 * wgt);
+                    EdgeWeight new_w =
+                        degrees[source] + degrees[target] - (2 * wgt);
 
                     degrees[source] = new_w;
                     degrees[target] = new_w;
                     uf.Union(source, target);
-                    contracted[source] = true;
-                    contracted[target] = true;
                 }
             }
         }
@@ -132,8 +122,9 @@ class tests {
                     continue;
                 }
 
+                EdgeWeight w1 = G->getEdgeWeight(e1);
                 finished[tgt] = true;
-                EdgeWeight wgt_sum = G->getEdgeWeight(e1);
+                EdgeWeight wgt_sum = w1;
                 if (tgt > n) {
                     for (EdgeID e2 : G->edges_of(tgt)) {
                         NodeID tgt2 = G->getEdgeTarget(e2);
@@ -145,7 +136,6 @@ class tests {
                             continue;
                         }
 
-                        EdgeWeight w1 = G->getEdgeWeight(e1);
                         EdgeWeight w2 = G->getEdgeWeight(e2);
                         EdgeWeight w3 = G->getEdgeWeight(marked[tgt2]);
 

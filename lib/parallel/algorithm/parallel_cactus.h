@@ -137,7 +137,6 @@ class parallel_cactus : public minimum_cut {
                     }
                 }
             }
-
             LOGC(timing) << "t " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf.n();

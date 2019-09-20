@@ -167,13 +167,6 @@ class minimum_cut_helpers {
         const std::vector<size_t>& ge_ids,
         const std::vector<std::vector<std::pair<NodeID, NodeID> > >& g_edges,
         const EdgeWeight mincut) {
-        std::vector<NodeID> out_graph_mapping;
-
-        // TODO: IS THIS EASIER?!
-        for (size_t i = 0; i < out_graph->getOriginalNodes(); ++i) {
-            out_graph_mapping.emplace_back(out_graph->getCurrentPosition(i));
-        }
-
         out_graph->setOriginalNodes(graphs[0]->number_of_nodes());
         std::vector<NodeID> final;
 
@@ -183,7 +176,8 @@ class minimum_cut_helpers {
         }
 
         for (NodeID n = 0; n < graphs.back()->number_of_nodes(); ++n) {
-            graphs.back()->setPartitionIndex(n, out_graph_mapping[n]);
+            graphs.back()->setPartitionIndex(n,
+                                             out_graph->getCurrentPosition(n));
         }
 
         // last one is empty, otherwise we would not have left the loop then

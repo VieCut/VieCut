@@ -183,8 +183,6 @@ class parallel_cactus : public minimum_cut {
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);
 
-        LOG1 << "out graph " << out_graph->n();
-
         minimum_cut_helpers::setVertexLocations(out_graph, graphs, ge_ids,
                                                 guaranteed_edges, mincut);
 

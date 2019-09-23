@@ -183,9 +183,9 @@ class recursive_cactus {
         NodeID s = UNDEFINED_NODE;
 
         for (NodeID n : G->nodes()) {
-            if (G->getWeightedNodeDegree(n) > max_degree &&
+            if (G->getNodeDegree(n) > max_degree &&
                 !G->isEmpty(n)) {
-                max_degree = G->getWeightedNodeDegree(n);
+                max_degree = G->getNodeDegree(n);
                 s = n;
             }
         }
@@ -196,9 +196,9 @@ class recursive_cactus {
 
         for (EdgeID edge : G->edges_of(s)) {
             NodeID ngbr = G->getEdgeTarget(s, edge);
-            if (G->getWeightedNodeDegree(ngbr) > max_ngbr &&
+            if (G->getNodeDegree(ngbr) > max_ngbr &&
                 !G->isEmpty(ngbr)) {
-                max_ngbr = G->getWeightedNodeDegree(ngbr);
+                max_ngbr = G->getNodeDegree(ngbr);
                 t = ngbr;
                 e = edge;
             }
@@ -325,7 +325,12 @@ class recursive_cactus {
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
 
         if (depth % 10 == 0) {
+            size_t previous = UNDEFINED_NODE;
             cactusEdge = removeHeavyEdges(G);
+            
+            // implicit do-while loop
+            while (previous > G->n()) {
+                previous = G->n();
             // create empty multicut problem to be able to run mod_capforest
 
             multicut_problem mcp(G);
@@ -347,6 +352,7 @@ class recursive_cactus {
                 G = contraction::fromUnionFind(G, &uf34);
             }
         }
+        }
 
         if (G->number_of_nodes() == 1 || G->number_of_edges() == 0) {
             reInsertVertices(G, cactusEdge);
@@ -356,9 +362,10 @@ class recursive_cactus {
         VIECUT_ASSERT_TRUE(isCNCR(G));
         FlowType max_flow;
 
+
         // auto [s, e, tgt] = findFlowEdge(G);
-        // auto [s, e, tgt] = maximumFlowEdge(G);
-        auto [s, e, tgt] = centralFlowEdge(G);
+        auto [s, e, tgt] = maximumFlowEdge(G);
+        //auto [s, e, tgt] = centralFlowEdge(G);
 
         {
             std::vector<NodeID> vtcs = { s, tgt };
@@ -372,10 +379,11 @@ class recursive_cactus {
 
             VIECUT_ASSERT_EQ(G->getEdgeTarget(s, e), tgt);
             G->contractEdge(s, e);
+            G = recursiveCactus(G, depth + 1);
             reInsertVertices(G, cactusEdge);
             VIECUT_ASSERT_TRUE(isCNCR(G));
 
-            return recursiveCactus(G, depth + 1);
+            return G;
         } else {
             if (G->number_of_nodes() == 2) {
                 reInsertVertices(G, cactusEdge);

@@ -152,6 +152,31 @@ class recursive_cactus {
     }
 
  private:
+    std::tuple<NodeID, EdgeID, NodeID> centralFlowEdge(
+        std::shared_ptr<mutable_graph> G) {
+        NodeID random_vtx = random_functions::nextInt(0, G->n() - 1);
+        NodeID v1 = std::get<2>(graph_algorithms::bfsDistances(G, random_vtx));
+        auto [parent, distance, v2] = graph_algorithms::bfsDistances(G, v1);
+
+        uint32_t max_distance = distance[v2];
+        for (uint32_t d = max_distance; d > (max_distance + 1) / 2; --d) {
+            if (distance[v2] != d) {
+                LOG1 << distance[v2] << " of " << v2 << " is not " << d;
+                exit(1);
+            }
+            v2 = parent[v2];
+        }
+
+        for (EdgeID e : G->edges_of(v2)) {
+            if (G->getEdgeTarget(v2, e) == parent[v2]) {
+                return std::make_tuple(v2, e, parent[v2]);
+            }
+        }
+
+        LOG1 << "Central flow edge didn't find an edge!";
+        exit(1);
+    }
+
     std::tuple<NodeID, EdgeID, NodeID> maximumFlowEdge(
         std::shared_ptr<mutable_graph> G) {
         NodeWeight max_degree = 0;
@@ -332,7 +357,8 @@ class recursive_cactus {
         FlowType max_flow;
 
         // auto [s, e, tgt] = findFlowEdge(G);
-        auto [s, e, tgt] = maximumFlowEdge(G);
+        // auto [s, e, tgt] = maximumFlowEdge(G);
+        auto [s, e, tgt] = centralFlowEdge(G);
 
         {
             std::vector<NodeID> vtcs = { s, tgt };
@@ -852,8 +878,8 @@ class recursive_cactus {
 
                 if (target != source
                     && (wgt > limit
-                    || 2 * wgt > degrees[source]
-                    || 2 * wgt > degrees[target])
+                        || 2 * wgt > degrees[source]
+                        || 2 * wgt > degrees[target])
                     && degrees[source] > limit
                     && degrees[target] > limit) {
                     EdgeWeight new_w =

@@ -10,6 +10,8 @@
  *****************************************************************************/
 
 #include <memory>
+#include <queue>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -126,6 +128,38 @@ class graph_algorithms {
             exit(1);
         }
         LOG0 << "Graph is valid!";
+    }
+
+    static std::tuple<std::vector<NodeID>, std::vector<uint32_t>, NodeID>
+    bfsDistances(std::shared_ptr<mutable_graph> G, NodeID start) {
+        std::queue<NodeID> q;
+        std::vector<NodeID> parent(G->n(), UNDEFINED_NODE);
+        std::vector<uint32_t> distance(G->n(), 0);
+        std::vector<bool> discovered(G->n(), false);
+        NodeID vtcs = 1;
+        discovered[start] = true;
+        q.push(start);
+
+        NodeID top = UNDEFINED_NODE;
+        while (!q.empty()) {
+            top = q.front();
+            q.pop();
+            for (EdgeID e : G->edges_of(top)) {
+                NodeID t = G->getEdgeTarget(top, e);
+                if (!discovered[t]) {
+                    discovered[t] = true;
+                    parent[t] = top;
+                    distance[t] = distance[top] + 1;
+                    vtcs++;
+                    if (vtcs == G->n()) {
+                        return std::make_tuple(parent, distance, t);
+                    }
+                    q.push(t);
+                }
+            }
+        }
+
+        return std::make_tuple(parent, distance, top);
     }
 
  private:

@@ -729,6 +729,7 @@ class mutable_graph {
     std::shared_ptr<mutable_graph> G) {
     std::ostringstream oss;
 
+    oss << "Graph n " << G->n() << " m " << G->m() << "\n";
     for (NodeID n : G->nodes()) {
         oss << n << ": [";
         for (EdgeID e : G->edges_of(n)) {

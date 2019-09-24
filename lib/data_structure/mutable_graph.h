@@ -308,15 +308,15 @@ class mutable_graph {
         NodeID back = number_of_nodes() - 1;
 
         if (node < back) {
-            std::swap(contained_in_this[node], contained_in_this[back]);
-
-            for (NodeID n : contained_in_this[node]) {
+            for (NodeID n : contained_in_this[back]) {
                 current_position[n] = node;
             }
 
-            for (NodeID n : contained_in_this[back]) {
+            for (NodeID n : contained_in_this[node]) {
                 current_position[n] = back;
             }
+
+            contained_in_this[node] = contained_in_this[back];
         }
 
         for (EdgeID e : edges_of(node)) {

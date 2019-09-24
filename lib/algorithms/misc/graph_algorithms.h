@@ -127,7 +127,8 @@ class graph_algorithms {
             LOG1 << "Error: Invalid number of edges!";
             exit(1);
         }
-        LOG0 << "Graph is valid!";
+
+        LOG1 << "Graph is valid!";
     }
 
     static std::tuple<std::vector<NodeID>, std::vector<uint32_t>, NodeID>

@@ -253,7 +253,6 @@ class recursive_cactus {
         std::unordered_map<NodeID, std::vector<NodeID> > contract;
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
         std::vector<NodeID> markForCactus;
-
         for (NodeID n : G->nodes()) {
             if (G->isEmpty(n))
                 continue;
@@ -326,6 +325,7 @@ class recursive_cactus {
 
         if (depth % 10 == 0) {
             size_t previous = UNDEFINED_NODE;
+
             cactusEdge = removeHeavyEdges(G);
 
             // implicit do-while loop
@@ -537,11 +537,9 @@ class recursive_cactus {
                 std::shared_ptr<mutable_graph> G2,
                 NodeID v2) {
         NodeID v1_n = G1->number_of_nodes();
-
         if (G2->number_of_nodes() == 1) {
             return G1;
         }
-
         if (G1->number_of_nodes() == 1) {
             return G2;
         }
@@ -559,11 +557,9 @@ class recursive_cactus {
                 }
             } else {
                 NodeID v = G1->new_empty_node();
-
                 for (NodeID c : G2->containedVertices(i)) {
                     G1->setCurrentPosition(c, v);
                 }
-
                 G1->setContainedVertices(v, G2->containedVertices(i));
             }
         }
@@ -690,8 +686,8 @@ class recursive_cactus {
             cactus->new_edge_order(new_nodes[0], new_nodes[1], mincut / 2);
             cactus->new_edge_order(new_nodes[0], new_nodes[2], mincut / 2);
             cactus->new_edge_order(new_nodes[1], new_nodes[2], mincut / 2);
-
             cactus->deleteVertex(vertex);
+
             return true;
         }
 
@@ -713,9 +709,12 @@ class recursive_cactus {
         }
 
         for (NodeID n = 0; n < G->getOriginalNodes(); ++n) {
-            NodeID n_in_contract = v[G->getCurrentPosition(n)];
-            contract->addContainedVertex(n_in_contract, n);
-            contract->setCurrentPosition(n, n_in_contract);
+            NodeID pos = G->getCurrentPosition(n);
+            if (pos < G->n()) {
+                NodeID n_in_contract = v[G->getCurrentPosition(n)];
+                contract->addContainedVertex(n_in_contract, n);
+                contract->setCurrentPosition(n, n_in_contract);
+            }
         }
 
         for (NodeID n : contract->nodes()) {

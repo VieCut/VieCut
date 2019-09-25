@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "algorithms/flow/push_relabel.h"
+#include "algorithms/global_mincut/cactus/heavy_edges.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/misc/graph_algorithms.h"
 #include "algorithms/misc/strongly_connected_components.h"
@@ -248,72 +249,6 @@ class recursive_cactus {
         return std::make_tuple(s, e, tgt);
     }
 
-    std::vector<std::tuple<NodeID, std::vector<NodeID> > >
-    removeHeavyEdges(std::shared_ptr<mutable_graph> G) {
-        std::unordered_map<NodeID, std::vector<NodeID> > contract;
-        std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
-        std::vector<NodeID> markForCactus;
-        for (NodeID n : G->nodes()) {
-            if (G->isEmpty(n))
-                continue;
-
-            for (EdgeID e : G->edges_of(n)) {
-                EdgeWeight wgt = G->getEdgeWeight(n, e);
-                NodeID target = G->getEdgeTarget(n, e);
-
-                if (G->isEmpty(target))
-                    continue;
-
-                if (wgt > mincut) {
-                    NodeID v1 = G->containedVertices(n)[0];
-                    NodeID v2 = G->containedVertices(target)[0];
-                    NodeID min = std::min(v1, v2);
-                    NodeID max = std::max(v1, v2);
-
-                    if (contract.find(min) == contract.end()) {
-                        contract[min] = { max };
-                    } else {
-                        contract[min].emplace_back(max);
-                    }
-                }
-
-                if (wgt == mincut) {
-                    if (G->get_first_invalid_edge(n) == 1) {
-                        // each edge is seen from both adjacent nodes
-                        // so we get all edges
-                        markForCactus.emplace_back(G->containedVertices(n)[0]);
-                    }
-                }
-            }
-        }
-
-        for (const auto& [lowest, others] : contract) {
-            std::unordered_set<NodeID> vtxset;
-            vtxset.insert(G->getCurrentPosition(lowest));
-            for (const auto& v : others) {
-                vtxset.insert(G->getCurrentPosition(v));
-            }
-            if (vtxset.size() > 1) {
-                G->contractVertexSet(vtxset);
-            }
-        }
-
-        for (const NodeID& e : markForCactus) {
-            if (G->n() > 2) {
-                NodeID n = G->getCurrentPosition(e);
-                VIECUT_ASSERT_EQ(G->get_first_invalid_edge(n), 1);
-                NodeID t = G->getEdgeTarget(n, 0);
-                if (G->isEmpty(t)) {
-                    continue;
-                }
-                NodeID vtx_in_t = G->containedVertices(t)[0];
-                cactusEdge.emplace_back(vtx_in_t, G->containedVertices(n));
-                G->deleteVertex(n);
-            }
-        }
-        return cactusEdge;
-    }
-
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
         if (depth % 100 == 0) {
@@ -326,10 +261,9 @@ class recursive_cactus {
         if (depth % 10 == 0) {
             size_t previous = UNDEFINED_NODE;
 
-            cactusEdge = removeHeavyEdges(G);
-
             // implicit do-while loop
             while (previous > G->n()) {
+                heavy_edges::removeHeavyEdges(G, &cactusEdge, mincut);
                 previous = G->n();
                 // create empty multicut problem to be able to run mod_capforest
 
@@ -355,7 +289,7 @@ class recursive_cactus {
         }
 
         if (G->number_of_nodes() == 1 || G->number_of_edges() == 0) {
-            reInsertVertices(G, cactusEdge);
+            heavy_edges::reInsertVertices(G, cactusEdge, mincut);
             return G;
         }
 
@@ -379,12 +313,12 @@ class recursive_cactus {
             VIECUT_ASSERT_EQ(G->getEdgeTarget(s, e), tgt);
             G->contractEdge(s, e);
             G = recursiveCactus(G, depth + 1);
-            reInsertVertices(G, cactusEdge);
+            heavy_edges::reInsertVertices(G, cactusEdge, mincut);
             VIECUT_ASSERT_TRUE(isCNCR(G));
             return G;
         } else {
             if (G->number_of_nodes() == 2) {
-                reInsertVertices(G, cactusEdge);
+                heavy_edges::reInsertVertices(G, cactusEdge, mincut);
                 VIECUT_ASSERT_TRUE(isCNCR(G));
                 return G;
             }
@@ -422,7 +356,7 @@ class recursive_cactus {
                     ret->setCurrentPosition(n, new_node);
                 }
 
-                reInsertVertices(ret, cactusEdge);
+                heavy_edges::reInsertVertices(ret, cactusEdge, mincut);
                 return ret;
             }
 
@@ -442,7 +376,7 @@ class recursive_cactus {
                         STCactus, G, depth, c, v, blocksizes[c]);
                 }
             }
-            reInsertVertices(STCactus, cactusEdge);
+            heavy_edges::reInsertVertices(STCactus, cactusEdge, mincut);
             VIECUT_ASSERT_TRUE(isCNCR(STCactus));
             return STCactus;
         }
@@ -542,21 +476,6 @@ class recursive_cactus {
         STCactus = mergeGraphs(STCactus, merge_vtx_in_cactus, n_i, nibar);
         VIECUT_ASSERT_TRUE(isCNCR(STCactus));
         return STCactus;
-    }
-
-    void reInsertVertices(std::shared_ptr<mutable_graph> G,
-                          std::vector<
-                              std::tuple<NodeID,
-                                         std::vector<NodeID> > > toInsert) {
-        for (const auto& [t, cont] : toInsert) {
-            NodeID curr = G->getCurrentPosition(t);
-            NodeID vtx = G->new_empty_node();
-            G->new_edge_order(curr, vtx, mincut);
-            G->setContainedVertices(vtx, cont);
-            for (const auto& e : G->containedVertices(vtx)) {
-                G->setCurrentPosition(e, vtx);
-            }
-        }
     }
 
     bool isCNCR(std::shared_ptr<mutable_graph> G) {

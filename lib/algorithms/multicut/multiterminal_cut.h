@@ -106,7 +106,7 @@ class multiterminal_cut {
         std::vector<int> t_comp;
         strongly_connected_components cc;
 
-        auto [components, num_comp] = cc.strong_components(G);
+        auto [components, num_comp, unused] = cc.strong_components(G);
         std::vector<std::vector<terminal> > terminals(num_comp);
         std::vector<NodeID> ctr(num_comp, 0);
         std::vector<NodeID> num_terminals(num_comp, 0);

@@ -29,7 +29,7 @@ class strongly_connected_components {
     strongly_connected_components() { }
     virtual ~strongly_connected_components() { }
 
-    std::pair<std::vector<int>, size_t> strong_components(
+    std::tuple<std::vector<int>, size_t, std::vector<size_t>> strong_components(
         std::shared_ptr<mutable_graph> G) {
         m_dfsnum.resize(G->number_of_nodes());
         m_comp_num.resize(G->number_of_nodes());
@@ -47,7 +47,7 @@ class strongly_connected_components {
             }
         }
 
-        return std::make_pair(m_comp_num, m_comp_count);
+        return std::make_tuple(m_comp_num, m_comp_count, m_blocksizes);
     }
 
     size_t strong_components(std::shared_ptr<graph_access> G,
@@ -121,10 +121,12 @@ class strongly_connected_components {
             // return from call of node node
             if (current_node == m_roots.top()) {
                 NodeID w = 0;
+                m_blocksizes.emplace_back();
                 do {
                     w = m_unfinished.top();
                     m_unfinished.pop();
                     m_comp_num[w] = m_comp_count;
+                    m_blocksizes[m_comp_count]++;
                 } while (w != current_node);
                 m_comp_count++;
                 m_roots.pop();
@@ -212,6 +214,7 @@ class strongly_connected_components {
 
     std::vector<int> m_dfsnum;
     std::vector<int> m_comp_num;
+    std::vector<size_t> m_blocksizes;
     std::stack<NodeID> m_unfinished;
     std::stack<NodeID> m_roots;
     std::stack<std::pair<NodeID, EdgeID> > iteration_stack;

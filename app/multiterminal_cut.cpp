@@ -133,7 +133,7 @@ int main(int argn, char** argv) {
             config->total_terminals = num_terminals;
 
             strongly_connected_components cc;
-            auto [components, num_comp] = cc.strong_components(G);
+            auto [components, num_comp, unused] = cc.strong_components(G);
 
             std::vector<NodeID> v =
                 graph_io::readVector<NodeID>(config->partition_file);

@@ -266,25 +266,15 @@ class recursive_cactus {
                 heavy_edges::removeHeavyEdges(G, &cactusEdge, mincut);
                 previous = G->n();
                 // create empty multicut problem to be able to run mod_capforest
-
                 multicut_problem mcp(G);
                 auto problem = std::make_shared<multicut_problem>(mcp);
                 noi_minimum_cut noi;
                 auto uf = noi.modified_capforest(problem, mincut + 1);
-
-                if (uf.n() < G->n()) {
-                    G = contraction::fromUnionFind(G, &uf);
-                }
-
+                G = contraction::fromUnionFind(G, &uf);
                 auto uf12 = allCutsPrTests12(G, mincut);
-                if (uf12.n() < G->n()) {
-                    G = contraction::fromUnionFind(G, &uf12);
-                }
-
+                G = contraction::fromUnionFind(G, &uf12);
                 auto uf34 = allCutsPrTests34(G, mincut);
-                if (uf34.n() < G->n()) {
-                    G = contraction::fromUnionFind(G, &uf34);
-                }
+                G = contraction::fromUnionFind(G, &uf34);
             }
         }
 

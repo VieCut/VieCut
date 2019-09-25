@@ -179,18 +179,19 @@ class contraction {
     static std::shared_ptr<mutable_graph> fromUnionFind(
         std::shared_ptr<mutable_graph> G,
         union_find* uf) {
-        std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
+        if (uf->n() == G->n()) {
+            //no contraction
+            return G;
+        }
 
+        std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
-
         for (NodeID n : G->nodes()) {
             NodeID part_id = uf->Find(n);
-
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
             }
-
             reverse_mapping[part[part_id]].push_back(
                 G->containedVertices(n)[0]);
         }
@@ -201,7 +202,6 @@ class contraction {
                 for (auto v : reverse_mapping[i]) {
                     vtx_to_ctr.emplace(G->getCurrentPosition(v));
                 }
-
                 G->contractVertexSet(vtx_to_ctr);
             }
         }
@@ -209,7 +209,6 @@ class contraction {
         if (debug) {
             graph_algorithms::checkGraphValidity(G);
         }
-
         return G;
     }
 

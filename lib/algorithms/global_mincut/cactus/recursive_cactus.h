@@ -150,101 +150,6 @@ class recursive_cactus {
     }
 
  private:
-    std::tuple<NodeID, EdgeID, NodeID> centralFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
-        NodeID random_vtx = random_functions::nextInt(0, G->n() - 1);
-        NodeID v1 = std::get<2>(graph_algorithms::bfsDistances(G, random_vtx));
-        auto [parent, distance, v2] = graph_algorithms::bfsDistances(G, v1);
-        uint32_t max_distance = distance[v2];
-        for (uint32_t d = max_distance; d > (max_distance + 1) / 2; --d) {
-            if (distance[v2] != d) {
-                LOG1 << distance[v2] << " of " << v2 << " is not " << d;
-                exit(1);
-            }
-            v2 = parent[v2];
-        }
-
-        for (EdgeID e : G->edges_of(v2)) {
-            if (G->getEdgeTarget(v2, e) == parent[v2]) {
-                return std::make_tuple(v2, e, parent[v2]);
-            }
-        }
-
-        LOG1 << "Central flow edge didn't find an edge!";
-        exit(1);
-    }
-
-    std::tuple<NodeID, EdgeID, NodeID> maximumFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
-        NodeWeight max_degree = 0;
-        NodeID s = UNDEFINED_NODE;
-
-        for (NodeID n : G->nodes()) {
-            if (G->getNodeDegree(n) > max_degree &&
-                !G->isEmpty(n)) {
-                max_degree = G->getNodeDegree(n);
-                s = n;
-            }
-        }
-
-        NodeID t = UNDEFINED_NODE;
-        EdgeID e = UNDEFINED_EDGE;
-        NodeWeight max_ngbr = 0;
-
-        for (EdgeID edge : G->edges_of(s)) {
-            NodeID ngbr = G->getEdgeTarget(s, edge);
-            if (G->getNodeDegree(ngbr) > max_ngbr &&
-                !G->isEmpty(ngbr)) {
-                max_ngbr = G->getNodeDegree(ngbr);
-                t = ngbr;
-                e = edge;
-            }
-        }
-
-        if (t == UNDEFINED_NODE) {
-            LOG1 << "Heaviest vertex has only empty neighbours!";
-            return findFlowEdge(G);
-        } else {
-            return std::make_tuple(s, e, t);
-        }
-    }
-
-    std::tuple<NodeID, EdgeID, NodeID> findFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
-        NodeID s = random_functions::nextInt(0, G->n() - 1);
-        NodeID tgt = 0;
-        NodeID max_edge = G->get_first_invalid_edge(s) - 1;
-        EdgeID e = random_functions::nextInt(0, max_edge);
-        bool edge_found = false;
-        while (!edge_found) {
-            while (G->isEmpty(s)) {
-                if (s + 1 >= G->n()) {
-                    s = 0;
-                } else {
-                    s++;
-                }
-            }
-            e = 0;
-            while (e < G->get_first_invalid_edge(s)
-                   && (G->isEmpty(G->getEdgeTarget(s, e)))) {
-                e++;
-            }
-
-            if (e < G->get_first_invalid_edge(s)) {
-                edge_found = true;
-            } else {
-                if (s + 1 >= G->n()) {
-                    s = 0;
-                } else {
-                    s++;
-                }
-            }
-        }
-
-        tgt = G->getEdgeTarget(s, e);
-        return std::make_tuple(s, e, tgt);
-    }
-
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
         if (depth % 100 == 0) {
@@ -619,6 +524,101 @@ class recursive_cactus {
         }
         stcactus->finish_construction();
         return stcactus;
+    }
+
+    std::tuple<NodeID, EdgeID, NodeID> centralFlowEdge(
+        std::shared_ptr<mutable_graph> G) {
+        NodeID random_vtx = random_functions::nextInt(0, G->n() - 1);
+        NodeID v1 = std::get<2>(graph_algorithms::bfsDistances(G, random_vtx));
+        auto [parent, distance, v2] = graph_algorithms::bfsDistances(G, v1);
+        uint32_t max_distance = distance[v2];
+        for (uint32_t d = max_distance; d > (max_distance + 1) / 2; --d) {
+            if (distance[v2] != d) {
+                LOG1 << distance[v2] << " of " << v2 << " is not " << d;
+                exit(1);
+            }
+            v2 = parent[v2];
+        }
+
+        for (EdgeID e : G->edges_of(v2)) {
+            if (G->getEdgeTarget(v2, e) == parent[v2]) {
+                return std::make_tuple(v2, e, parent[v2]);
+            }
+        }
+
+        LOG1 << "Central flow edge didn't find an edge!";
+        exit(1);
+    }
+
+    std::tuple<NodeID, EdgeID, NodeID> maximumFlowEdge(
+        std::shared_ptr<mutable_graph> G) {
+        NodeWeight max_degree = 0;
+        NodeID s = UNDEFINED_NODE;
+
+        for (NodeID n : G->nodes()) {
+            if (G->getNodeDegree(n) > max_degree &&
+                !G->isEmpty(n)) {
+                max_degree = G->getNodeDegree(n);
+                s = n;
+            }
+        }
+
+        NodeID t = UNDEFINED_NODE;
+        EdgeID e = UNDEFINED_EDGE;
+        NodeWeight max_ngbr = 0;
+
+        for (EdgeID edge : G->edges_of(s)) {
+            NodeID ngbr = G->getEdgeTarget(s, edge);
+            if (G->getNodeDegree(ngbr) > max_ngbr &&
+                !G->isEmpty(ngbr)) {
+                max_ngbr = G->getNodeDegree(ngbr);
+                t = ngbr;
+                e = edge;
+            }
+        }
+
+        if (t == UNDEFINED_NODE) {
+            LOG1 << "Heaviest vertex has only empty neighbours!";
+            return findFlowEdge(G);
+        } else {
+            return std::make_tuple(s, e, t);
+        }
+    }
+
+    std::tuple<NodeID, EdgeID, NodeID> findFlowEdge(
+        std::shared_ptr<mutable_graph> G) {
+        NodeID s = random_functions::nextInt(0, G->n() - 1);
+        NodeID tgt = 0;
+        NodeID max_edge = G->get_first_invalid_edge(s) - 1;
+        EdgeID e = random_functions::nextInt(0, max_edge);
+        bool edge_found = false;
+        while (!edge_found) {
+            while (G->isEmpty(s)) {
+                if (s + 1 >= G->n()) {
+                    s = 0;
+                } else {
+                    s++;
+                }
+            }
+            e = 0;
+            while (e < G->get_first_invalid_edge(s)
+                   && (G->isEmpty(G->getEdgeTarget(s, e)))) {
+                e++;
+            }
+
+            if (e < G->get_first_invalid_edge(s)) {
+                edge_found = true;
+            } else {
+                if (s + 1 >= G->n()) {
+                    s = 0;
+                } else {
+                    s++;
+                }
+            }
+        }
+
+        tgt = G->getEdgeTarget(s, e);
+        return std::make_tuple(s, e, tgt);
     }
 
     timer t;

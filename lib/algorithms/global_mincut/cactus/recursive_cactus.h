@@ -381,18 +381,16 @@ class recursive_cactus {
             G = recursiveCactus(G, depth + 1);
             reInsertVertices(G, cactusEdge);
             VIECUT_ASSERT_TRUE(isCNCR(G));
-
             return G;
         } else {
             if (G->number_of_nodes() == 2) {
                 reInsertVertices(G, cactusEdge);
                 VIECUT_ASSERT_TRUE(isCNCR(G));
-
                 return G;
             }
             // contract
             strongly_connected_components scc;
-            auto [v, num_comp] = scc.strong_components(G);
+            auto [v, num_comp, blocksizes] = scc.strong_components(G);
 
             if (num_comp == 2
                 && (G->getWeightedNodeDegree(s) == mincut
@@ -414,12 +412,9 @@ class recursive_cactus {
                 }
 
                 VIECUT_ASSERT_TRUE(isCNCR(G));
-
                 auto ret = recursiveCactus(G, depth + 1);
-
                 NodeID other_now = ret->getCurrentPosition(elementsInOther[0]);
                 NodeID new_node = ret->new_empty_node();
-
                 ret->new_edge(other_now, new_node, mincut);
                 ret->setContainedVertices(new_node, elementsInCtr);
 
@@ -428,16 +423,25 @@ class recursive_cactus {
                 }
 
                 reInsertVertices(ret, cactusEdge);
-
                 return ret;
             }
 
             auto STCactus = findSTCactus(v, G, s, num_comp);
-
+            double g_n = static_cast<double>(G->n());
+            // first the small blocks, last the big one. then we don't need to
+            // copy graphs as the small ones are newly generated
             for (int c = 0; c < static_cast<int>(num_comp); ++c) {
-                STCactus = mergeCactusWithComponent(STCactus, G, depth, c, v);
+                if (static_cast<double>(blocksizes[c]) <= (g_n / 2.0)) {
+                    STCactus = mergeCactusWithComponent(
+                        STCactus, G, depth, c, v, blocksizes[c]);
+                }
             }
-
+            for (int c = 0; c < static_cast<int>(num_comp); ++c) {
+                if (static_cast<double>(blocksizes[c]) > (g_n / 2.0)) {
+                    STCactus = mergeCactusWithComponent(
+                        STCactus, G, depth, c, v, blocksizes[c]);
+                }
+            }
             reInsertVertices(STCactus, cactusEdge);
             VIECUT_ASSERT_TRUE(isCNCR(STCactus));
             return STCactus;
@@ -448,34 +452,89 @@ class recursive_cactus {
         std::shared_ptr<mutable_graph> STCactus,
         std::shared_ptr<mutable_graph> G,
         size_t depth, int component,
-        const std::vector<int>& scc_result) {
-        // find a node in G that is contracted
-        // and one that is not contracted,
-        // use their location in contracted graphs
-        // to re-find nodes as IDs swap around
+        const std::vector<int>& scc_result, size_t blocksize) {
         NodeID uncontracted_base_vertex = UNDEFINED_NODE;
         NodeID contracted_base_vertex = UNDEFINED_NODE;
+        std::shared_ptr<mutable_graph> graph;
+        if (static_cast<double>(blocksize) <=
+            (static_cast<double>(G->n()) / 2.0)) {
+            graph = std::make_shared<mutable_graph>();
+            graph->start_construction(blocksize + 1);
+            graph->setOriginalNodes(G->getOriginalNodes());
+            graph->new_empty_node();
+            for (NodeID n : graph->nodes()) {
+                graph->setContainedVertices(n, { });
+            }
 
-        std::unordered_set<NodeID> all_ctr;
-        for (size_t i = 0; i < scc_result.size(); ++i) {
-            if (scc_result[i] != component) {
-                all_ctr.insert(i);
-                if (contracted_base_vertex == UNDEFINED_NODE) {
-                    if (!G->containedVertices(i).empty()) {
-                        contracted_base_vertex = G->containedVertices(i)[0];
+            std::vector<NodeID> contained;
+            NodeID vtx = 0;
+
+            for (NodeID n : G->nodes()) {
+                if (scc_result[n] == component) {
+                    graph->new_empty_node();
+                    contained.emplace_back(vtx++);
+                    if (uncontracted_base_vertex == UNDEFINED_NODE &&
+                        !G->containedVertices(n).empty()) {
+                        uncontracted_base_vertex = G->containedVertices(n)[0];
+                    }
+                    for (NodeID con : G->containedVertices(n)) {
+                        graph->addContainedVertex(contained.back(), con);
+                        graph->setCurrentPosition(con, contained.back());
+                    }
+                } else {
+                    contained.emplace_back(blocksize);
+                    if (contracted_base_vertex == UNDEFINED_NODE &&
+                        !G->containedVertices(n).empty()) {
+                        contracted_base_vertex = G->containedVertices(n)[0];
+                    }
+                    for (NodeID con : G->containedVertices(n)) {
+                        graph->addContainedVertex(blocksize, con);
+                        graph->setCurrentPosition(con, blocksize);
                     }
                 }
-            } else {
-                if (uncontracted_base_vertex == UNDEFINED_NODE) {
-                    if (!G->containedVertices(i).empty()) {
+            }
+
+            for (NodeID n : G->nodes()) {
+                if (contained[n] != blocksize) {
+                    EdgeWeight to_contracted = 0;
+                    for (EdgeID e : G->edges_of(n)) {
+                        NodeID t = G->getEdgeTarget(n, e);
+                        EdgeWeight wgt = G->getEdgeWeight(n, e);
+                        if (contained[t] == blocksize) {
+                            to_contracted += wgt;
+                        } else if (contained[n] < contained[t]) {
+                            graph->new_edge(contained[n], contained[t], wgt);
+                        }
+                    }
+
+                    if (to_contracted > 0) {
+                        graph->new_edge(contained[n], blocksize, to_contracted);
+                    }
+                }
+            }
+        } else {
+            // find a node in G that is contracted
+            // and one that is not contracted,
+            // use their location in contracted graphs
+            // to re-find nodes as IDs swap around
+            std::unordered_set<NodeID> all_ctr;
+            for (size_t i = 0; i < scc_result.size(); ++i) {
+                if (scc_result[i] != component) {
+                    all_ctr.insert(i);
+                    if (contracted_base_vertex == UNDEFINED_NODE &&
+                        !G->containedVertices(i).empty()) {
+                        contracted_base_vertex = G->containedVertices(i)[0];
+                    }
+                } else {
+                    if (uncontracted_base_vertex == UNDEFINED_NODE &&
+                        !G->containedVertices(i).empty()) {
                         uncontracted_base_vertex = G->containedVertices(i)[0];
                     }
                 }
             }
+            graph = G;
+            graph->contractVertexSet(all_ctr);
         }
-
-        auto graph = std::make_shared<mutable_graph>(*G);
-        graph->contractVertexSet(all_ctr);
         auto n_i = recursiveCactus(graph, depth + 1);
         NodeID merge_vtx_in_cactus = STCactus->getCurrentPosition(
             uncontracted_base_vertex);

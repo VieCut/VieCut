@@ -22,6 +22,8 @@
 #include <vector>
 
 #include "algorithms/flow/push_relabel.h"
+#include "algorithms/global_mincut/cactus/all_cut_local_red.h"
+#include "algorithms/global_mincut/cactus/graph_modification.h"
 #include "algorithms/global_mincut/cactus/heavy_edges.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/misc/graph_algorithms.h"
@@ -105,10 +107,8 @@ class recursive_cactus {
         }
 
         auto in_graph = flow_graphs.back()->simplify();
-
         auto out_graph = recursiveCactus(in_graph, 0);
-
-        VIECUT_ASSERT_TRUE(isCNCR(out_graph));
+        VIECUT_ASSERT_TRUE(graph_modification::isCNCR(out_graph, mincut));
         LOGC(timing) << "t " << t.elapsed() << " cactus n "
                      << out_graph->n() << " m " << out_graph->n();
 
@@ -131,16 +131,13 @@ class recursive_cactus {
                     auto [t, orig] = packed[lv][n];
                     NodeID newnode = out_graph->new_empty_node();
                     NodeID t_now = out_graph->getCurrentPosition(t);
-
                     out_graph->addContainedVertex(newnode, orig);
                     out_graph->setCurrentPosition(orig, newnode);
                     out_graph->new_edge_order(t_now, newnode, mincut);
                 }
-
                 if (deleted[lv][n].first != UNDEFINED_NODE) {
                     auto [t, orig] = deleted[lv][n];
                     NodeID t_now = out_graph->getCurrentPosition(t);
-
                     out_graph->addContainedVertex(t_now, orig);
                     out_graph->setCurrentPosition(orig, t_now);
                 }
@@ -158,7 +155,6 @@ class recursive_cactus {
         NodeID random_vtx = random_functions::nextInt(0, G->n() - 1);
         NodeID v1 = std::get<2>(graph_algorithms::bfsDistances(G, random_vtx));
         auto [parent, distance, v2] = graph_algorithms::bfsDistances(G, v1);
-
         uint32_t max_distance = distance[v2];
         for (uint32_t d = max_distance; d > (max_distance + 1) / 2; --d) {
             if (distance[v2] != d) {
@@ -255,12 +251,9 @@ class recursive_cactus {
             LOGC(configuration::getConfig()->verbose)
                 << "G n " << G->n() << " m " << G->m() << " depth " << depth;
         }
-
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
-
         if (depth % 10 == 0) {
             size_t previous = UNDEFINED_NODE;
-
             // implicit do-while loop
             while (previous > G->n()) {
                 heavy_edges::removeHeavyEdges(G, &cactusEdge, mincut);
@@ -271,25 +264,21 @@ class recursive_cactus {
                 noi_minimum_cut noi;
                 auto uf = noi.modified_capforest(problem, mincut + 1);
                 G = contraction::fromUnionFind(G, &uf);
-                auto uf12 = allCutsPrTests12(G, mincut);
+                auto uf12 = all_cut_local_red::allCutsPrTests12(G, mincut);
                 G = contraction::fromUnionFind(G, &uf12);
-                auto uf34 = allCutsPrTests34(G, mincut);
+                auto uf34 = all_cut_local_red::allCutsPrTests34(G, mincut);
                 G = contraction::fromUnionFind(G, &uf34);
             }
         }
-
         if (G->number_of_nodes() == 1 || G->number_of_edges() == 0) {
             heavy_edges::reInsertVertices(G, cactusEdge, mincut);
             return G;
         }
-
-        VIECUT_ASSERT_TRUE(isCNCR(G));
+        VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G, mincut));
         FlowType max_flow;
-
         // auto [s, e, tgt] = findFlowEdge(G);
         auto [s, e, tgt] = maximumFlowEdge(G);
         // auto [s, e, tgt] = centralFlowEdge(G);
-
         {
             std::vector<NodeID> vtcs = { s, tgt };
             push_relabel pr;
@@ -299,23 +288,20 @@ class recursive_cactus {
 
         if (max_flow > (FlowType)mincut) {
             LOG << "max flow is larger " << max_flow;
-
             VIECUT_ASSERT_EQ(G->getEdgeTarget(s, e), tgt);
             G->contractEdge(s, e);
             G = recursiveCactus(G, depth + 1);
             heavy_edges::reInsertVertices(G, cactusEdge, mincut);
-            VIECUT_ASSERT_TRUE(isCNCR(G));
+            VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G, mincut));
             return G;
         } else {
             if (G->number_of_nodes() == 2) {
                 heavy_edges::reInsertVertices(G, cactusEdge, mincut);
-                VIECUT_ASSERT_TRUE(isCNCR(G));
+                VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G,mincut));
                 return G;
             }
-            // contract
             strongly_connected_components scc;
             auto [v, num_comp, blocksizes] = scc.strong_components(G);
-
             if (num_comp == 2
                 && (G->getWeightedNodeDegree(s) == mincut
                     || G->getWeightedNodeDegree(tgt) == mincut)) {
@@ -324,10 +310,8 @@ class recursive_cactus {
                 NodeID ctr = (G->getWeightedNodeDegree(s) == mincut) ? s : tgt;
                 VIECUT_ASSERT_EQ(G->getWeightedNodeDegree(ctr), mincut);
                 NodeID other = (ctr == s) ? tgt : s;
-
                 auto elementsInCtr = G->containedVertices(ctr);
                 auto elementsInOther = G->containedVertices(other);
-
                 G->contractEdge(s, e);
                 NodeID contracted_v = G->getCurrentPosition(elementsInCtr[0]);
                 G->setContainedVertices(contracted_v, elementsInOther);
@@ -335,7 +319,7 @@ class recursive_cactus {
                     G->setCurrentPosition(n, contracted_v);
                 }
 
-                VIECUT_ASSERT_TRUE(isCNCR(G));
+                VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G, mincut));
                 auto ret = recursiveCactus(G, depth + 1);
                 NodeID other_now = ret->getCurrentPosition(elementsInOther[0]);
                 NodeID new_node = ret->new_empty_node();
@@ -367,7 +351,7 @@ class recursive_cactus {
                 }
             }
             heavy_edges::reInsertVertices(STCactus, cactusEdge, mincut);
-            VIECUT_ASSERT_TRUE(isCNCR(STCactus));
+            VIECUT_ASSERT_TRUE(graph_modification::isCNCR(STCactus, mincut));
             return STCactus;
         }
     }
@@ -463,219 +447,22 @@ class recursive_cactus {
         NodeID merge_vtx_in_cactus = STCactus->getCurrentPosition(
             uncontracted_base_vertex);
         NodeID nibar = n_i->getCurrentPosition(contracted_base_vertex);
-        STCactus = mergeGraphs(STCactus, merge_vtx_in_cactus, n_i, nibar);
-        VIECUT_ASSERT_TRUE(isCNCR(STCactus));
+        STCactus = graph_modification::mergeGraphs(
+            STCactus, merge_vtx_in_cactus, n_i, nibar, mincut);
+        VIECUT_ASSERT_TRUE(graph_modification::isCNCR(STCactus, mincut));
         return STCactus;
     }
 
-    bool isCNCR(std::shared_ptr<mutable_graph> G) {
-        for (NodeID n : G->nodes()) {
-            if (G->isEmpty(n)) {
-                EdgeWeight deg = 0;
-                NodeID num = 0;
-                for (EdgeID e : G->edges_of(n)) {
-                    deg += G->getEdgeWeight(n, e);
-                    num++;
-                }
-
-                if (deg % mincut != 0) {
-                    LOG1 << "bad degree in vertex " << n;
-                    return false;
-                }
-
-                if (deg / mincut == 3) {
-                    LOG1 << "empty 3junction vertex " << n;
-                    return false;
-                }
-
-                if (deg / mincut == 2) {
-                    if (num < 4) {
-                        LOG1 << "empty 2junction node with 2cycle " << n;
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    std::shared_ptr<mutable_graph>
-    mergeGraphs(std::shared_ptr<mutable_graph> G1,
-                NodeID v1,
-                std::shared_ptr<mutable_graph> G2,
-                NodeID v2) {
-        NodeID v1_n = G1->number_of_nodes();
-        if (G2->number_of_nodes() == 1) {
-            return G1;
-        }
-        if (G1->number_of_nodes() == 1) {
-            return G2;
-        }
-
-        std::vector<NodeID> empty;
-        G1->setContainedVertices(v1, empty);
-
-        for (size_t i = 0; i < G2->number_of_nodes(); ++i) {
-            if (i == v2) {
-                for (NodeID c : G2->containedVertices(i)) {
-                    if (G1->getCurrentPosition(c) == v1) {
-                        G1->setCurrentPosition(c, v1);
-                        G1->addContainedVertex(v1, c);
-                    }
-                }
-            } else {
-                NodeID v = G1->new_empty_node();
-                for (NodeID c : G2->containedVertices(i)) {
-                    G1->setCurrentPosition(c, v);
-                }
-                G1->setContainedVertices(v, G2->containedVertices(i));
-            }
-        }
-
-        for (NodeID n : G2->nodes()) {
-            NodeID new_id = n + v1_n - (n > v2);
-            if (n == v2) {
-                new_id = v1;
-            }
-
-            for (EdgeID e : G2->edges_of(n)) {
-                NodeID t = G2->getEdgeTarget(n, e);
-                if (t != v2) {
-                    NodeID t_id = t + v1_n - (t > v2);
-                    G1->new_edge(new_id, t_id, G2->getEdgeWeight(n, e));
-                }
-            }
-        }
-
-        if (G1->isEmpty(v1)) {
-            canonizeCactus(G1, v1);
-        }
-
-        return G1;
-    }
-
-    bool canonizeCactus(std::shared_ptr<mutable_graph> cactus, NodeID vertex) {
-        size_t junctions = 0;
-        std::vector<std::tuple<NodeID, EdgeID, EdgeID> > neighbors_tree;
-        std::vector<std::pair<NodeID, EdgeID> > neighbors_cycle;
-        for (EdgeID e : cactus->edges_of(vertex)) {
-            EdgeWeight wgt = cactus->getEdgeWeight(vertex, e);
-            if (wgt == mincut) {
-                neighbors_tree.emplace_back(cactus->getEdgeTarget(vertex, e),
-                                            cactus->getReverseEdge(vertex, e),
-                                            e);
-            } else {
-                VIECUT_ASSERT_EQ(mincut % 2, 0);
-                VIECUT_ASSERT_EQ(mincut / 2, wgt);
-                neighbors_cycle.emplace_back(cactus->getEdgeTarget(vertex, e),
-                                             cactus->getReverseEdge(vertex, e));
-            }
-            junctions += wgt;
-        }
-
-        if (junctions % mincut != 0) {
-            LOG1 << mincut << " " << junctions;
-            LOG1 << cactus;
-            LOG1 << "ERROR! NOT EVEN CYCLED. EXITING!";
-            exit(1);
-        }
-
-        junctions /= mincut;
-
-        if (junctions == 2 && !neighbors_tree.empty()) {
-            EdgeID ed = std::get<2>(neighbors_tree[0]);
-            cactus->contractEdge(vertex, ed);
-            return true;
-        }
-
-        if (junctions == 3) {
-            std::vector<std::pair<std::pair<NodeID, EdgeID>,
-                                  std::pair<NodeID, EdgeID> > > pairs;
-            while (neighbors_cycle.size() > 2) {
-                // find matching vertices in cycle, remove from array
-                // (only up to 6 elements in vector, so O(n) delete is fine)
-                std::map<NodeID, size_t> neighbors;
-                for (size_t i = 1; i < neighbors_cycle.size(); ++i) {
-                    neighbors.emplace(neighbors_cycle[i].first, i);
-                }
-
-                std::queue<NodeID> q;
-                std::vector<bool> seen(cactus->number_of_nodes(), false);
-                // if cactus is actually a cactus,
-                // the cycles are only connected through 'vertex'
-                seen[vertex] = true;
-                q.push(neighbors_cycle[0].first);
-
-                while (!q.empty()) {
-                    NodeID n = q.front();
-                    q.pop();
-                    for (EdgeID e : cactus->edges_of(n)) {
-                        NodeID tgt = cactus->getEdgeTarget(n, e);
-                        if (neighbors.count(tgt)) {
-                            pairs.emplace_back(neighbors_cycle[0],
-                                               neighbors_cycle[neighbors[tgt]]);
-                            std::queue<NodeID> empty;
-                            std::swap(q, empty);
-                            neighbors_cycle.erase(neighbors_cycle.begin()
-                                                  + neighbors[tgt]);
-                            neighbors_cycle.erase(neighbors_cycle.begin());
-                            break;
-                        }
-
-                        if (!seen[tgt]) {
-                            q.push(tgt);
-                        }
-                    }
-                }
-            }
-            if (neighbors_cycle.size() == 2) {
-                pairs.emplace_back(neighbors_cycle[0], neighbors_cycle[1]);
-            }
-
-            VIECUT_ASSERT_EQ(pairs.size() + neighbors_tree.size(), 3);
-
-            // delete vertex and replace with 3 new empty 2-junction vertices
-            // merge the ones that are in a 2-cycle
-
-            std::vector<NodeID> new_nodes;
-
-            for (auto p : pairs) {
-                new_nodes.emplace_back(cactus->new_empty_node());
-                cactus->new_edge_order(new_nodes.back(),
-                                       p.first.first, mincut / 2);
-                cactus->new_edge_order(new_nodes.back(),
-                                       p.second.first, mincut / 2);
-            }
-
-            for (auto n : neighbors_tree) {
-                new_nodes.emplace_back(std::get<0>(n));
-            }
-
-            cactus->new_edge_order(new_nodes[0], new_nodes[1], mincut / 2);
-            cactus->new_edge_order(new_nodes[0], new_nodes[2], mincut / 2);
-            cactus->new_edge_order(new_nodes[1], new_nodes[2], mincut / 2);
-            cactus->deleteVertex(vertex);
-
-            return true;
-        }
-
-        return false;
-    }
-
     std::shared_ptr<mutable_graph> findSTCactus(
-        const std::vector<int>& v,
-        std::shared_ptr<mutable_graph> G,
-        NodeID s,
-        int num_comp) {
+        const std::vector<int>& v, std::shared_ptr<mutable_graph> G,
+        NodeID s, int num_comp) {
         auto contract = std::make_shared<mutable_graph>();
         contract->start_construction(num_comp);
         NodeID contained = G->containedVertices(s)[0];
         contract->setOriginalNodes(G->getOriginalNodes());
-
         for (NodeID n : contract->nodes()) {
             contract->setContainedVertices(n, { });
         }
-
         for (NodeID n = 0; n < G->getOriginalNodes(); ++n) {
             NodeID pos = G->getCurrentPosition(n);
             if (pos < G->n()) {
@@ -684,7 +471,6 @@ class recursive_cactus {
                 contract->setCurrentPosition(n, n_in_contract);
             }
         }
-
         for (NodeID n : contract->nodes()) {
             for (NodeID m : contract->nodes()) {
                 if (n < m) {
@@ -692,7 +478,6 @@ class recursive_cactus {
                 }
             }
         }
-
         for (NodeID n : G->nodes()) {
             for (EdgeID e : G->edges_of(n)) {
                 NodeID t = G->getEdgeTarget(n, e);
@@ -705,7 +490,6 @@ class recursive_cactus {
                 }
             }
         }
-
         for (NodeID n : contract->nodes()) {
             for (EdgeID e = contract->getNodeDegree(n); e-- > 0; ) {
                 if (contract->getEdgeWeight(n, e) == 0) {
@@ -713,75 +497,56 @@ class recursive_cactus {
                 }
             }
         }
-
         auto stcactus = std::make_shared<mutable_graph>();
         NodeID num_vertices = contract->n();
         stcactus->start_construction(num_vertices);
         stcactus->resizePositions(contract->getOriginalNodes());
-
         s = contract->getCurrentPosition(contained);
-
         node_bucket_pq pq(num_vertices, mincut + 1);
-
         for (NodeID n = 0; n < num_vertices; ++n) {
             stcactus->new_node();
-
             if (n != s)
                 pq.insert(n, 0);
         }
-
         for (EdgeID e : contract->edges_of(s)) {
             NodeID tgt = contract->getEdgeTarget(s, e);
             pq.increaseKey(tgt, contract->getEdgeWeight(s, e));
         }
-
         std::vector<NodeID> node_mapping(contract->number_of_nodes());
         std::vector<NodeID> rev_node_mapping(contract->number_of_nodes());
-
         stcactus->setContainedVertices(0, contract->containedVertices(s));
         node_mapping[s] = 0;
-
         for (NodeID v : stcactus->containedVertices(0)) {
             stcactus->setCurrentPosition(v, 0);
         }
-
         for (NodeID n = 1; n < num_vertices; ++n) {
             NodeID next = pq.deleteMax();
             for (EdgeID e : contract->edges_of(next)) {
                 NodeID tgt = contract->getEdgeTarget(next, e);
                 EdgeWeight wgt = pq.getKey(tgt);
                 if (pq.contains(tgt)) {
-                    pq.increaseKey(
-                        tgt,
-                        std::min(wgt + contract->getEdgeWeight(next, e),
-                                 mincut));
+                    EdgeWeight new_wgt = wgt + contract->getEdgeWeight(next, e);
+                    pq.increaseKey(tgt, std::min(new_wgt, mincut));
                 }
             }
-
             node_mapping[next] = n;
             rev_node_mapping[n] = next;
-
             stcactus->setContainedVertices(
                 n, contract->containedVertices(next));
-
             for (NodeID v : stcactus->containedVertices(n)) {
                 stcactus->setCurrentPosition(v, n);
             }
         }
-
         std::vector<std::vector<NodeID> > A;
         std::vector<NodeID> B;
         std::vector<bool> order;
-
         size_t i = 1;
         B.emplace_back(0);
         order.emplace_back(false);
-
         while (i < (contract->number_of_nodes() - 1)) {
             EdgeWeight cycle_degree = 0;
             std::unordered_set<NodeID> curr_cycle;
             NodeID n = rev_node_mapping[i];
-
             while ((cycle_degree == 0 || cycle_degree == mincut)
                    && (i + 1 < contract->number_of_nodes())) {
                 n = rev_node_mapping[i];
@@ -794,13 +559,11 @@ class recursive_cactus {
                         cycle_degree += wgt;
                     }
                 }
-
                 if (cycle_degree == mincut) {
                     i++;
                     curr_cycle.insert(n);
                 }
             }
-
             if (curr_cycle.size() > 0) {
                 A.emplace_back();
                 order.emplace_back(true);
@@ -813,10 +576,8 @@ class recursive_cactus {
                 order.emplace_back(false);
             }
         }
-
         order.emplace_back(false);
         B.emplace_back(num_vertices - 1);
-
         NodeID previous = 0;
         size_t a_index = 0, b_index = 0;
         VIECUT_ASSERT_EQ(order.size(), A.size() + B.size());
@@ -834,13 +595,11 @@ class recursive_cactus {
                     if (j == A[a_index].size() - 1) {
                         // last vertex, connect with next cycle or ordered vtx
                         NodeID next;
-
                         if (order[i + 1] == true) {
                             next = stcactus->new_empty_node();
                         } else {
                             next = B[b_index];
                         }
-
                         stcactus->new_edge_order(A[a_index][j], next,
                                                  mincut / 2);
                         stcactus->new_edge_order(previous, next, mincut / 2);
@@ -859,113 +618,7 @@ class recursive_cactus {
             }
         }
         stcactus->finish_construction();
-
         return stcactus;
-    }
-
-    union_find allCutsPrTests12(std::shared_ptr<mutable_graph> G,
-                                EdgeWeight limit) {
-        union_find uf(G->number_of_nodes());
-        std::vector<EdgeWeight> degrees;
-        std::vector<bool> contracted(G->number_of_nodes(), false);
-
-        for (NodeID n : G->nodes()) {
-            degrees.push_back(G->getWeightedNodeDegree(n));
-        }
-
-        for (NodeID n : G->nodes()) {
-            for (EdgeID e : G->edges_of(n)) {
-                NodeID target = uf.Find(G->getEdgeTarget(n, e));
-                NodeID source = uf.Find(n);
-                EdgeWeight wgt = G->getEdgeWeight(n, e);
-
-                if (target != source
-                    && (wgt > limit
-                        || 2 * wgt > degrees[source]
-                        || 2 * wgt > degrees[target])
-                    && degrees[source] > limit
-                    && degrees[target] > limit) {
-                    EdgeWeight new_w =
-                        degrees[source] + degrees[target] - (2 * wgt);
-
-                    degrees[source] = new_w;
-                    degrees[target] = new_w;
-                    uf.Union(source, target);
-                }
-            }
-        }
-        return uf;
-    }
-
-    union_find allCutsPrTests34(std::shared_ptr<mutable_graph> G,
-                                EdgeWeight weight_limit) {
-        union_find uf(G->number_of_nodes());
-        std::vector<EdgeID> marked(G->number_of_nodes(), UNDEFINED_EDGE);
-        std::vector<bool> finished(G->number_of_nodes(), false);
-        std::vector<bool> contracted(G->number_of_nodes(), false);
-
-        for (NodeID n : G->nodes()) {
-            if (finished[n])
-                continue;
-
-            finished[n] = true;
-            for (EdgeID e : G->edges_of(n)) {
-                NodeID tgt = G->getEdgeTarget(n, e);
-                if (tgt > n) {
-                    marked[tgt] = e;
-                }
-            }
-
-            EdgeWeight deg_n = G->getWeightedNodeDegree(n);
-            for (EdgeID e1 : G->edges_of(n)) {
-                NodeID tgt = G->getEdgeTarget(n, e1);
-                EdgeWeight deg_tgt = G->getWeightedNodeDegree(tgt);
-                if (finished[tgt]) {
-                    marked[tgt] = UNDEFINED_EDGE;
-                    continue;
-                }
-
-                finished[tgt] = true;
-                EdgeWeight wgt_sum = G->getEdgeWeight(n, e1);
-                if (tgt > n) {
-                    for (EdgeID e2 : G->edges_of(tgt)) {
-                        NodeID tgt2 = G->getEdgeTarget(tgt, e2);
-                        if (marked[tgt2] == UNDEFINED_EDGE)
-                            continue;
-
-                        if (marked[tgt2] >= G->get_first_invalid_edge(n)
-                            || marked[tgt2] < G->get_first_edge(n)) {
-                            continue;
-                        }
-
-                        EdgeWeight w1 = G->getEdgeWeight(n, e1);
-                        EdgeWeight w2 = G->getEdgeWeight(tgt, e2);
-                        EdgeWeight w3 = G->getEdgeWeight(n, marked[tgt2]);
-
-                        wgt_sum += std::min(w2, w3);
-
-                        bool contractible =
-                            2 * (w1 + w3) > deg_n && 2 * (w1 + w2) > deg_tgt
-                            && deg_n > weight_limit && deg_tgt > weight_limit;
-
-                        if (contractible
-                            && !contracted[n] && !contracted[tgt]) {
-                            uf.Union(n, tgt);
-                            contracted[n] = true;
-                            contracted[tgt] = true;
-                        }
-                    }
-
-                    if (wgt_sum > weight_limit) {
-                        uf.Union(n, tgt);
-                        contracted[n] = true;
-                        contracted[tgt] = true;
-                    }
-                    marked[tgt] = UNDEFINED_EDGE;
-                }
-            }
-        }
-        return uf;
     }
 
     timer t;

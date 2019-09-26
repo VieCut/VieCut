@@ -31,7 +31,7 @@ class strongly_connected_components {
     virtual ~strongly_connected_components() { }
 
     std::tuple<std::vector<int>, size_t, std::vector<size_t> >
-        strong_components(std::shared_ptr<mutable_graph> G) {
+    strong_components(std::shared_ptr<mutable_graph> G) {
         m_dfsnum.resize(G->number_of_nodes());
         m_comp_num.resize(G->number_of_nodes());
         m_dfscount = 0;

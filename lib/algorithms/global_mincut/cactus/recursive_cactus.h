@@ -152,16 +152,26 @@ class recursive_cactus {
  private:
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
+        heavy_edges he(mincut);
+        auto cactusEdges = he.removeHeavyEdges(G);
+        auto cycleEdges = he.contractCycleEdges(G);
+        G = internalRecursiveCactus(G, depth);
+        he.reInsertCycles(G, cycleEdges);
+        he.reInsertVertices(G, cactusEdges);
+        return G;
+    }
+
+    std::shared_ptr<mutable_graph> internalRecursiveCactus(
+        std::shared_ptr<mutable_graph> G, size_t depth) {
         if (depth % 100 == 0) {
             LOGC(configuration::getConfig()->verbose)
                 << "G n " << G->n() << " m " << G->m() << " depth " << depth;
         }
-        std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
+
         if (depth % 10 == 0) {
             size_t previous = UNDEFINED_NODE;
             // implicit do-while loop
             while (previous > G->n()) {
-                heavy_edges::removeHeavyEdges(G, &cactusEdge, mincut);
                 previous = G->n();
                 // create empty multicut problem to be able to run mod_capforest
                 multicut_problem mcp(G);
@@ -176,7 +186,6 @@ class recursive_cactus {
             }
         }
         if (G->number_of_nodes() == 1 || G->number_of_edges() == 0) {
-            heavy_edges::reInsertVertices(G, cactusEdge, mincut);
             return G;
         }
         VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G, mincut));
@@ -196,13 +205,9 @@ class recursive_cactus {
             VIECUT_ASSERT_EQ(G->getEdgeTarget(s, e), tgt);
             G->contractEdge(s, e);
             G = recursiveCactus(G, depth + 1);
-            heavy_edges::reInsertVertices(G, cactusEdge, mincut);
-            VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G, mincut));
             return G;
         } else {
             if (G->number_of_nodes() == 2) {
-                heavy_edges::reInsertVertices(G, cactusEdge, mincut);
-                VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G,mincut));
                 return G;
             }
             strongly_connected_components scc;
@@ -230,12 +235,9 @@ class recursive_cactus {
                 NodeID new_node = ret->new_empty_node();
                 ret->new_edge(other_now, new_node, mincut);
                 ret->setContainedVertices(new_node, elementsInCtr);
-
                 for (NodeID n : elementsInCtr) {
                     ret->setCurrentPosition(n, new_node);
                 }
-
-                heavy_edges::reInsertVertices(ret, cactusEdge, mincut);
                 return ret;
             }
 
@@ -255,7 +257,6 @@ class recursive_cactus {
                         STCactus, G, depth, c, v, blocksizes[c]);
                 }
             }
-            heavy_edges::reInsertVertices(STCactus, cactusEdge, mincut);
             VIECUT_ASSERT_TRUE(graph_modification::isCNCR(STCactus, mincut));
             return STCactus;
         }

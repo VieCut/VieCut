@@ -180,7 +180,7 @@ class contraction {
         std::shared_ptr<mutable_graph> G,
         union_find* uf) {
         if (uf->n() == G->n()) {
-            //no contraction
+            // no contraction
             return G;
         }
 

@@ -24,7 +24,7 @@
 #include "data_structure/mutable_graph.h"
 
 class graph_modification {
-public:
+ public:
     static std::shared_ptr<mutable_graph> mergeGraphs(
         std::shared_ptr<mutable_graph> G1, NodeID v1,
         std::shared_ptr<mutable_graph> G2, NodeID v2, EdgeWeight mincut) {
@@ -67,13 +67,13 @@ public:
                 }
             }
         }
-        if (G1->isEmpty(v1)) 
+        if (G1->isEmpty(v1))
             canonizeCactus(G1, v1, mincut);
         return G1;
     }
 
     static bool canonizeCactus(std::shared_ptr<mutable_graph> cactus,
-                        NodeID vertex, EdgeWeight mincut) {
+                               NodeID vertex, EdgeWeight mincut) {
         size_t junctions = 0;
         std::vector<std::tuple<NodeID, EdgeID, EdgeID> > neighbors_tree;
         std::vector<std::pair<NodeID, EdgeID> > neighbors_cycle;

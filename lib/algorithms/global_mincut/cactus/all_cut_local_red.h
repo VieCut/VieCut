@@ -26,7 +26,7 @@
 #endif
 
 class all_cut_local_red {
-public:
+ public:
     static union_find allCutsPrTests12(std::shared_ptr<mutable_graph> G,
                                        EdgeWeight limit) {
         union_find uf(G->number_of_nodes());

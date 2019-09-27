@@ -24,11 +24,7 @@
 
 class heavy_edges {
  public:
-
-    using NeighboursAndContents =
-        std::vector<std::tuple<std::vector<std::pair<NodeID, EdgeWeight> >,
-                               std::vector<NodeID>, NodeID> >;
-    heavy_edges(EdgeWeight mincut) : mincut(mincut) { }
+    explicit heavy_edges(EdgeWeight mincut) : mincut(mincut) { }
 
     std::vector<std::tuple<NodeID, std::vector<NodeID> > > removeHeavyEdges(
         std::shared_ptr<mutable_graph> G) {
@@ -131,106 +127,6 @@ class heavy_edges {
         }
 
         return cycleEdges;
-    }
-
-    // Return type: std::vector<std::pair<std::vector<std::pair<NodeID,
-    // EdgeWeight> >, std::vector<NodeID> > >;
-    NeighboursAndContents contractMinimumDegreeVertices(
-        std::shared_ptr<mutable_graph> G) {
-        NeighboursAndContents nbc;
-        if (mincut % 2 == 0)
-            return nbc;
-        for (NodeID n = 0; n < G->n(); ++n) {
-            if (G->getWeightedNodeDegree(n) == mincut) {
-                bool empty_neighbor = false;
-                EdgeID non_minimum_neighbour = UNDEFINED_EDGE;
-                for (EdgeID e : G->edges_of(n)) {
-                    NodeID ngbr = G->getEdgeTarget(n, e);
-                    if (G->getWeightedNodeDegree(ngbr) != mincut
-                        && non_minimum_neighbour == UNDEFINED_EDGE) {
-                        non_minimum_neighbour = e;
-                    }
-
-                    if (G->isEmpty(ngbr)) {
-                        empty_neighbor = true;
-                        LOG1 << "empty neighbour!";
-                        break;
-                    }
-                }
-                if (empty_neighbor || non_minimum_neighbour == UNDEFINED_EDGE)
-                    continue;
-
-                LOG1 << "k";
-                nbc.emplace_back();
-                auto& neighbours = std::get<0>(nbc.back());
-                for (EdgeID e : G->edges_of(n)) {
-                    NodeID t = G->containedVertices(G->getEdgeTarget(n, e))[0];
-                    EdgeWeight w = G->getEdgeWeight(n, e);
-                    neighbours.emplace_back(t, w);
-                }
-                auto& contents = std::get<1>(nbc.back());
-                contents = G->containedVertices(n);
-                G->setContainedVertices(n, { });
-                for (const auto& c : contents) {
-                    G->setCurrentPosition(c, UNDEFINED_NODE);
-                }
-                auto& ctr = std::get<2>(nbc.back());
-                ctr = non_minimum_neighbour;
-                // TODO(anoe): use reverse edge when checked that it works!
-                G->contractEdge(n, non_minimum_neighbour);
-            }
-        }
-
-        return nbc;
-    }
-
-    void reInsertMinimumDegree(std::shared_ptr<mutable_graph> G,
-                               NeighboursAndContents nbc) {
-        for (size_t i = nbc.size(); i-- > 0; ) {
-            const auto& [neighbours, contents, ctr_ngbr] = nbc[i];
-            NodeID p = neighbours[ctr_ngbr].first;
-            NodeID n = G->getCurrentPosition(p);
-            NodeID other_ngbr = UNDEFINED_NODE;
-            EdgeWeight wgt = 0;
-
-            for (size_t j = 0; j < neighbours.size(); ++j) {
-                if (j == ctr_ngbr)
-                    continue;
-                NodeID pj = neighbours[j].first;
-                NodeID nj = G->getCurrentPosition(pj);
-                if (nj != n) {
-                    wgt += neighbours[j].second;
-                    other_ngbr = nj;
-                }
-            }
-            NodeID reIns = G->new_empty_node();
-            /*if (other_ngbr != UNDEFINED_NODE) {
-                VIECUT_ASSERT_EQ(wgt, mincut / 2);
-                EdgeID e = UNDEFINED_EDGE;
-                for (EdgeID arc : G->edges_of(n)) {
-                    if (G->getEdgeTarget(n, arc) == other_ngbr) {
-                        e = arc;
-                        break;
-                    }
-                }
-                G->new_edge_order(n, reIns, mincut / 2);
-                G->new_edge_order(other_ngbr, reIns, mincut / 2);
-
-                EdgeWeight w01 = G->getEdgeWeight(n, e);
-                if (w01 == (mincut / 2)) {
-                    G->deleteEdge(n, e);
-                } else {
-                    G->setEdgeWeight(n, e, w01 - (mincut / 2));
-                }
-            } else {*/
-            G->new_edge_order(n, reIns, mincut);
-            // }
-
-            G->setContainedVertices(reIns, contents);
-            for (NodeID v : contents) {
-                G->setCurrentPosition(v, reIns);
-            }
-        }
     }
 
     void reInsertCycles(

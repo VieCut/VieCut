@@ -155,9 +155,7 @@ class recursive_cactus {
         heavy_edges he(mincut);
         auto cactusEdges = he.removeHeavyEdges(G);
         auto cycleEdges = he.contractCycleEdges(G);
-        // auto ngbrsAndContents = he.contractMinimumDegreeVertices(G);
         G = internalRecursiveCactus(G, depth);
-        // he.reInsertMinimumDegree(G, ngbrsAndContents);
         he.reInsertCycles(G, cycleEdges);
         he.reInsertVertices(G, cactusEdges);
         return G;

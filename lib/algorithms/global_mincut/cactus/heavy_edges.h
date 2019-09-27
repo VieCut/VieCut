@@ -100,6 +100,9 @@ class heavy_edges {
     contractCycleEdges(std::shared_ptr<mutable_graph> G) {
         std::vector<std::tuple<std::pair<NodeID, NodeID>,
                                std::vector<NodeID> > > cycleEdges;
+        if (mincut % 2 != 0)
+            return cycleEdges;
+
         // as we contract edges, we use basic for loop so G->n() can update
         for (NodeID n = 0; n < G->n(); ++n) {
             if (G->get_first_invalid_edge(n) == 2
@@ -121,10 +124,12 @@ class heavy_edges {
                 for (const auto& c : contained) {
                     G->setCurrentPosition(c, UNDEFINED_NODE);
                 }
-                G->contractEdge(n0, G->getReverseEdge(n, 0));
+
+                G->contractEdgeSparseTarget(n0, G->getReverseEdge(n, 0));
                 cycleEdges.emplace_back(std::make_pair(p0, p1), contained);
             }
         }
+
         return cycleEdges;
     }
 
@@ -132,17 +137,18 @@ class heavy_edges {
     // EdgeWeight> >, std::vector<NodeID> > >;
     NeighboursAndContents contractMinimumDegreeVertices(
         std::shared_ptr<mutable_graph> G) {
-
         NeighboursAndContents nbc;
+        if (mincut % 2 == 0)
+            return nbc;
         for (NodeID n = 0; n < G->n(); ++n) {
             if (G->getWeightedNodeDegree(n) == mincut) {
                 bool empty_neighbor = false;
-                EdgeID non_minimum_neighbour = 0;
+                EdgeID non_minimum_neighbour = UNDEFINED_EDGE;
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID ngbr = G->getEdgeTarget(n, e);
-                    if (G->getWeightedNodeDegree(ngbr) == mincut) {
-                        empty_neighbor = true;
-                        break;
+                    if (G->getWeightedNodeDegree(ngbr) != mincut
+                        && non_minimum_neighbour == UNDEFINED_EDGE) {
+                        non_minimum_neighbour = e;
                     }
 
                     if (G->isEmpty(ngbr)) {
@@ -197,9 +203,8 @@ class heavy_edges {
                     other_ngbr = nj;
                 }
             }
-
             NodeID reIns = G->new_empty_node();
-            if (other_ngbr != UNDEFINED_NODE) {
+            /*if (other_ngbr != UNDEFINED_NODE) {
                 VIECUT_ASSERT_EQ(wgt, mincut / 2);
                 EdgeID e = UNDEFINED_EDGE;
                 for (EdgeID arc : G->edges_of(n)) {
@@ -217,9 +222,9 @@ class heavy_edges {
                 } else {
                     G->setEdgeWeight(n, e, w01 - (mincut / 2));
                 }
-            } else {
-                G->new_edge_order(n, reIns, mincut);
-            }
+            } else {*/
+            G->new_edge_order(n, reIns, mincut);
+            // }
 
             G->setContainedVertices(reIns, contents);
             for (NodeID v : contents) {

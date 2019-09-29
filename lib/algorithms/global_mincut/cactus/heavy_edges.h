@@ -96,8 +96,6 @@ class heavy_edges {
     contractCycleEdges(std::shared_ptr<mutable_graph> G) {
         std::vector<std::tuple<std::pair<NodeID, NodeID>,
                                std::vector<NodeID> > > cycleEdges;
-        if (mincut % 2 != 0)
-            return cycleEdges;
 
         // as we contract edges, we use basic for loop so G->n() can update
         for (NodeID n = 0; n < G->n(); ++n) {
@@ -105,13 +103,25 @@ class heavy_edges {
                 && G->getWeightedNodeDegree(n) == mincut) {
                 NodeID n0 = G->getEdgeTarget(n, 0);
                 NodeID n1 = G->getEdgeTarget(n, 1);
-                if (G->isEmpty(n0) || G->isEmpty(n1))
+                if (G->isEmpty(n0) || G->isEmpty(n1)) {
+                    LOG1 << "TODO(anoe): This case actually happens!";
                     continue;
-                // if the edges have different weights, the heavier of them will
-                // be contracted in local routines
-                if (G->getEdgeWeight(n, 0) != mincut / 2
-                    || G->getEdgeWeight(n, 1) != mincut / 2)
-                    continue;
+                }
+
+                // if the weights are different, n will definitely be connected
+                // to the lighter of n0 and n1. for readability we will set
+                // n0 and n1 to this lighter vertex, when reinserting p0 will
+                // definitely be in the same block as p1 (as they are equal)
+                // so we don't create the additional edge to the other neighbor
+                EdgeWeight w0 = G->getEdgeWeight(n, 0);
+                EdgeWeight w1 = G->getEdgeWeight(n, 1);
+                EdgeID rev = 0;
+                if (w1 > w0) {
+                    rev = 1;
+                    n0 = n1;
+                }
+                if (w0 > w1)
+                    n1 = n0;
 
                 NodeID p0 = G->containedVertices(n0)[0];
                 NodeID p1 = G->containedVertices(n1)[0];
@@ -121,7 +131,7 @@ class heavy_edges {
                     G->setCurrentPosition(c, UNDEFINED_NODE);
                 }
 
-                G->contractEdgeSparseTarget(n0, G->getReverseEdge(n, 0));
+                G->contractEdgeSparseTarget(n0, G->getReverseEdge(n, rev));
                 cycleEdges.emplace_back(std::make_pair(p0, p1), contained);
             }
         }

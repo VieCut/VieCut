@@ -459,7 +459,8 @@ class graph_access {
     }
 
     void computeDegrees() {
-        assert(!m_degrees_computed);
+        if (m_degrees_computed)
+            return;
 
         m_max_degree = 0;
         m_min_degree = UNDEFINED_EDGE;

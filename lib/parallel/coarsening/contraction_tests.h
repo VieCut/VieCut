@@ -60,6 +60,7 @@ class tests {
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
+        G->computeDegrees();
 
         // workaround for std::vector<bool> not being usable in parallel
         std::vector<uint8_t> contracted(G->number_of_nodes(), false);
@@ -74,9 +75,9 @@ class tests {
                 NodeID tgt = G->getEdgeTarget(e);
                 NodeWeight tgt_wgt = G->getWeightedNodeDegree(tgt);
                 if (wgt >= weight_limit) {
-                    uf.Union(n, tgt);
                     contracted[n] = true;
                     contracted[tgt] = true;
+                    uf.Union(n, tgt);
                 }
 
                 // if we want to find all cuts
@@ -113,9 +114,9 @@ class tests {
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
+        G->computeDegrees();
         std::vector<uint8_t> finished(G->number_of_nodes(), false);
         std::vector<uint8_t> contracted(G->number_of_nodes(), 0);
-
 #pragma omp parallel
         {
             std::vector<EdgeID> marked(G->number_of_nodes(), UNDEFINED_EDGE);

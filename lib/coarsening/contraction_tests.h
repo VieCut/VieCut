@@ -57,35 +57,38 @@ class tests {
                                 EdgeWeight limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
-        std::vector<EdgeWeight> degrees;
-
+        G->computeDegrees();
         std::vector<bool> contracted(G->number_of_nodes(), false);
-
         for (NodeID n : G->nodes()) {
-            degrees.push_back(G->getWeightedNodeDegree(n));
-        }
-
-        for (NodeID n : G->nodes()) {
+            NodeWeight n_wgt = G->getWeightedNodeDegree(n);
             for (EdgeID e : G->edges_of(n)) {
+                NodeID t = G->getEdgeTarget(e);
                 NodeID target = uf.Find(G->getEdgeTarget(e));
+                NodeID t_wgt = G->getWeightedNodeDegree(t);
                 NodeID source = uf.Find(n);
                 EdgeWeight wgt = G->getEdgeWeight(e);
 
-                if (target != source &&
-                    (wgt >= limit ||
-                     ((2 * wgt > degrees[source] || 2 * wgt > degrees[target])
-                      // if we want to find all cuts
-                      // we are not allowed to contract an edge
-                      // if an incident vertex has degree mincut
-                      // (as the singleton cut might be important)
-                      && (!find_all_cuts || (degrees[source] >= limit
-                                             && degrees[target] >= limit))))) {
-                    EdgeWeight new_w =
-                        degrees[source] + degrees[target] - (2 * wgt);
-
-                    degrees[source] = new_w;
-                    degrees[target] = new_w;
+                if (wgt >= limit) {
                     uf.Union(source, target);
+                    contracted[n] = true;
+                    contracted[G->getEdgeTarget(e)] = true;
+                }
+
+                // if we want to find all cuts
+                // we are not allowed to contract an edge
+                // if an incident vertex has degree mincut
+                // (as the singleton cut might be important)
+                if (!find_all_cuts || (n_wgt >= limit && t_wgt >= limit)) {
+                    if (2 * wgt > n_wgt && (!find_all_cuts || !contracted[n])) {
+                        contracted[n] = true;
+                        contracted[t] = true;
+                        uf.Union(n, t);
+                    }
+                    if (2 * wgt > t_wgt && (!find_all_cuts || !contracted[t])) {
+                        contracted[n] = true;
+                        contracted[t] = true;
+                        uf.Union(n, t);
+                    }
                 }
             }
         }

@@ -64,8 +64,8 @@ int main(int argn, char** argv) {
 
     auto G = original_graph;
     std::vector<std::shared_ptr<graph_access> > graph_vec = { original_graph };
-
     union_find uf(original_graph->number_of_nodes());
+
 
     while (G->number_of_nodes() > 1) {
         t_this.restart();
@@ -80,22 +80,20 @@ int main(int argn, char** argv) {
             }
         }
 
-        for (NodeID n : mg->nodes()) {
-            if (n != largest_id) {
-                if (mg->containedVertices(n).size() > 0) {
-                    NodeID v0 = mg->containedVertices(n)[0];
-                    for (NodeID v : mg->containedVertices(n)) {
-                        uf.Union(v0, v);
-                        for (EdgeID e : original_graph->edges_of(v)) {
-                            NodeID t = original_graph->getEdgeTarget(e);
-                            uf.Union(v, t);
-                        }
-                    }
+        for (NodeID n : original_graph->nodes()) {
+            if (mg->getCurrentPosition(n) != largest_id) {
+                if (G->number_of_nodes() == 630789) {
+                    LOG1 << n;
+                }
+                for (EdgeID e : original_graph->edges_of(n)) {
+                    NodeID t = original_graph->getEdgeTarget(e);
+                    uf.Union(n, t);
                 }
             }
         }
 
         G = contraction::fromUnionFind(original_graph, &uf);
+
         graph_vec = { original_graph, G };
 
         cut = current_cut;

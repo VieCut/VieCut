@@ -102,16 +102,16 @@ class parallel_cactus : public minimum_cut {
         bool disable_blacklist = false;
 
         while (graphs.back()->number_of_nodes() < previous_size) {
+            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
             previous_size = graphs.back()->number_of_nodes();
             LOGC(timing) << "t " << t.elapsed() << " n "
                          << graphs.back()->number_of_nodes()
                          << " m " << graphs.back()->number_of_edges();
-            std::shared_ptr<graph_access> curr_g = graphs.back();
 
 #ifdef PARALLEL
             // all runs after first disable blacklist so that every thread
             // runs capforest on the whole graph
-            auto uf = mc.parallel_modified_capforest(curr_g, mincut + 1,
+            auto uf = mc.parallel_modified_capforest(graphs.back(), mincut + 1,
                                                      disable_blacklist);
             disable_blacklist = true;
 #else
@@ -119,19 +119,19 @@ class parallel_cactus : public minimum_cut {
                  << "Using normal noi_minimum_cut instead!";
 
             noi_minimum_cut noi;
-            auto uf = noi.modified_capforest(curr_g, mincut + 1);
+            auto uf = noi.modified_capforest(graphs.back(), mincut + 1);
 #endif
 
             ge_ids.emplace_back(graphs.size() - 1);
             guaranteed_edges.emplace_back();
             EdgeWeight current_mincut = mincut;
 
-            for (NodeID n : curr_g->nodes()) {
-                if (curr_g->getNodeDegree(n) == 1) {
-                    EdgeID e = curr_g->get_first_edge(n);
-                    if ((curr_g->getEdgeWeight(e) == mincut)
+            for (NodeID n : graphs.back()->nodes()) {
+                if (graphs.back()->getNodeDegree(n) == 1) {
+                    EdgeID e = graphs.back()->get_first_edge(n);
+                    if ((graphs.back()->getEdgeWeight(e) == mincut)
                         && (guaranteed_edges.back().size() + 1 < n)) {
-                        NodeID t = curr_g->getEdgeTarget(e);
+                        NodeID t = graphs.back()->getEdgeTarget(e);
                         uf.Union(n, t);
                         guaranteed_edges.back().emplace_back(n, t);
                     }
@@ -140,8 +140,9 @@ class parallel_cactus : public minimum_cut {
             LOGC(timing) << "t " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf.n();
-            if (uf.n() < curr_g->number_of_nodes()) {
-                graphs.push_back(contraction::fromUnionFind(curr_g, &uf));
+            if (uf.n() < graphs.back()->number_of_nodes()) {
+                auto g_new = contraction::fromUnionFind(graphs.back(), &uf);
+                graphs.push_back(g_new);
                 mincut = minimum_cut_helpers::updateCut(graphs, mincut);
             }
 

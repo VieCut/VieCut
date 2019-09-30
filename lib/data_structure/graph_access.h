@@ -122,6 +122,10 @@ class basicGraph {
     EdgeID new_edge(NodeID source, NodeID target, EdgeWeight weight) {
         VIECUT_ASSERT_TRUE(m_building_graph);
 
+        if (source == target) {
+            return e;
+        }
+
         m_edges.emplace_back(target, weight);
         EdgeID e_bar = e;
         ++e;

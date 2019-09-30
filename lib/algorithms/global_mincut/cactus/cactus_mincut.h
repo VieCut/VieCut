@@ -102,28 +102,31 @@ class cactus_mincut : public minimum_cut {
                 }
             }
 
-            auto newg = contraction::fromUnionFind(current_graph, &uf);
-            if (newg->number_of_nodes() < current_graph->number_of_nodes())
+            if (uf.n() < current_graph->number_of_nodes()) {
+                auto newg = contraction::fromUnionFind(current_graph, &uf);
                 graphs.emplace_back(newg);
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            }
 
             union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
             LOGC(timing) << "t12 " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf12.n();
-            auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
-            if (g12->number_of_nodes() < newg->number_of_nodes())
+            if (uf12.n() < graphs.back()->number_of_nodes()) {
+                auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
                 graphs.push_back(g12);
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            }
 
             union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
             LOGC(timing) << "t34 " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf34.n();
-            auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
-            if (g34->number_of_nodes() < g12->number_of_nodes())
+            if (uf34.n() < graphs.back()->number_of_nodes()) {
+                auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
                 graphs.push_back(g34);
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            }
 
             if (current_mincut > mincut) {
                 // mincut has improved

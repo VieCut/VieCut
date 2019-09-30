@@ -140,8 +140,10 @@ class parallel_cactus : public minimum_cut {
             LOGC(timing) << "t " << t.elapsed() << " contract "
                          << graphs.back()->number_of_nodes()
                          << " to " << uf.n();
-            graphs.push_back(contraction::fromUnionFind(curr_g, &uf));
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            if (uf.n() < curr_g->number_of_nodes()) {
+                graphs.push_back(contraction::fromUnionFind(curr_g, &uf));
+                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            }
 
             auto uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
             LOGC(timing) << "t12 " << t.elapsed() << " contract "

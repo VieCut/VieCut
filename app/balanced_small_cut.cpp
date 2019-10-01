@@ -66,7 +66,6 @@ int main(int argn, char** argv) {
     std::vector<std::shared_ptr<graph_access> > graph_vec = { original_graph };
     union_find uf(original_graph->number_of_nodes());
 
-
     while (G->number_of_nodes() > 1) {
         t_this.restart();
         auto [current_cut, mg] = mc.findAllMincuts(graph_vec);

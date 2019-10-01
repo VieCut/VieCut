@@ -134,7 +134,7 @@ int main(int argn, char** argv) {
 
             strongly_connected_components cc;
             auto [components, num_comp, unused] = cc.strong_components(G);
-
+            (void)unused;
             std::vector<NodeID> v =
                 graph_io::readVector<NodeID>(config->partition_file);
             std::vector<NodeID> term;

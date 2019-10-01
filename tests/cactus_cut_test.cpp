@@ -560,7 +560,11 @@ TEST(CactusCutTest, TwoDTorus) {
     }
     G->finish_construction();
 
+#ifdef PARALLEL
+    parallel_cactus mc;
+#else
     cactus_mincut mc;
+#endif
     auto [cut, mg] = mc.findAllMincuts(G);
 
     ASSERT_EQ(cut, 4);

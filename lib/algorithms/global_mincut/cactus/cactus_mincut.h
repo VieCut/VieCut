@@ -71,15 +71,12 @@ class cactus_mincut : public minimum_cut {
         minimum_cut_helpers::setInitialCutValues(graphs);
 
         NodeID previous_size = UNDEFINED_NODE;
-        while (graphs.back()->number_of_nodes() < previous_size) {
+        while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
             previous_size = graphs.back()->number_of_nodes();
             auto current_graph = graphs.back();
-
             EdgeWeight current_mincut = mincut;
-
             ge_ids.emplace_back(graphs.size() - 1);
             guaranteed_edges.emplace_back();
-
             LOGC(timing) << "t " << t.elapsed()
                          << " n " << current_graph->number_of_nodes()
                          << " m " << current_graph->number_of_edges()

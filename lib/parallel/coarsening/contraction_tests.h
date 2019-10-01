@@ -139,11 +139,6 @@ class tests {
                     NodeID tgt = G->getEdgeTarget(e1);
                     NodeID deg_tgt = G->getWeightedNodeDegree(tgt);
                     EdgeWeight w1 = G->getEdgeWeight(e1);
-                    if (finished[tgt]) {
-                        marked[tgt] = UNDEFINED_EDGE;
-                        continue;
-                    }
-
                     finished[tgt] = true;
                     EdgeWeight wgt_sum = G->getEdgeWeight(e1);
                     if (tgt > n) {

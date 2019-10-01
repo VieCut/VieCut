@@ -537,3 +537,40 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
         ASSERT_EQ(19, std::max({ vec1, vec2, vec3, vec4 }));
     }
 }
+
+TEST(CactusCutTest, TwoDTorus) {
+    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    size_t dimension = 3;
+    size_t num_vertices = dimension * dimension;
+    G->start_construction(num_vertices, 4 * num_vertices);
+
+    for (size_t i = 0; i < num_vertices; ++i) {
+        size_t x = i % dimension;
+        size_t y = i / dimension;
+
+        size_t left = (y * dimension) + ((x + dimension - 1) % dimension);
+        size_t right = (y * dimension) + ((x + 1) % dimension);
+        size_t up = (((y + 1) % dimension) * dimension) + x;
+        size_t down = (((y + dimension - 1) % dimension) * dimension) + x;
+
+        G->new_edge(i, left);
+        G->new_edge(i, right);
+        G->new_edge(i, up);
+        G->new_edge(i, down);
+    }
+    G->finish_construction();
+
+    cactus_mincut mc;
+    auto [cut, mg] = mc.findAllMincuts(G);
+
+    ASSERT_EQ(cut, 4);
+    ASSERT_EQ(mg->number_of_nodes(), 10);
+    ASSERT_EQ(mg->number_of_edges(), 18);
+
+    std::vector<size_t> sizes(3, 0);
+    std::vector<size_t> desired_sizes = { 1, 9, 0 };
+    for (NodeID n : mg->nodes()) {
+        sizes[mg->containedVertices(n).size()]++;
+    }
+    ASSERT_EQ(sizes, desired_sizes);
+}

@@ -101,7 +101,7 @@ class parallel_cactus : public minimum_cut {
         NodeID previous_size = UNDEFINED_NODE;
         bool disable_blacklist = false;
 
-        while (graphs.back()->number_of_nodes() < previous_size) {
+        while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
             previous_size = graphs.back()->number_of_nodes();
             LOGC(timing) << "t " << t.elapsed() << " n "

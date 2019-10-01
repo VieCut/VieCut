@@ -180,16 +180,17 @@ class minimum_cut_helpers {
                                              out_graph->getCurrentPosition(n));
         }
 
-        // last one is empty, otherwise we would not have left the loop then
-        int32_t g_id = ge_ids.size() - 2;
-        for (auto i = graphs.size() - 1; i-- > 0 && graphs.size() > 1; ) {
+        int32_t g_id = ge_ids.size() - 1;
+        for (auto i = graphs.size(); i-- > 0 && graphs.size() > 1; ) {
+            if (i < graphs.size() - 1) {
 #ifdef PARALLEL
 #pragma omp parallel for
 #endif
-            for (NodeID n = 0; n < graphs[i]->number_of_nodes(); ++n) {
-                NodeID index = graphs[i]->getPartitionIndex(n);
-                NodeID id_new = graphs[i + 1]->getPartitionIndex(index);
-                graphs[i]->setPartitionIndex(n, id_new);
+                for (NodeID n = 0; n < graphs[i]->number_of_nodes(); ++n) {
+                    NodeID index = graphs[i]->getPartitionIndex(n);
+                    NodeID id_new = graphs[i + 1]->getPartitionIndex(index);
+                    graphs[i]->setPartitionIndex(n, id_new);
+                }
             }
 
             if (g_id != -1 && i == ge_ids[g_id]) {

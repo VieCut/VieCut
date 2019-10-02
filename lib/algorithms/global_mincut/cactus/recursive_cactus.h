@@ -585,7 +585,6 @@ class recursive_cactus {
         NodeID t = UNDEFINED_NODE;
         EdgeID e = UNDEFINED_EDGE;
         NodeWeight max_ngbr = 0;
-
         for (EdgeID edge : G->edges_of(s)) {
             NodeID ngbr = G->getEdgeTarget(s, edge);
             if (G->getNodeDegree(ngbr) > max_ngbr &&
@@ -612,7 +611,7 @@ class recursive_cactus {
         for (NodeID n : G->nodes()) {
             if (G->getWeightedNodeDegree(n) > max_degree &&
                 !G->isEmpty(n)) {
-                max_degree = G->getNodeDegree(n);
+                max_degree = G->getWeightedNodeDegree(n);
                 s = n;
             }
         }
@@ -620,12 +619,11 @@ class recursive_cactus {
         NodeID t = UNDEFINED_NODE;
         EdgeID e = UNDEFINED_EDGE;
         NodeWeight max_ngbr = 0;
-
         for (EdgeID edge : G->edges_of(s)) {
             NodeID ngbr = G->getEdgeTarget(s, edge);
             if (G->getWeightedNodeDegree(ngbr) > max_ngbr &&
                 !G->isEmpty(ngbr)) {
-                max_ngbr = G->getNodeDegree(ngbr);
+                max_ngbr = G->getWeightedNodeDegree(ngbr);
                 t = ngbr;
                 e = edge;
             }

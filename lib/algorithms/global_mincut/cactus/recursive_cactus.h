@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <queue>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -195,9 +196,21 @@ class recursive_cactus {
         }
         VIECUT_ASSERT_TRUE(graph_modification::isCNCR(G, mincut));
         FlowType max_flow;
-        // auto [s, e, tgt] = findFlowEdge(G);
-        auto [s, e, tgt] = maximumFlowEdge(G);
-        // auto [s, e, tgt] = centralFlowEdge(G);
+        NodeID s = 0;
+        NodeID tgt = 0;
+        EdgeID e = 0;
+
+        std::string es = configuration::getConfig()->edge_selection;
+
+        if (es == "heavy")
+            std::tie(s, e, tgt) = maximumFlowEdge(G);
+        if (es == "heavy_weighted")
+            std::tie(s, e, tgt) = maximumWeightedFlowEdge(G);
+        if (es == "central")
+            std::tie(s, e, tgt) = centralFlowEdge(G);
+        if (es == "random" || es == "" || es == "heavy_vertex")
+            std::tie(s, e, tgt) = findFlowEdge(G);
+
         {
             std::vector<NodeID> vtcs = { s, tgt };
             push_relabel pr;
@@ -576,6 +589,41 @@ class recursive_cactus {
         for (EdgeID edge : G->edges_of(s)) {
             NodeID ngbr = G->getEdgeTarget(s, edge);
             if (G->getNodeDegree(ngbr) > max_ngbr &&
+                !G->isEmpty(ngbr)) {
+                max_ngbr = G->getNodeDegree(ngbr);
+                t = ngbr;
+                e = edge;
+            }
+        }
+
+        if (t == UNDEFINED_NODE) {
+            LOG1 << "Heaviest vertex has only empty neighbours!";
+            return findFlowEdge(G);
+        } else {
+            return std::make_tuple(s, e, t);
+        }
+    }
+
+    std::tuple<NodeID, EdgeID, NodeID> maximumWeightedFlowEdge(
+        std::shared_ptr<mutable_graph> G) {
+        NodeWeight max_degree = 0;
+        NodeID s = UNDEFINED_NODE;
+
+        for (NodeID n : G->nodes()) {
+            if (G->getWeightedNodeDegree(n) > max_degree &&
+                !G->isEmpty(n)) {
+                max_degree = G->getNodeDegree(n);
+                s = n;
+            }
+        }
+
+        NodeID t = UNDEFINED_NODE;
+        EdgeID e = UNDEFINED_EDGE;
+        NodeWeight max_ngbr = 0;
+
+        for (EdgeID edge : G->edges_of(s)) {
+            NodeID ngbr = G->getEdgeTarget(s, edge);
+            if (G->getWeightedNodeDegree(ngbr) > max_ngbr &&
                 !G->isEmpty(ngbr)) {
                 max_ngbr = G->getNodeDegree(ngbr);
                 t = ngbr;

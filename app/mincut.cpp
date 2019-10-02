@@ -64,6 +64,7 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('x', "optimization", cfg->optimization,
                     "switch for different modes for optimization experiments");
     cmdl.add_string('e', "edge_select", cfg->edge_selection, "NNI edge select");
+    cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -102,10 +103,8 @@ int main(int argn, char** argv) {
 
     for (size_t i = 0; i < num_iterations; ++i) {
         for (int numthread : numthreads) {
-            auto seed = i;
-            LOG << "random seed " << seed;
-            random_functions::setSeed(seed);
-            configuration::getConfig()->seed = seed;
+            LOG << cfg->seed << " random seed";
+            random_functions::setSeed(cfg->seed);
 
             NodeID n = G->number_of_nodes();
             EdgeID m = G->number_of_edges();
@@ -141,12 +140,16 @@ int main(int argn, char** argv) {
                 algprint += "unlimited";
             }
 
-            std::cout << "RESULT source=taa algo=" << algprint << " graph="
-                      << graphname << " time=" << t.elapsed()
-                      << " cut=" << cut << " n=" << n
-                      << " m=" << m / 2 << " processes="
-                      << numthread << " optimization=" << cfg->optimization
+            std::cout << "RESULT algo=" << algprint
+                      << " graph=" << graphname
+                      << " time=" << t.elapsed()
+                      << " cut=" << cut
+                      << " n=" << n
+                      << " m=" << m / 2
+                      << " processes=" << numthread
+                      << " optimization=" << cfg->optimization
                       << " edge_select=" << cfg->edge_selection
+                      << " seed=" << cfg->seed
                       << std::endl;
         }
     }

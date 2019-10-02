@@ -170,7 +170,7 @@ std::shared_ptr<graph_access> graph_io::readGraphWeighted(std::string file) {
             if (!target) break;
             // check for self-loops
             if (target - 1 == node) {
-                LOG1 << "The graph file contains self-loops. "
+                LOG0 << "The graph file contains self-loops. "
                      << "This is not supported. "
                      << "Please remove them from the file.";
                 continue;

@@ -70,67 +70,77 @@ class cactus_mincut : public minimum_cut {
 
         minimum_cut_helpers::setInitialCutValues(graphs);
 
-        NodeID previous_size = UNDEFINED_NODE;
-        while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
-            previous_size = graphs.back()->number_of_nodes();
-            auto current_graph = graphs.back();
-            EdgeWeight current_mincut = mincut;
-            ge_ids.emplace_back(graphs.size() - 1);
-            guaranteed_edges.emplace_back();
-            LOGC(timing) << "t " << t.elapsed()
-                         << " n " << current_graph->number_of_nodes()
-                         << " m " << current_graph->number_of_edges()
-                         << " cut " << mincut;
+        if (configuration::getConfig()->optimization > 0) {
+            NodeID previous_size = UNDEFINED_NODE;
+            while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
+                previous_size = graphs.back()->number_of_nodes();
+                auto current_graph = graphs.back();
+                EdgeWeight current_mincut = mincut;
+                ge_ids.emplace_back(graphs.size() - 1);
+                guaranteed_edges.emplace_back();
+                LOGC(timing) << "t " << t.elapsed()
+                             << " n " << current_graph->number_of_nodes()
+                             << " m " << current_graph->number_of_edges()
+                             << " cut " << mincut;
 
-            std::vector<std::pair<NodeID, NodeID> > contractable;
+                std::vector<std::pair<NodeID, NodeID> > contractable;
 
-            timer time;
-            auto uf = noi.modified_capforest(current_graph, mincut + 1);
+                timer time;
+                auto uf = noi.modified_capforest(current_graph, mincut + 1);
 
-            for (NodeID n : current_graph->nodes()) {
-                EdgeID e = current_graph->get_first_edge(n);
-                if (current_graph->get_first_invalid_edge(n) - e == 1) {
-                    if ((current_graph->getEdgeWeight(e) == mincut)
-                        && uf.n() > 1) {
-                        NodeID t = current_graph->getEdgeTarget(e);
-                        uf.Union(n, t);
-                        guaranteed_edges.back().emplace_back(n, t);
+                if (configuration::getConfig()->optimization > 3) {
+                    for (NodeID n : current_graph->nodes()) {
+                        EdgeID e = current_graph->get_first_edge(n);
+                        if (current_graph->get_first_invalid_edge(n) - e == 1) {
+                            if ((current_graph->getEdgeWeight(e) == mincut)
+                                && uf.n() > 1) {
+                                NodeID t = current_graph->getEdgeTarget(e);
+                                uf.Union(n, t);
+                                guaranteed_edges.back().emplace_back(n, t);
+                            }
+                        }
                     }
                 }
-            }
 
-            if (uf.n() < current_graph->number_of_nodes()) {
-                auto newg = contraction::fromUnionFind(current_graph, &uf);
-                graphs.emplace_back(newg);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
-            }
+                if (uf.n() < current_graph->number_of_nodes()) {
+                    auto newg = contraction::fromUnionFind(current_graph, &uf);
+                    graphs.emplace_back(newg);
+                    mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                }
 
-            union_find uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
-            LOGC(timing) << "t12 " << t.elapsed() << " contract "
-                         << graphs.back()->number_of_nodes()
-                         << " to " << uf12.n();
-            if (uf12.n() < graphs.back()->number_of_nodes()) {
-                auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
-                graphs.push_back(g12);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
-            }
+                if (configuration::getConfig()->optimization > 1) {
+                    union_find uf12 = tests::prTests12(
+                        graphs.back(), mincut + 1, true);
+                    LOGC(timing) << "t12 " << t.elapsed() << " contract "
+                                 << graphs.back()->number_of_nodes()
+                                 << " to " << uf12.n();
+                    if (uf12.n() < graphs.back()->number_of_nodes()) {
+                        auto g12 = contraction::fromUnionFind(
+                            graphs.back(), &uf12);
+                        graphs.push_back(g12);
+                        mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                    }
 
-            union_find uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
-            LOGC(timing) << "t34 " << t.elapsed() << " contract "
-                         << graphs.back()->number_of_nodes()
-                         << " to " << uf34.n();
-            if (uf34.n() < graphs.back()->number_of_nodes()) {
-                auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
-                graphs.push_back(g34);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
-            }
+                    union_find uf34 = tests::prTests34(
+                        graphs.back(), mincut + 1, true);
+                    LOGC(timing) << "t34 " << t.elapsed() << " contract "
+                                 << graphs.back()->number_of_nodes()
+                                 << " to " << uf34.n();
+                    if (uf34.n() < graphs.back()->number_of_nodes()) {
+                        auto g34 = contraction::fromUnionFind(
+                            graphs.back(), &uf34);
+                        graphs.push_back(g34);
+                        mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                    }
+                }
 
-            if (current_mincut > mincut) {
-                // mincut has improved
-                // so all the edges that were in guaranteed edges
-                // before are now _not_ cactus edges as there is a lighter cut
-                guaranteed_edges.clear();
-                ge_ids.clear();
+                if (current_mincut > mincut) {
+                    // mincut has improved
+                    // so all the edges that were in guaranteed edges before
+                    // are now _not_ cactus edges as there is a lighter cut
+                    guaranteed_edges.clear();
+                    ge_ids.clear();
+                }
             }
         }
 

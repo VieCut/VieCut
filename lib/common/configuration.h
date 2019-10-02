@@ -61,6 +61,9 @@ class configuration {
     // karger-stein:
     size_t optimal = 0;
 
+    // experiments
+    size_t optimization = 0;
+
  private:
     configuration() { }
 

@@ -61,6 +61,9 @@ int main(int argn, char** argv) {
     cmdl.add_string('o', "output_path", cfg->output_path,
                     "print minimum cut to file");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
+    cmdl.add_size_t('x', "optimization", cfg->optimization,
+                    "switch for different modes for optimization experiments");
+    cmdl.add_string('e', "edge_select", cfg->edge_selection, "NNI edge select");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -128,7 +131,6 @@ int main(int argn, char** argv) {
             }
 
             std::string graphname = string::basename(cfg->graph_filename);
-
             std::string algprint = cfg->algorithm;
 #ifdef PARALLEL
             algprint += "par";
@@ -143,7 +145,9 @@ int main(int argn, char** argv) {
                       << graphname << " time=" << t.elapsed()
                       << " cut=" << cut << " n=" << n
                       << " m=" << m / 2 << " processes="
-                      << numthread << std::endl;
+                      << numthread << " optimization=" << cfg->optimization
+                      << " edge_select=" << cfg->edge_selection
+                      << std::endl;
         }
     }
 }

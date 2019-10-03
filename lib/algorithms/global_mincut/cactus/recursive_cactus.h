@@ -61,92 +61,11 @@ class recursive_cactus {
     std::shared_ptr<mutable_graph> flowMincut(
         const std::vector<std::shared_ptr<graph_access> >& graphs) {
         std::vector<std::shared_ptr<mutable_graph> > flow_graphs;
-        flow_graphs.emplace_back(
-            mutable_graph::from_graph_access(graphs.back()));
-        std::vector<std::vector<std::pair<NodeID, NodeID> > > packed;
-        std::vector<std::vector<std::pair<NodeID, NodeID> > > deleted;
-        bool continuing = true;
-        size_t num_vertices = graphs.back()->number_of_nodes();
-
-        while (configuration::getConfig()->optimization > 10 && continuing) {
-            auto flow_graph =
-                std::make_shared<mutable_graph>(*flow_graphs.back());
-            packed.emplace_back(flow_graph->number_of_nodes(),
-                                std::make_pair(UNDEFINED_NODE, UNDEFINED_NODE));
-            deleted.emplace_back(flow_graph->number_of_nodes(),
-                                 std::make_pair(UNDEFINED_NODE,
-                                                UNDEFINED_NODE));
-            continuing = false;
-
-            for (NodeID n = flow_graph->n(); n-- != 0; ) {
-                if (flow_graph->get_first_invalid_edge(n) == 1
-                    && num_vertices > 2) {
-                    NodeID tgt = flow_graph->containedVertices(
-                        flow_graph->getEdgeTarget(n, 0))[0];
-                    NodeID original = flow_graph->containedVertices(n)[0];
-                    continuing = true;
-                    num_vertices--;
-
-                    if (flow_graph->getEdgeWeight(n, 0) == mincut) {
-                        packed.back()[n] = std::make_pair(tgt, original);
-                    } else {
-                        deleted.back()[n] = std::make_pair(tgt, original);
-                    }
-                }
-            }
-
-            for (NodeID n = flow_graph->number_of_nodes(); n-- != 0; ) {
-                if (packed.back()[n].first != UNDEFINED_NODE
-                    || deleted.back()[n].first != UNDEFINED_NODE) {
-                    flow_graph->deleteVertex(n);
-                }
-            }
-            flow_graphs.push_back(flow_graph);
-            LOGC(timing) << "t " << t.elapsed() << " contracted from "
-                         << packed.back().size() << " to "
-                         << flow_graph->number_of_nodes() << " vertices!";
-        }
-
-        auto in_graph = flow_graphs.back()->simplify();
+        auto in_graph = mutable_graph::from_graph_access(graphs.back());
         auto out_graph = recursiveCactus(in_graph, 0);
         VIECUT_ASSERT_TRUE(graph_modification::isCNCR(out_graph, mincut));
         LOGC(timing) << "t " << t.elapsed() << " cactus n "
                      << out_graph->n() << " m " << out_graph->n();
-
-        out_graph->setOriginalNodes(flow_graphs[0]->number_of_nodes());
-
-        for (NodeID n = 0; n < out_graph->number_of_nodes(); ++n) {
-            std::vector<NodeID> cv;
-            for (NodeID v : out_graph->containedVertices(n)) {
-                NodeID p = flow_graphs.back()->containedVertices(v)[0];
-                cv.emplace_back(p);
-                out_graph->setCurrentPosition(p, n);
-            }
-            out_graph->setContainedVertices(n, cv);
-        }
-
-        // unpack
-        for (size_t lv = packed.size(); lv-- > 0; ) {
-            for (size_t n = 0; n < packed[lv].size(); ++n) {
-                if (packed[lv][n].first != UNDEFINED_NODE) {
-                    auto [t, orig] = packed[lv][n];
-                    NodeID newnode = out_graph->new_empty_node();
-                    NodeID t_now = out_graph->getCurrentPosition(t);
-                    out_graph->addContainedVertex(newnode, orig);
-                    out_graph->setCurrentPosition(orig, newnode);
-                    out_graph->new_edge_order(t_now, newnode, mincut);
-                }
-                if (deleted[lv][n].first != UNDEFINED_NODE) {
-                    auto [t, orig] = deleted[lv][n];
-                    NodeID t_now = out_graph->getCurrentPosition(t);
-                    out_graph->addContainedVertex(t_now, orig);
-                    out_graph->setCurrentPosition(orig, t_now);
-                }
-            }
-        }
-
-        LOGC(timing) << "t " << t.elapsed() << " cactus_unpack n "
-                     << out_graph->n() << " m " << out_graph->m();
         return out_graph;
     }
 

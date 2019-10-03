@@ -160,4 +160,5 @@ int main(int argn, char** argv) {
 
     LOG1 << "Writing to file " << name << "...";
     graph_io::writeGraphWeighted(G, name);
+    LOG1 << "Done!";
 }

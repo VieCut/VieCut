@@ -162,6 +162,12 @@ class heavy_edges {
                         break;
                     }
                 }
+
+                if (e == UNDEFINED_EDGE) {
+                    LOG1 << "Vertices aren't neighbours! Something is wrong!";
+                    exit(1);
+                }
+
                 G->new_edge_order(n0, reIns, mincut / 2);
                 G->new_edge_order(n1, reIns, mincut / 2);
                 EdgeWeight w01 = G->getEdgeWeight(n0, e);

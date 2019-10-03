@@ -379,10 +379,13 @@ class mutable_graph {
     }
 
     NodeID contractEdgeSparseTarget(NodeID node, EdgeID edge) {
-        last_node--;
         RevEdge e = vertices[node][edge];
         NodeID target = e.target;
 
+        if (node == target + 1) {
+            return contractEdge(node, edge);
+        }
+        last_node--;
         for (EdgeID ed : edges_of(target)) {
             if (ed != e.reverse_edge) {
                 NodeID e_target = getEdgeTarget(target, ed);

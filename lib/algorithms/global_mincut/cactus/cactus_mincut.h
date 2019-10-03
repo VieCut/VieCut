@@ -70,7 +70,7 @@ class cactus_mincut : public minimum_cut {
 
         minimum_cut_helpers::setInitialCutValues(graphs);
 
-        if (configuration::getConfig()->optimization > 0) {
+        if (configuration::getConfig()->optimization >= 1) {
             NodeID previous_size = UNDEFINED_NODE;
             while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
                 previous_size = graphs.back()->number_of_nodes();
@@ -88,7 +88,7 @@ class cactus_mincut : public minimum_cut {
                 timer time;
                 auto uf = noi.modified_capforest(current_graph, mincut + 1);
 
-                if (configuration::getConfig()->optimization > 3) {
+                if (configuration::getConfig()->optimization >= 3) {
                     for (NodeID n : current_graph->nodes()) {
                         EdgeID e = current_graph->get_first_edge(n);
                         if (current_graph->get_first_invalid_edge(n) - e == 1) {
@@ -108,7 +108,7 @@ class cactus_mincut : public minimum_cut {
                     mincut = minimum_cut_helpers::updateCut(graphs, mincut);
                 }
 
-                if (configuration::getConfig()->optimization > 1) {
+                if (configuration::getConfig()->optimization >= 2) {
                     union_find uf12 = tests::prTests12(
                         graphs.back(), mincut + 1, true);
                     LOGC(timing) << "t12 " << t.elapsed() << " contract "

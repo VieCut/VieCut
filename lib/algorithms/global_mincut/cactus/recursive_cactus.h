@@ -72,7 +72,17 @@ class recursive_cactus {
  private:
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
-        if (configuration::getConfig()->optimization > 6) {
+        switch (configuration::getConfig()->optimization) {
+        case 5:
+        {
+            heavy_edges he(mincut);
+            auto cactusEdges = he.removeHeavyEdges(G);
+            G = internalRecursiveCactus(G, depth);
+            he.reInsertVertices(G, cactusEdges);
+            return G;
+        }
+        case 6:
+        {
             heavy_edges he(mincut);
             auto cactusEdges = he.removeHeavyEdges(G);
             auto cycleEdges = he.contractCycleEdges(G);
@@ -80,7 +90,8 @@ class recursive_cactus {
             he.reInsertCycles(G, cycleEdges);
             he.reInsertVertices(G, cactusEdges);
             return G;
-        } else {
+        }
+        default:
             return internalRecursiveCactus(G, depth);
         }
     }
@@ -91,7 +102,7 @@ class recursive_cactus {
             LOGC(configuration::getConfig()->verbose)
                 << "G n " << G->n() << " m " << G->m() << " depth " << depth;
         }
-        if (configuration::getConfig()->optimization > 5) {
+        if (configuration::getConfig()->optimization >= 4) {
             if (depth % 10 == 0) {
                 size_t previous = UNDEFINED_NODE;
                 // implicit do-while loop

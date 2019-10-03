@@ -62,11 +62,15 @@ class configuration {
     size_t optimal = 0;
 
     // experiments
+    // 0 -> NNI
+    // 1 -> + NOI
+    // 2 -> + PR
+    // 3 -> degree1 outside
+    // 4 -> NOI & PR inside
+    // 5 -> degree1 inside
+    // 6 -> degree2 inside
     size_t optimization = 0;
 
  private:
     configuration() { }
-
-    // configuration(configuration const&);
-    // void operator=(configuration const&);
 };

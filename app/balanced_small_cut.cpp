@@ -44,7 +44,7 @@ int main(int argn, char** argv) {
 
     cfg->find_most_balanced_cut = true;
     cfg->save_cut = true;
-    cfg->optimization = 100;
+    cfg->optimization = 6;
 
     if (!cmdl.process(argn, argv))
         return -1;

@@ -130,9 +130,16 @@ class heavy_edges {
                 for (const auto& c : contained) {
                     G->setCurrentPosition(c, UNDEFINED_NODE);
                 }
-
                 G->contractEdgeSparseTarget(n0, G->getReverseEdge(n, rev));
                 cycleEdges.emplace_back(std::make_pair(p0, p1), contained);
+            } else if (G->get_first_invalid_edge(n) == 2 &&
+                       G->getEdgeWeight(n, 0) != G->getEdgeWeight(n, 1)) {
+                // edge 0 heavier, thus can't be in mincut and be contracted
+                EdgeID heavier =
+                    (G->getEdgeWeight(n, 0) < G->getEdgeWeight(n, 1));
+                NodeID ngbr = G->getEdgeTarget(n, heavier);
+                EdgeID rev = G->getReverseEdge(n, heavier);
+                G->contractEdgeSparseTarget(ngbr, rev);
             }
         }
 

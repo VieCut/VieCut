@@ -109,14 +109,14 @@ class heavy_edges {
                 }
 
                 // if the weights are different, n will definitely be connected
-                // to the lighter of n0 and n1. for readability we will set
-                // n0 and n1 to this lighter vertex, when reinserting p0 will
+                // to the heavier of n0 and n1. for readability we will set
+                // n0 and n1 to this heavier vertex, when reinserting p0 will
                 // definitely be in the same block as p1 (as they are equal)
                 // so we don't create the additional edge to the other neighbor
                 EdgeWeight w0 = G->getEdgeWeight(n, 0);
                 EdgeWeight w1 = G->getEdgeWeight(n, 1);
                 EdgeID rev = 0;
-                if (w1 > w0) {
+                if (w1 < w0) {
                     rev = 1;
                     n0 = n1;
                 }
@@ -135,8 +135,8 @@ class heavy_edges {
             } else if (G->get_first_invalid_edge(n) == 2 &&
                        G->getEdgeWeight(n, 0) != G->getEdgeWeight(n, 1)) {
                 // edge 0 heavier, thus can't be in mincut and be contracted
-                EdgeID heavier =
-                    (G->getEdgeWeight(n, 0) < G->getEdgeWeight(n, 1));
+                bool h1 = (G->getEdgeWeight(n, 0) < G->getEdgeWeight(n, 1));
+                EdgeID heavier = h1 ? 1 : 0;
                 NodeID ngbr = G->getEdgeTarget(n, heavier);
                 EdgeID rev = G->getReverseEdge(n, heavier);
                 G->contractEdgeSparseTarget(ngbr, rev);

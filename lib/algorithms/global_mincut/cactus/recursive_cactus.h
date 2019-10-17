@@ -140,7 +140,7 @@ class recursive_cactus {
 
         if (es == "heavy")
             std::tie(s, e, tgt) = maximumFlowEdge(G);
-        if (es == "heavy_weighted"|| es == "" || es == "heavy_vertex")
+        if (es == "heavy_weighted" || es == "" || es == "heavy_vertex")
             std::tie(s, e, tgt) = maximumWeightedFlowEdge(G);
         if (es == "central")
             std::tie(s, e, tgt) = centralFlowEdge(G);

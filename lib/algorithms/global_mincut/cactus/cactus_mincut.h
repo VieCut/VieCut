@@ -24,6 +24,7 @@
 #include "algorithms/global_mincut/cactus/recursive_cactus.h"
 #include "algorithms/global_mincut/minimum_cut.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
+#include "algorithms/global_mincut/viecut.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"
@@ -62,6 +63,13 @@ class cactus_mincut : public minimum_cut {
         std::vector<std::shared_ptr<graph_access> > graphs) {
         recursive_cactus rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
+
+        if (configuration::getConfig()->optimization >= 1) {
+            viecut vc;
+            mincut = vc.perform_minimum_cut(graphs.back());
+        }
+
+
         noi_minimum_cut noi;
         timer t;
 

@@ -159,8 +159,6 @@ class cactus_mincut : public minimum_cut {
 
         minimum_cut_helpers::setVertexLocations(
             out_graph, graphs, ge_ids, guaranteed_edges, mincut);
-
-        LOG1 << out_graph;
         LOGC(timing)
             << "unpacked - n " << out_graph->n() << " m " << out_graph->m();
 

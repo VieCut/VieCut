@@ -104,10 +104,6 @@ class recursive_cactus {
             return G;
         }
 
-        if (depth % 100 == 0) {
-            LOGC(configuration::getConfig()->verbose)
-                << "G n " << G->n() << " m " << G->m() << " depth " << depth;
-        }
         if (configuration::getConfig()->optimization >= 4) {
             if (depth % 10 == 0) {
                 size_t previous = UNDEFINED_NODE;

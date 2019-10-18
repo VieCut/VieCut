@@ -65,7 +65,7 @@ class recursive_cactus {
         auto out_graph = recursiveCactus(in_graph, 0);
         VIECUT_ASSERT_TRUE(graph_modification::isCNCR(out_graph, mincut));
         LOGC(timing) << "t " << t.elapsed() << " cactus n "
-                     << out_graph->n() << " m " << out_graph->n();
+                     << out_graph->n() << " m " << out_graph->m();
         return out_graph;
     }
 

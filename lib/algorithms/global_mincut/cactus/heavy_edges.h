@@ -96,7 +96,6 @@ class heavy_edges {
     contractCycleEdges(std::shared_ptr<mutable_graph> G) {
         std::vector<std::tuple<std::pair<NodeID, NodeID>,
                                std::vector<NodeID> > > cycleEdges;
-
         // as we contract edges, we use basic for loop so G->n() can update
         for (NodeID n = 0; n < G->n(); ++n) {
             if (G->get_first_invalid_edge(n) == 2
@@ -116,12 +115,13 @@ class heavy_edges {
                 EdgeWeight w0 = G->getEdgeWeight(n, 0);
                 EdgeWeight w1 = G->getEdgeWeight(n, 1);
                 EdgeID rev = 0;
-                if (w1 < w0) {
+                if (w1 > w0) {
                     rev = 1;
                     n0 = n1;
                 }
-                if (w0 > w1)
+                if (w1 < w0) {
                     n1 = n0;
+                }
 
                 NodeID p0 = G->containedVertices(n0)[0];
                 NodeID p1 = G->containedVertices(n1)[0];

@@ -26,7 +26,6 @@
 
 class label_propagation {
     static constexpr bool debug = false;
-    static constexpr bool timing = true;
 
  public:
     label_propagation() { }
@@ -36,6 +35,7 @@ class label_propagation {
         timer t;
         std::vector<NodeID> cluster_id(G->number_of_nodes());
         std::vector<NodeID> permutation(G->number_of_nodes());
+        bool timing = configuration::getConfig()->verbose;
 
         // use this vector to store connection strengths to blocks.
         // in order to only reset elements
@@ -53,7 +53,6 @@ class label_propagation {
         size_t iterations = 2;
 
         LOG << "Number of iterations: " << iterations;
-        LOGC(timing) << "start " << t.elapsedToZero();
 
         // size_t change = G.number_of_nodes();
         for (size_t j = 0; j < iterations; j++) {

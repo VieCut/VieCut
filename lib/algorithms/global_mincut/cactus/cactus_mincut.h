@@ -63,6 +63,7 @@ class cactus_mincut : public minimum_cut {
         std::vector<std::shared_ptr<graph_access> > graphs) {
         recursive_cactus rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
+        timer t;
 
         if (configuration::getConfig()->optimization >= 1) {
             viecut vc;
@@ -70,7 +71,6 @@ class cactus_mincut : public minimum_cut {
         }
 
         noi_minimum_cut noi;
-        timer t;
 
         std::vector<std::vector<std::pair<NodeID, NodeID> > > guaranteed_edges;
         std::vector<size_t> ge_ids;

@@ -83,8 +83,7 @@ int main(int argn, char** argv) {
     LOG1 << "io time: " << t.elapsed();
     // ***************************** perform cut *****************************
 #ifdef PARALLEL
-    LOG1 << "PARALLEL DEFINED!";
-
+    LOGC(cfg->verbose) << "PARALLEL DEFINED!";
     size_t i;
     try {
         for (i = 0; i < procs.size(); ++i) {
@@ -95,7 +94,7 @@ int main(int argn, char** argv) {
              << " is not a valid number of workers! Continuing without.";
     }
 #else
-    LOG1 << "PARALLEL NOT DEFINED";
+    LOGC(cfg->verbose) << "PARALLEL NOT DEFINED";
 #endif
     if (numthreads.empty())
         numthreads.emplace_back(1);

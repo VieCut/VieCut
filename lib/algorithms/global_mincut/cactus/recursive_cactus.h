@@ -98,10 +98,10 @@ class recursive_cactus {
 
     std::shared_ptr<mutable_graph> internalRecursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
-        if (t.elapsed() > 1800) {
-            // TODO(anoe): this is only temporary!
-            LOG1 << "TIMEOUT!";
-            return G;
+        if (depth % 100 == 0) {
+            LOGC(configuration::getConfig()->verbose) << "depth " << depth
+                                                      << " G n " << G->n()
+                                                      << " m " << G->m();
         }
 
         if (configuration::getConfig()->optimization >= 4) {

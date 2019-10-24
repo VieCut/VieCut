@@ -58,6 +58,8 @@ int main(int argn, char** argv) {
                     "sampling variant for pre-run of viecut");
     cmdl.add_flag('b', "balanced", cfg->find_most_balanced_cut,
                   "find most balanced minimum cut");
+    cmdl.add_flag('d', "minimize conductance", cfg->find_lowest_conductance,
+                  "find lowest conductance minimum cut");
     cmdl.add_string('o', "output_path", cfg->output_path,
                     "print minimum cut to file");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
@@ -68,6 +70,11 @@ int main(int argn, char** argv) {
 
     if (!cmdl.process(argn, argv))
         return -1;
+
+    if (cfg->find_lowest_conductance) {
+        // same check, just different optimization function, rest of code reused
+        cfg->find_most_balanced_cut = true;
+    }
 
     std::vector<int> numthreads;
     timer t;

@@ -94,6 +94,9 @@ int main(int argn, char** argv) {
                         uf.Union(n, t);
                     } else {
                         NodeID deg_t = original_graph->getWeightedNodeDegree(t);
+                        if (pos_t == largest_id) {
+                            deg_t += original_graph->number_of_nodes();
+                        }
                         if (deg_t > std::get<2>(heaviest_neighbors[pos])) {
                             heaviest_neighbors[pos] =
                                 std::make_tuple(n, t, deg_t);

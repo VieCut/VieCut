@@ -37,12 +37,40 @@ class most_balanced_minimum_cut {
         }
 
         balanced_cut_dfs dfs(original_graph, G, mincut);
-        auto [n1, e1, n2, e2] = dfs.runDFS();
+        auto [n1, e1, n2, e2, bestcutInCycle] = dfs.runDFS();
 
         NodeID rev_n1 = G->getEdgeTarget(n1, e1);
         EdgeID rev_e1 = G->getReverseEdge(n1, e1);
         NodeID rev_n2 = G->getEdgeTarget(n2, e2);
         EdgeID rev_e2 = G->getReverseEdge(n2, e2);
+
+        //TODO: set nodeincut for every vertex, then go to neighbors (if empty theirs)
+        // and check all neighbors!
+
+        std::vector<std::pair<NodeID, EdgeID> > contractedBestcutEdges;
+        std::vector<EdgeID> originalBestcutEdges;
+
+        contractedBestcutEdges.emplace_back(n1, e1);
+        contractedBestcutEdges.emplace_back(rev_n1, rev_e1);
+        if (bestcutInCycle) {
+            contractedBestcutEdges.emplace_back(n2, e2);
+            contractedBestcutEdges.emplace_back(rev_n2, rev_e2);
+        }
+
+        for (const auto & [n, e] : contractedBestcutEdges) {
+            NodeID target = G->getEdgeTarget(n, e);
+            for (const auto & on : G->containedVertices(n)) {
+                for (EdgeID oe : original_graph->edges_of(on)) {
+                    if (G->getCurrentPosition(
+                        original_graph->getEdgeTarget(oe)) == target) {
+                        LOG1 << "from " << on << " to " << original_graph->getEdgeTarget(oe);
+                        originalBestcutEdges.emplace_back(oe);
+                    }
+                }
+            }
+        }
+
+        LOG1 << "original bestcut edges: " << originalBestcutEdges;
 
         if (configuration::getConfig()->output_path != "") {
             LOG1 << "Printing output to file "

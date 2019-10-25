@@ -43,6 +43,7 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('p', "processes", cfg->threads, "Number of processes!");
 
     cfg->find_most_balanced_cut = true;
+    cfg->find_lowest_conductance = true;
     cfg->save_cut = true;
     cfg->optimization = 6;
 
@@ -80,17 +81,29 @@ int main(int argn, char** argv) {
             }
         }
 
+        std::vector<std::tuple<NodeID, NodeID, NodeWeight> > heaviest_neighbors(
+            mg->n(), std::make_tuple(0, 0, 0));
+
         for (NodeID n : original_graph->nodes()) {
-            if (mg->getCurrentPosition(n) != largest_id) {
-                if (G->number_of_nodes() == 630789) {
-                    LOG1 << n;
-                }
+            NodeID pos = mg->getCurrentPosition(n);
+            if (pos != largest_id) {
                 for (EdgeID e : original_graph->edges_of(n)) {
                     NodeID t = original_graph->getEdgeTarget(e);
-                    uf.Union(n, t);
+                    NodeID pos_t = mg->getCurrentPosition(t);
+                    if (pos == pos_t) {
+                        uf.Union(n, t);
+                    } else {
+                        NodeID deg_t = original_graph->getWeightedNodeDegree(t);
+                        if (deg_t > std::get<2>(heaviest_neighbors[pos])) {
+                            heaviest_neighbors[pos] =
+                                std::make_tuple(n, t, deg_t);
+                        }
+                    }
                 }
             }
         }
+
+        for (NodeID n : mg->nodes()) { }
 
         G = contraction::fromUnionFind(original_graph, &uf);
 

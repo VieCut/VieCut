@@ -58,6 +58,8 @@ int main(int argn, char** argv) {
                     "sampling variant for pre-run of viecut");
     cmdl.add_flag('b', "balanced", cfg->find_most_balanced_cut,
                   "find most balanced minimum cut");
+    cmdl.add_flag('d', "conductance", cfg->find_lowest_conductance,
+                  "find lowest conductance minimum cut");
     cmdl.add_string('o', "output_path", cfg->output_path,
                     "print minimum cut to file");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");

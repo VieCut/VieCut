@@ -36,7 +36,7 @@ class most_balanced_minimum_cut {
             return;
         }
 
-        balanced_cut_dfs dfs(G, mincut);
+        balanced_cut_dfs dfs(original_graph, G, mincut);
         auto [n1, e1, n2, e2] = dfs.runDFS();
 
         NodeID rev_n1 = G->getEdgeTarget(n1, e1);

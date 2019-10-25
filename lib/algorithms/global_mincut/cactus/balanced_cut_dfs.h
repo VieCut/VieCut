@@ -16,6 +16,7 @@
 #include <tuple>
 #include <vector>
 
+#include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
 #include "tools/random_functions.h"
@@ -25,21 +26,28 @@ class balanced_cut_dfs {
     static constexpr bool debug = false;
 
     balanced_cut_dfs() = delete;
-    balanced_cut_dfs(std::shared_ptr<mutable_graph> G, EdgeWeight mincut)
-        : G(G),
+    balanced_cut_dfs(std::shared_ptr<graph_access> original_graph,
+                     std::shared_ptr<mutable_graph> G, EdgeWeight mincut)
+        : original_graph(original_graph),
+          G(G),
           mincut(mincut),
           status(G->n(), UNDISCOVERED),
-          subtree_weight(G->n(), UNDEFINED_NODE),
+          subtree_weight(G->n(), UNDEFINED_EDGE),
           parent(G->n(), UNDEFINED_NODE),
           outgoing_cycles(G->n()) { }
 
     std::tuple<NodeID, EdgeID, NodeID, EdgeID> runDFS() {
         start_vertex = random_functions::nextInt(0, G->n() - 1);
-
+        optimize_conductance =
+            configuration::getConfig()->find_lowest_conductance;
+        if (optimize_conductance) {
+            sum_of_weights = original_graph->sumOfEdgeWeights();
+        }
         processVertex(start_vertex);
 
         LOG1 << "Most balanced cut has weight "
-             << best_weight << " on lighter side!";
+             << best_weight << " on the lighter side and "
+             << totalWeight() - best_weight << " on the heavier side";
 
         // Return cut edge(s) for most balanced mincut.
         // If most balanced mincut is on a cycle, we return both edges.
@@ -55,12 +63,13 @@ class balanced_cut_dfs {
         }
     }
 
+ private:
     void processVertex(NodeID n) {
         status[n] = ACTIVE;
 
         if (G->get_first_invalid_edge(n) == 1 && n != start_vertex) {
             // leaf
-            subtree_weight[n] = G->containedVertices(n).size();
+            subtree_weight[n] = findVertexWeight(n);
             status[n] = FINISHED;
             return;
         }
@@ -99,19 +108,38 @@ class balanced_cut_dfs {
             checkForCycles(n);
         }
 
-        subtree_weight[n] = children_weight + G->containedVertices(n).size();
+        subtree_weight[n] = children_weight + findVertexWeight(n);
 
         status[n] = FINISHED;
     }
 
- private:
-    NodeWeight lighterBlock(NodeWeight w) {
-        return std::min(w, G->getOriginalNodes() - w);
+    EdgeWeight findVertexWeight(NodeID n) {
+        if (optimize_conductance) {
+            EdgeWeight vertex_weight = 0;
+            for (const auto& v : G->containedVertices(n)) {
+                vertex_weight += original_graph->getWeightedNodeDegree(v);
+            }
+            return vertex_weight;
+        } else {
+            return G->containedVertices(n).size();
+        }
+    }
+
+    EdgeWeight totalWeight() {
+        if (optimize_conductance) {
+            return sum_of_weights;
+        } else {
+            return G->getOriginalNodes();
+        }
+    }
+
+    EdgeWeight lighterBlock(EdgeWeight w) {
+        return std::min(w, totalWeight() - w);
     }
 
     void investigateCycle(NodeID t, NodeID start) {
         std::vector<NodeID> cycle_vertices;
-        std::vector<NodeWeight> cycle_weight;
+        std::vector<EdgeWeight> cycle_weight;
         cycle_vertices.emplace_back(t);
         cycle_weight.emplace_back(subtree_weight[t]);
 
@@ -122,7 +150,7 @@ class balanced_cut_dfs {
             cycle_vertices.emplace_back(par);
         }
 
-        cycle_weight.back() = G->getOriginalNodes()
+        cycle_weight.back() = totalWeight()
                               - subtree_weight[cycle_vertices[
                                                    cycle_vertices.size() - 2]];
 
@@ -130,12 +158,13 @@ class balanced_cut_dfs {
 
         NodeID back = length;
         NodeID front = 1;
-        NodeWeight in_weight = cycle_weight[0];
+        EdgeWeight in_weight = cycle_weight[0];
 
         while (back <= 2 * length) {
             if (lighterBlock(in_weight) >= best_weight) {
                 best_weight = lighterBlock(in_weight);
                 best_in_cycle = true;
+
                 // front edge
                 best_n = cycle_vertices[(front - 1) % length];
                 for (EdgeID e : G->edges_of(best_n)) {
@@ -157,7 +186,7 @@ class balanced_cut_dfs {
                 }
             }
 
-            if (in_weight * 2 >= G->getOriginalNodes()) {
+            if (in_weight * 2 >= totalWeight()) {
                 in_weight -= cycle_weight[back % length];
                 back++;
             } else {
@@ -173,20 +202,23 @@ class balanced_cut_dfs {
         }
     }
 
+    std::shared_ptr<graph_access> original_graph;
     std::shared_ptr<mutable_graph> G;
     EdgeWeight mincut;
     NodeID start_vertex;
     std::vector<DFSVertexStatus> status;
-    std::vector<NodeWeight> subtree_weight;
+    std::vector<EdgeWeight> subtree_weight;
     std::vector<NodeID> parent;
     std::vector<std::vector<NodeID> > outgoing_cycles;
+    EdgeWeight sum_of_weights = 0;
 
     bool best_in_cycle = false;
+    bool optimize_conductance = false;
     NodeID best_n = 0;
     EdgeID best_e = 0;
 
     NodeID best_n2 = 0;
     EdgeID best_e2 = 0;
 
-    NodeWeight best_weight = 0;
+    EdgeWeight best_weight = 0;
 };

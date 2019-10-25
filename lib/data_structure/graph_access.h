@@ -485,6 +485,18 @@ class graph_access {
         m_degrees_computed = true;
     }
 
+    EdgeWeight sumOfEdgeWeights() {
+        if (!m_degrees_computed) {
+            computeDegrees();
+        }
+
+        EdgeWeight sum_weights = 0;
+        for (NodeID n : nodes()) {
+            sum_weights += m_degree[n];
+        }
+        return sum_weights;
+    }
+
     EdgeWeight getMinDegree() {
         if (!m_degrees_computed) {
             computeDegrees();

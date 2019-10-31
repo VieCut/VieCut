@@ -106,7 +106,7 @@ int main(int argn, char** argv) {
             }
         }
 
-        for (NodeID n : mg->nodes()) { 
+        for (NodeID n : mg->nodes()) {
             if (n != largest_id) {
                 auto hn = heaviest_neighbors[n];
                 uf.Union(std::get<0>(hn), std::get<1>(hn));

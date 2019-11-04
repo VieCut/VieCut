@@ -57,7 +57,9 @@ class balanced_cut_dfs {
         if (best_in_cycle) {
             LOG << "n " << best_n2 << " with edge " << best_e2
                 << " to " << G->getEdgeTarget(best_n2, best_e2);
-            return std::make_tuple(best_n, best_e, best_n2, best_e2, true);
+            NodeID best_n2_r = G->getEdgeTarget(best_n2, best_e2);
+            EdgeID best_e2_r = G->getReverseEdge(best_n2, best_e2);
+            return std::make_tuple(best_n, best_e, best_n2_r, best_e2_r, true);
         } else {
             return std::make_tuple(best_n, best_e, best_n, best_e, false);
         }

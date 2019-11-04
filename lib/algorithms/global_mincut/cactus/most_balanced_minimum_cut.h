@@ -66,7 +66,6 @@ class most_balanced_minimum_cut {
         while (!q.empty()) {
             NodeID top = q.front();
             q.pop();
-            checked[top] = true;
             for (NodeID v : G->containedVertices(top)) {
                 original_graph->setNodeInCut(v, true);
             }
@@ -74,34 +73,24 @@ class most_balanced_minimum_cut {
                 NodeID t = G->getEdgeTarget(top, e);
                 if (!checked[t]) {
                     q.push(t);
+                    checked[t] = true;
                 }
             }
         }
 
-        // TODO(anoe): Work in Progress
-        std::vector<std::pair<NodeID, EdgeID> > contractedBestcutEdges;
         std::vector<EdgeID> originalBestcutEdges;
-
-        contractedBestcutEdges.emplace_back(n1, e1);
-        contractedBestcutEdges.emplace_back(rev_n1, rev_e1);
-        if (bestcutInCycle) {
-            contractedBestcutEdges.emplace_back(n2, e2);
-            contractedBestcutEdges.emplace_back(rev_n2, rev_e2);
-        }
-
-        for (const auto& [n, e] : contractedBestcutEdges) {
-            NodeID target = G->getEdgeTarget(n, e);
-            for (const auto& on : G->containedVertices(n)) {
-                for (EdgeID oe : original_graph->edges_of(on)) {
-                    if (G->getCurrentPosition(
-                            original_graph->getEdgeTarget(oe)) == target) {
-                        originalBestcutEdges.emplace_back(oe);
-                    }
+        for (NodeID on : original_graph->nodes()) {
+            for (EdgeID oe : original_graph->edges_of(on)) {
+                NodeID ot = original_graph->getEdgeTarget(oe);
+                if (original_graph->getNodeInCut(on)
+                    != original_graph->getNodeInCut(ot)) {
+                    originalBestcutEdges.emplace_back(oe);
                 }
             }
         }
 
-        LOG1 << "original bestcut edges: " << originalBestcutEdges;
+        if (bestcutInCycle)
+            LOG0 << "bestcut is in cycle";
 
         if (configuration::getConfig()->output_path != "") {
             LOG1 << "Printing output to file "

@@ -43,7 +43,7 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('p', "processes", cfg->threads, "Number of processes!");
 
     cfg->find_most_balanced_cut = true;
-    cfg->find_lowest_conductance = true;
+    // cfg->find_lowest_conductance = true;
     cfg->save_cut = true;
     cfg->optimization = 6;
 
@@ -70,7 +70,7 @@ int main(int argn, char** argv) {
 
     while (G->number_of_nodes() > 1) {
         t_this.restart();
-        auto [current_cut, mg] = mc.findAllMincuts(graph_vec);
+        auto [current_cut, mg, mb_edges] = mc.findAllMincuts(graph_vec);
 
         NodeWeight largest_block = 0;
         NodeID largest_id = 0;
@@ -93,23 +93,27 @@ int main(int argn, char** argv) {
                     if (pos == pos_t) {
                         uf.Union(n, t);
                     } else {
-                        NodeID deg_t = original_graph->getWeightedNodeDegree(t);
-                        if (pos_t == largest_id) {
-                            deg_t += original_graph->number_of_nodes();
-                        }
-                        if (deg_t > std::get<2>(heaviest_neighbors[pos])) {
-                            heaviest_neighbors[pos] =
-                                std::make_tuple(n, t, deg_t);
+                        if (mb_edges.count(e) == 0) {
+                            uf.Union(n, t);
                         }
                     }
                 }
             }
         }
 
-        for (NodeID n : mg->nodes()) {
-            if (n != largest_id) {
-                auto hn = heaviest_neighbors[n];
-                uf.Union(std::get<0>(hn), std::get<1>(hn));
+        auto random_it =
+            std::next(std::begin(mb_edges), random_functions::nextInt(
+                          0, mb_edges.size() - 1));
+
+        EdgeID e = *random_it;
+        original_graph->setEdgeWeight(e, original_graph->getEdgeWeight(e) + 1);
+        NodeID in_n = original_graph->getEdgeSource(e);
+        NodeID in_t = original_graph->getEdgeTarget(e);
+
+        for (EdgeID e : original_graph->edges_of(in_t)) {
+            if (original_graph->getEdgeTarget(e) == in_n) {
+                original_graph->setEdgeWeight(
+                    e, original_graph->getEdgeWeight(e) + 1);
             }
         }
 

@@ -72,11 +72,11 @@ int main(int argn, char** argv) {
         t_this.restart();
         auto [current_cut, mg, mb_edges] = mc.findAllMincuts(graph_vec);
 
-        NodeWeight largest_block = 0;
+        std::vector<NodeID> largest_block;
         NodeID largest_id = 0;
         for (NodeID n : mg->nodes()) {
-            if (mg->containedVertices(n).size() > largest_block) {
-                largest_block = mg->containedVertices(n).size();
+            if (mg->containedVertices(n).size() > largest_block.size()) {
+                largest_block = mg->containedVertices(n);
                 largest_id = n;
             }
         }
@@ -93,27 +93,56 @@ int main(int argn, char** argv) {
                     if (pos == pos_t) {
                         uf.Union(n, t);
                     } else {
-                        if (mb_edges.count(e) == 0) {
-                            uf.Union(n, t);
-                        }
+                        /* if (mb_edges.count(e) == 0) {
+                             uf.Union(n, t);
+                         }*/
                     }
                 }
             }
         }
 
-        auto random_it =
-            std::next(std::begin(mb_edges), random_functions::nextInt(
-                          0, mb_edges.size() - 1));
+        std::vector<std::vector<EdgeID> > interblock_edges;
 
-        EdgeID e = *random_it;
-        original_graph->setEdgeWeight(e, original_graph->getEdgeWeight(e) + 1);
-        NodeID in_n = original_graph->getEdgeSource(e);
-        NodeID in_t = original_graph->getEdgeTarget(e);
+        for (NodeID n : mg->nodes()) {
+            interblock_edges.emplace_back();
+            if (n == largest_id)
+                continue;
 
-        for (EdgeID e : original_graph->edges_of(in_t)) {
-            if (original_graph->getEdgeTarget(e) == in_n) {
-                original_graph->setEdgeWeight(
-                    e, original_graph->getEdgeWeight(e) + 1);
+            for (NodeID v : mg->containedVertices(n)) {
+                for (EdgeID e : G->edges_of(v)) {
+                    NodeID t = G->getEdgeTarget(e);
+                    if (mg->getCurrentPosition(t) != n) {
+                        interblock_edges.back().emplace_back(e);
+                    }
+                }
+            }
+        }
+
+        std::vector<bool> increased(mg->n(), false);
+        for (NodeID n : original_graph->nodes()) {
+            NodeID block = mg->getCurrentPosition(n);
+            if (!increased[block] && block != largest_id) {
+                auto random_it = std::next(
+                    std::begin(interblock_edges[block]),
+                    random_functions::nextInt(
+                        0, interblock_edges[block].size() - 1));
+
+                EdgeID e = *random_it;
+
+                original_graph->setEdgeWeight(e,
+                                              original_graph->getEdgeWeight(e) + 1);
+
+                NodeID n = original_graph->getEdgeSource(e);
+                NodeID in_t = original_graph->getEdgeTarget(e);
+                increased[mg->getCurrentPosition(in_t)] = true;
+
+                for (EdgeID e : original_graph->edges_of(in_t)) {
+                    if (original_graph->getEdgeTarget(e) == n) {
+                        original_graph->setEdgeWeight(
+                            e, original_graph->getEdgeWeight(e) + 1);
+                        break;
+                    }
+                }
             }
         }
 

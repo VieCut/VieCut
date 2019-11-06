@@ -494,7 +494,7 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
 
         EdgeWeight wgt = 0;
-        for (const auto & e : balanced_edges) {
+        for (const auto& e : balanced_edges) {
             wgt += G->getEdgeWeight(e);
         }
 
@@ -580,9 +580,9 @@ TEST(CactusCutTest, TwoDTorus) {
 #endif
     auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
     configuration::getConfig()->find_most_balanced_cut = true;
-        
+
     EdgeWeight wgt = 0;
-    for (const auto & e : balanced_edges) {
+    for (const auto& e : balanced_edges) {
         wgt += G->getEdgeWeight(e);
     }
     ASSERT_EQ(cut, 4);

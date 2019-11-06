@@ -216,10 +216,6 @@ class contraction {
     static std::shared_ptr<graph_access> fromUnionFind(
         std::shared_ptr<graph_access> G,
         union_find* uf) {
-        if (uf->n() == G->number_of_nodes()) {
-            // no contraction
-            return G;
-        }
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
 
         std::vector<NodeID> mapping(G->number_of_nodes());

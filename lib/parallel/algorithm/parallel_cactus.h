@@ -62,16 +62,18 @@ class parallel_cactus : public minimum_cut {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         // compatibility with min cut interface
-        return findAllMincuts(G).first;
+        return std::get<0>(findAllMincuts(G));
     }
 
-    std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
+    std::tuple<EdgeWeight, std::shared_ptr<mutable_graph>,
+               std::unordered_set<EdgeID> > findAllMincuts(
         std::shared_ptr<graph_access> G) {
         std::vector<std::shared_ptr<graph_access> > v = { G };
         return findAllMincuts(v);
     }
 
-    std::pair<EdgeWeight, std::shared_ptr<mutable_graph> > findAllMincuts(
+    std::tuple<EdgeWeight, std::shared_ptr<mutable_graph>,
+               std::unordered_set<EdgeID> > findAllMincuts(
         std::vector<std::shared_ptr<graph_access> > graphs) {
         timer t;
         EdgeWeight mincut = graphs.back()->getMinDegree();
@@ -191,11 +193,11 @@ class parallel_cactus : public minimum_cut {
         LOGC(timing) << "t " << t.elapsed() << " unpacked - n "
                      << out_graph->n() << " m " << out_graph->m();
 
+        std::unordered_set<EdgeID> mb_edges;
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut mbmc;
-            mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
+            mb_edges = mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
         }
-
-        return std::make_pair(mincut, out_graph);
+        return std::make_tuple(mincut, out_graph, mb_edges);
     }
 };

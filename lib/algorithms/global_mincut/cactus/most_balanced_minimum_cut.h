@@ -43,9 +43,7 @@ class most_balanced_minimum_cut {
         auto [n1, e1, n2, e2, bestcutInCycle] = dfs.runDFS();
 
         NodeID rev_n1 = G->getEdgeTarget(n1, e1);
-        EdgeID rev_e1 = G->getReverseEdge(n1, e1);
         NodeID rev_n2 = G->getEdgeTarget(n2, e2);
-        EdgeID rev_e2 = G->getReverseEdge(n2, e2);
 
         for (NodeID n : original_graph->nodes()) {
             original_graph->setNodeInCut(n, false);

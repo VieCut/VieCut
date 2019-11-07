@@ -111,9 +111,10 @@ int main(int argn, char** argv) {
     cmdl.add_bool('o', "output", output, "Write intermediate graphs to disk");
     cmdl.add_flag('v', "verbose", cfg->verbose, "Verbose output.");
     cmdl.add_size_t('p', "processes", cfg->threads, "Number of processes!");
+    cmdl.add_flag('c', "find lowest conductance", cfg->find_lowest_conductance,
+                  "Find cut with lowest conductance");
 
     cfg->find_most_balanced_cut = true;
-    // cfg->find_lowest_conductance = true;
     cfg->save_cut = true;
     cfg->optimization = 6;
 

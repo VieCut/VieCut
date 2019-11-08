@@ -12,6 +12,7 @@
 #include <memory>
 #include <queue>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -68,9 +69,9 @@ class graph_algorithms {
 
                 uint64_t pair = uint64_from_pair(n, t);
                 uint64_t reverse_pair = uint64_from_pair(t, n);
-                
+
                 if (weights.find(pair) != weights.end()) {
-                        LOG1 << pair;
+                    LOG1 << pair;
                     for (auto w : weights) {
                         LOG1 << w;
                     }
@@ -86,13 +87,14 @@ class graph_algorithms {
                         exit(1);
                     }
                     reverse_found++;
-                } 
-                weights.emplace(pair, w);               
+                }
+                weights.emplace(pair, w);
             }
         }
 
         if (reverse_found * 2 != G->number_of_edges()) {
-            LOG1 << "Edges not adding up! " << reverse_found << " " << G->number_of_edges();
+            LOG1 << "Edges not adding up! "
+                 << reverse_found << " " << G->number_of_edges();
             exit(1);
         }
         LOG1 << "Graph is valid!";
@@ -224,10 +226,10 @@ class graph_algorithms {
     }
 
     static inline uint64_t uint64_from_pair(NodeID cluster_a,
-                                                NodeID cluster_b) {
-        //if (cluster_a > cluster_b) {
+                                            NodeID cluster_b) {
+        // if (cluster_a > cluster_b) {
         //    std::swap(cluster_a, cluster_b);
-        //}
+        // }
         return ((uint64_t)cluster_a << 32) | cluster_b;
     }
 

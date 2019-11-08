@@ -107,14 +107,17 @@ int main(int argn, char** argv) {
     tlx::CmdlineParser cmdl;
     auto cfg = configuration::getConfig();
     bool output = false;
-    bool augment = false;
+    bool augment_all = false;
+    bool augment_most_balanced = false;
     cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
     cmdl.add_bool('o', "output", output, "Write intermediate graphs to disk");
     cmdl.add_flag('v', "verbose", cfg->verbose, "Verbose output.");
     cmdl.add_size_t('p', "processes", cfg->threads, "Number of processes!");
     cmdl.add_flag('c', "find lowest conductance", cfg->find_lowest_conductance,
                   "Find cut with lowest conductance");
-    cmdl.add_flag('a', "augment", augment, "augment all minimum cuts");
+    cmdl.add_flag('a', "augment", augment_all, "augment all minimum cuts");
+    cmdl.add_flag('b', "augment_most_balanced", augment_most_balanced,
+                  "augment most balanced minimum cut");
 
     cfg->find_most_balanced_cut = true;
     cfg->save_cut = true;
@@ -144,7 +147,8 @@ int main(int argn, char** argv) {
     while (G->number_of_nodes() > 1) {
         t_this.restart();
         auto [current_cut, mg, mb_edges] = mc.findAllMincuts(graph_vec);
-        bool augment_all = (augment && (current_cut > 1));
+        bool augment_mb = ((augment_most_balanced || augment_all)
+                           && (current_cut > 1));
         std::vector<NodeID> largest_block;
         NodeID largest_id = 0;
         for (NodeID n : mg->nodes()) {
@@ -163,7 +167,8 @@ int main(int argn, char** argv) {
                     if (pos == pos_t) {
                         uf.Union(n, t);
                     } else {
-                        if (mb_edges.count(e) == 0 && !augment_all) {
+                        if (!augment_mb ||
+                            (mb_edges.count(e) == 0 && !augment_all)) {
                             uf.Union(n, t);
                         }
                     }
@@ -171,10 +176,12 @@ int main(int argn, char** argv) {
             }
         }
 
-        if (augment_all) {
-            augmentCutEdges(original_graph, mg, largest_id);
-        } else {
-            augmentMostBalancedCut(original_graph, mb_edges);
+        if (augment_mb) {
+            if (augment_all) {
+                augmentCutEdges(original_graph, mg, largest_id);
+            } else {
+                augmentMostBalancedCut(original_graph, mb_edges);
+            }
         }
 
         G = contraction::fromUnionFind(original_graph, &uf);

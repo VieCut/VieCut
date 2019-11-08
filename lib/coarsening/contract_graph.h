@@ -77,7 +77,7 @@ class contraction {
                                 int target_mindeg) {
         // non-const references for better syntax
         std::vector<NodeID>& mapping = *m;
-        std::vector<std::vector<NodeID> > reverse_mapping = *rm;
+        std::vector<std::vector<NodeID> >& reverse_mapping = *rm;
 
         for (NodeID p = 0; p < reverse_mapping.size(); ++p) {
             NodeID bestNode;

@@ -33,6 +33,9 @@ class most_balanced_minimum_cut {
             exit(1);
         }
 
+        if (configuration::getConfig()->output_path != "")
+            configuration::getConfig()->set_node_in_cut = true;
+
         std::unordered_set<EdgeID> originalBestcutEdges;
 
         if (mincut == 0) {
@@ -42,6 +45,10 @@ class most_balanced_minimum_cut {
 
         balanced_cut_dfs dfs(original_graph, G, mincut);
         auto [n1, e1, n2, e2, bestcutInCycle] = dfs.runDFS();
+
+        if (!configuration::getConfig()->set_node_in_cut) {
+            return std::unordered_set<EdgeID>{ };
+        }
 
         NodeID rev_n1 = G->getEdgeTarget(n1, e1);
         NodeID rev_n2 = G->getEdgeTarget(n2, e2);
@@ -99,6 +106,7 @@ class most_balanced_minimum_cut {
             graph_io::writeCut(original_graph,
                                configuration::getConfig()->output_path);
         }
+
         return originalBestcutEdges;
     }
 };

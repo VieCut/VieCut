@@ -212,9 +212,9 @@ Usage is similar to mincut and can be combined with any minimum cut algorithm.
 
 #### Program Options:
 
-* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19] for details)
+* `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see [HNS'19a] for details)
 * `-i` - Number of iterations (default: 1)
-* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19])
+* `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19a])
 * `-p` - Use `p` processors (multiple values possible)
 * `-c` - Contraction factor: we contract until only n*(1-c) vertices are left.
 * `-s` - Compute and save minimum cut.
@@ -238,7 +238,9 @@ This can be used to create subgraphs of a graph that have different minimum cuts
 
 [BZ'03] - *Batagelj, V. and Zaversnik, M., 2003. An O(m) algorithm for cores decomposition of networks.*
 
-[HNS'19] - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts.*
+[HNS'19a] - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts.*
+
+[HNS'19b] - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Branch-and-reduce for Multiterminal Cuts.*
 
 [HNSS'18] - *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms.*
 

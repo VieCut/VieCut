@@ -11,8 +11,6 @@ matrix:
       os: linux
       addons:
         apt:
-          sources:
-          - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
             - g++-7
             - libgoogle-perftools-dev
@@ -23,22 +21,18 @@ matrix:
       os: linux
       addons:
         apt:
-          sources:
-            - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
             - g++-8
             - libgoogle-perftools-dev
             - libomp-dev
             
 # clang++-6, Debug
-    - env: CMAKE_CC="clang-6.0" CMAKE_CXX="clang++-6.0" BUILD_TYPE="Debug" MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0 && OMP_NUM_THREADS=4"
+    - env: CMAKE_CC="clang-8" CMAKE_CXX="clang++-8" BUILD_TYPE="Debug" MATRIX_EVAL="CC=clang-8 && CXX=clang++-8 && OMP_NUM_THREADS=4"
       os: linux
       addons:
         apt:
-          sources:
-            - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
-            - clang-6.0
+            - clang-8
             - libgoogle-perftools-dev
             - libomp-dev
 
@@ -47,8 +41,6 @@ matrix:
       os: linux
       addons:
         apt:
-          sources:
-            - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
             - g++-7
             - libgoogle-perftools-dev
@@ -59,22 +51,18 @@ matrix:
       os: linux
       addons:
         apt:
-          sources:
-            - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
             - g++-8
             - libgoogle-perftools-dev
             - libomp-dev
 
 # clang++-6, Release
-    - env: CMAKE_CC="clang-6.0" CMAKE_CXX="clang++-6.0" BUILD_TYPE="Release" MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0 && OMP_NUM_THREADS=4"
+    - env: CMAKE_CC="clang-8" CMAKE_CXX="clang++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0 && OMP_NUM_THREADS=4"
       os: linux
       addons:
         apt:
-          sources:
-            - sourceline: "ppa:ubuntu-toolchain-r/test"
           packages:
-            - clang-6.0
+            - clang-8
             - libgoogle-perftools-dev
             - libomp-dev
 

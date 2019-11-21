@@ -63,8 +63,6 @@ int main(int argn, char** argv) {
     cmdl.add_string('o', "output_path", cfg->output_path,
                     "print minimum cut to file");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
-    cmdl.add_size_t('x', "optimization", cfg->optimization,
-                    "switch for different modes for optimization experiments");
     cmdl.add_string('e', "edge_select", cfg->edge_selection, "NNI edge select");
     cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
 
@@ -153,7 +151,6 @@ int main(int argn, char** argv) {
                       << " n=" << n
                       << " m=" << m / 2
                       << " processes=" << numthread
-                      << " optimization=" << cfg->optimization
                       << " edge_select=" << cfg->edge_selection
                       << " seed=" << cfg->seed
                       << std::endl;

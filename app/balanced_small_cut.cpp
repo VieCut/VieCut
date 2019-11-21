@@ -121,7 +121,6 @@ int main(int argn, char** argv) {
 
     cfg->find_most_balanced_cut = true;
     cfg->save_cut = true;
-    cfg->optimization = 6;
     cfg->set_node_in_cut = true;
 
     if (!cmdl.process(argn, argv))

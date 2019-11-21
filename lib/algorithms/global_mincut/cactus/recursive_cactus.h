@@ -72,28 +72,13 @@ class recursive_cactus {
  private:
     std::shared_ptr<mutable_graph> recursiveCactus(
         std::shared_ptr<mutable_graph> G, size_t depth) {
-        switch (configuration::getConfig()->optimization) {
-        case 5:
-        {
-            heavy_edges he(mincut);
-            auto cactusEdges = he.removeHeavyEdges(G);
-            G = internalRecursiveCactus(G, depth);
-            he.reInsertVertices(G, cactusEdges);
-            return G;
-        }
-        case 6:
-        {
-            heavy_edges he(mincut);
-            auto cactusEdges = he.removeHeavyEdges(G);
-            auto cycleEdges = he.contractCycleEdges(G);
-            G = internalRecursiveCactus(G, depth);
-            he.reInsertCycles(G, cycleEdges);
-            he.reInsertVertices(G, cactusEdges);
-            return G;
-        }
-        default:
-            return internalRecursiveCactus(G, depth);
-        }
+        heavy_edges he(mincut);
+        auto cactusEdges = he.removeHeavyEdges(G);
+        auto cycleEdges = he.contractCycleEdges(G);
+        G = internalRecursiveCactus(G, depth);
+        he.reInsertCycles(G, cycleEdges);
+        he.reInsertVertices(G, cactusEdges);
+        return G;
     }
 
     std::shared_ptr<mutable_graph> internalRecursiveCactus(
@@ -104,25 +89,24 @@ class recursive_cactus {
                                                       << " m " << G->m();
         }
 
-        if (configuration::getConfig()->optimization >= 4) {
-            if (depth % 10 == 0) {
-                size_t previous = UNDEFINED_NODE;
-                // implicit do-while loop
-                while (previous > G->n()) {
-                    previous = G->n();
-                    // create empty multicut problem to run modified_capforest
-                    multicut_problem mcp(G);
-                    auto problem = std::make_shared<multicut_problem>(mcp);
-                    noi_minimum_cut noi;
-                    auto uf = noi.modified_capforest(problem, mincut + 1);
-                    G = contraction::fromUnionFind(G, &uf);
-                    auto uf12 = all_cut_local_red::allCutsPrTests12(G, mincut);
-                    G = contraction::fromUnionFind(G, &uf12);
-                    auto uf34 = all_cut_local_red::allCutsPrTests34(G, mincut);
-                    G = contraction::fromUnionFind(G, &uf34);
-                }
+        if (depth % 10 == 0) {
+            size_t previous = UNDEFINED_NODE;
+            // implicit do-while loop
+            while (previous > G->n()) {
+                previous = G->n();
+                // create empty multicut problem to run modified_capforest
+                multicut_problem mcp(G);
+                auto problem = std::make_shared<multicut_problem>(mcp);
+                noi_minimum_cut noi;
+                auto uf = noi.modified_capforest(problem, mincut + 1);
+                G = contraction::fromUnionFind(G, &uf);
+                auto uf12 = all_cut_local_red::allCutsPrTests12(G, mincut);
+                G = contraction::fromUnionFind(G, &uf12);
+                auto uf34 = all_cut_local_red::allCutsPrTests34(G, mincut);
+                G = contraction::fromUnionFind(G, &uf34);
             }
         }
+
         if (G->number_of_nodes() == 1 || G->number_of_edges() == 0) {
             return G;
         }

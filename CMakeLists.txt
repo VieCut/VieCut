@@ -7,6 +7,15 @@ find_package(Tcmalloc REQUIRED)
 find_package(Profiler)
 find_package(OpenMP REQUIRED)
 
+OPTION(RUN_TESTS "Compile and run tests" ON)
+OPTION(USE_GUROBI "Use Gurobi for ILP Solving in multiterminal cut" OFF)
+
+if (USE_GUROBI)
+    find_package(Gurobi REQUIRED)
+    MESSAGE("Using Gurobi for ILP Solving in multiterminal cut...")
+    add_definitions(-DUSE_GUROBI)
+endif()
+
 macro(bal_seq TARGETNAME)
     set (SEQ_NAME "${TARGETNAME}") 
     add_executable(${SEQ_NAME} app/${TARGETNAME}.cpp)
@@ -36,14 +45,13 @@ add_definitions("-DVIECUT_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-OPTION(RUN_TESTS "Compile and run tests" ON)
-
 # prohibit in-source builds
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
     message(SEND_ERROR "In-source builds are not allowed.")
 endif()
 
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})
+MESSAGE(STATUS "Option: USE_GUROBI " ${USE_GUROBI})
 
 add_subdirectory(extlib/tlx)
 
@@ -53,6 +61,7 @@ include_directories(
     /usr/include/mpi
     extlib/growt
     extlib/tlx
+    ${GUROBI_INCLUDE_DIR}
 )
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp -g")
@@ -150,9 +159,9 @@ add_library(viecut ${SOURCE_FILES})
 
 set(EXTLIBS tlx)
 if(USE_PROFILER)
-set(LIBS viecut ${EXTLIBS} ${Profiler_LIBRARIES})
+set(LIBS viecut ${EXTLIBS} ${Profiler_LIBRARIES} ${GUROBI_LIBRARIES})
 else()
-set(LIBS viecut ${EXTLIBS} ${Tcmalloc_LIBRARIES})
+set(LIBS viecut ${EXTLIBS} ${Tcmalloc_LIBRARIES} ${GUROBI_LIBRARIES})
 endif()
 
 build_and_link(kcore)

@@ -12,6 +12,7 @@
 #include <memory>
 #include <queue>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -51,6 +52,52 @@ class graph_algorithms {
         }
 
         return find_top_k(all_degrees, k);
+    }
+
+    static void checkGraphValidity(std::shared_ptr<graph_access> G) {
+        std::unordered_map<uint64_t, EdgeWeight> weights;
+        size_t reverse_found = 0;
+        for (NodeID n : G->nodes()) {
+            for (EdgeID e : G->edges_of(n)) {
+                EdgeWeight w = G->getEdgeWeight(e);
+                NodeID t = G->getEdgeTarget(e);
+
+                if (t >= G->number_of_nodes()) {
+                    LOG1 << "edge to element outside of graph";
+                    exit(1);
+                }
+
+                uint64_t pair = uint64_from_pair(n, t);
+                uint64_t reverse_pair = uint64_from_pair(t, n);
+
+                if (weights.find(pair) != weights.end()) {
+                    LOG1 << pair;
+                    for (auto w : weights) {
+                        LOG1 << w;
+                    }
+
+                    LOG1 << "ERROR: Multi-edge detected from "
+                         << n << " to " << t;
+                    exit(1);
+                }
+                auto el = weights.find(reverse_pair);
+                if (el != weights.end()) {
+                    if (el->second != w) {
+                        LOG1 << "weight unequal!";
+                        exit(1);
+                    }
+                    reverse_found++;
+                }
+                weights.emplace(pair, w);
+            }
+        }
+
+        if (reverse_found * 2 != G->number_of_edges()) {
+            LOG1 << "Edges not adding up! "
+                 << reverse_found << " " << G->number_of_edges();
+            exit(1);
+        }
+        LOG1 << "Graph is valid!";
     }
 
     static void checkGraphValidity(std::shared_ptr<mutable_graph> G) {
@@ -176,5 +223,20 @@ class graph_algorithms {
             out.emplace_back(in[i].first);
         }
         return out;
+    }
+
+    static inline uint64_t uint64_from_pair(NodeID cluster_a,
+                                            NodeID cluster_b) {
+        // if (cluster_a > cluster_b) {
+        //    std::swap(cluster_a, cluster_b);
+        // }
+        return ((uint64_t)cluster_a << 32) | cluster_b;
+    }
+
+    static inline std::pair<NodeID, NodeID> pair_from_uint64(
+        uint64_t data) {
+        NodeID first = data >> 32;
+        NodeID second = data;
+        return std::make_pair(first, second);
     }
 };

@@ -77,7 +77,7 @@ class contraction {
                                 int target_mindeg) {
         // non-const references for better syntax
         std::vector<NodeID>& mapping = *m;
-        std::vector<std::vector<NodeID> > reverse_mapping = *rm;
+        std::vector<std::vector<NodeID> >& reverse_mapping = *rm;
 
         for (NodeID p = 0; p < reverse_mapping.size(); ++p) {
             NodeID bestNode;
@@ -135,8 +135,12 @@ class contraction {
         reverse_mapping) {
         NodeID num_nodes = reverse_mapping.size();
         auto contracted = std::make_shared<graph_access>();
+        if (reverse_mapping.size() == 1) {
+            contracted->start_construction(1, 0);
+            contracted->finish_construction();
+            return contracted;
+        }
         std::vector<EdgeWeight> intermediate(num_nodes * (num_nodes - 1), 0);
-
         for (NodeID n = 0; n < G->number_of_nodes(); ++n) {
             NodeID src = mapping[n];
             for (EdgeID e : G->edges_of(n)) {
@@ -147,7 +151,6 @@ class contraction {
                 }
             }
         }
-
         EdgeID existing_edges = intermediate.size();
         for (auto e : intermediate) {
             if (e == 0)
@@ -155,7 +158,6 @@ class contraction {
         }
 
         contracted->start_construction(num_nodes, existing_edges);
-
         for (size_t i = 0; i < num_nodes; ++i) {
             contracted->new_node();
             for (size_t j = 0; j < num_nodes; ++j) {
@@ -170,7 +172,6 @@ class contraction {
                 }
             }
         }
-
         contracted->finish_construction();
 
         return contracted;
@@ -235,6 +236,7 @@ class contraction {
             }
             reverse_mapping[part[part_id]].push_back(n);
         }
+
         return contractGraph(G, mapping,
                              reverse_mapping.size(), reverse_mapping);
     }

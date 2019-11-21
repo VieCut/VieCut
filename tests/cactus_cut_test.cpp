@@ -37,10 +37,10 @@ TEST(CactusCutTest, UnweightedGraphFromFile) {
 #else
         cactus_mincut mc;
 #endif
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
 
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 2);
-
         std::vector<size_t> sizes(6, 0);
         std::vector<size_t> desired_sizes = { 0, 0, 0, 0, 2, 0 };
         for (NodeID n : mg->nodes()) {
@@ -62,7 +62,8 @@ TEST(CactusCutTest, WeightedGraphFromFile) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 3);
 
         std::vector<size_t> sizes(10, 0);
@@ -96,7 +97,8 @@ TEST(CactusCutTest, SmallClique) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 3);
         ASSERT_EQ(mg->number_of_nodes(), 5);
 
@@ -147,7 +149,8 @@ TEST(CactusCutTest, RingOfVerySmallCliques) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 2);
         ASSERT_EQ(mg->number_of_nodes(), num_cliques * 3);
 
@@ -180,7 +183,8 @@ TEST(CactusCutTest, SimplePath) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, wgt);
         ASSERT_EQ(mg->number_of_nodes(), length);
     }
@@ -224,7 +228,8 @@ TEST(CactusCutTest, RingOfSmallCliques) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 2);
         ASSERT_EQ(mg->number_of_nodes(), num_cliques);
 
@@ -255,8 +260,8 @@ TEST(CactusCutTest, MultipleMincuts) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
-
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 3);
         ASSERT_EQ(mg->number_of_nodes(), 5);
 
@@ -291,8 +296,8 @@ TEST(CactusCutTest, LargeClique) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
-
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 9);
         ASSERT_EQ(mg->number_of_nodes(), 11);
 
@@ -347,7 +352,8 @@ TEST(CactusCutTest, GraphFromNKPaper) {
         cactus_mincut mc;
 #endif
 
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+        ASSERT_EQ(balanced_edges.size(), 0);
         ASSERT_EQ(cut, 4);
         ASSERT_EQ(mg->number_of_nodes(), 7);
         ASSERT_EQ(mg->number_of_edges(), 18);
@@ -485,8 +491,15 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
         configuration::getConfig()->output_path = outfile;
         configuration::getConfig()->save_cut = true;
         configuration::getConfig()->find_most_balanced_cut = true;
-        auto [cut, mg] = mc.findAllMincuts(G);
+        auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+
+        EdgeWeight wgt = 0;
+        for (const auto& e : balanced_edges) {
+            wgt += G->getEdgeWeight(e);
+        }
+
         ASSERT_EQ(cut, 4);
+        ASSERT_EQ(wgt, 2 * cut);
         ASSERT_EQ(mg->number_of_nodes(), 21);
         ASSERT_EQ(mg->number_of_edges(), 54);
 
@@ -565,9 +578,15 @@ TEST(CactusCutTest, TwoDTorus) {
 #else
     cactus_mincut mc;
 #endif
-    auto [cut, mg] = mc.findAllMincuts(G);
+    auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
+    configuration::getConfig()->find_most_balanced_cut = true;
 
+    EdgeWeight wgt = 0;
+    for (const auto& e : balanced_edges) {
+        wgt += G->getEdgeWeight(e);
+    }
     ASSERT_EQ(cut, 4);
+    ASSERT_EQ(wgt, 2 * cut);
     ASSERT_EQ(mg->number_of_nodes(), 10);
     ASSERT_EQ(mg->number_of_edges(), 18);
 

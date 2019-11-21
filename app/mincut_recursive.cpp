@@ -65,8 +65,8 @@ int main(int argn, char** argv) {
 
     while (G->number_of_nodes() > 1000) {
         t_this.restart();
-        auto [current_cut, mg] = mc.findAllMincuts(G);
-
+        auto [current_cut, mg, unused] = mc.findAllMincuts(G);
+        (void)unused;
         NodeWeight largest_block = 0;
         NodeID largest_id = 0;
         for (NodeID n : mg->nodes()) {

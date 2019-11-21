@@ -44,6 +44,10 @@
 #include "tools/timer.h"
 #include "tools/vector.h"
 
+#ifdef USE_GUROBI
+#include "algorithms/multicut/solve_with_ilp.h"
+#endif
+
 using namespace std::chrono_literals;
 
 class branch_multicut {

@@ -45,7 +45,7 @@
 #include "tools/vector.h"
 
 #ifdef USE_GUROBI
-#include "algorithms/multicut/solve_with_ilp.h"
+#include "algorithms/multicut/ilp_model.h"
 #endif
 
 using namespace std::chrono_literals;
@@ -222,20 +222,22 @@ class branch_multicut {
             }
         } else {
             nonBranchingContraction(current_problem, thread_id);
-            if (current_problem->graph->m() >= edges_before) {
+            if (current_problem->graph->m() >= edges_before
+                && current_problem->terminals.size() > 1) {
                 if (configuration::getConfig()->noBranching) {
                     writeGraph(current_problem);
                     return;
                 } else {
 #ifdef USE_GUROBI
+                    NodeID n = current_problem->graph->n();
                     bool branchOnCurrentInstance = false;
                     if (branchOnCurrentInstance) {
 #endif
-                        branchOnEdge(current_problem, thread_id);
+                    branchOnEdge(current_problem, thread_id);
 #ifdef USE_GUROBI
-                    } else {
-                        solve_with_ilp::solve(current_problem);
-                    }
+                } else {
+                    solve_with_ilp(current_problem);
+                }
 #endif
                 }
             } else {
@@ -597,6 +599,32 @@ class branch_multicut {
 
         return contr_flow;
     }
+
+#ifdef USE_GUROBI
+    void solve_with_ilp(std::shared_ptr<multicut_problem> mcp) {
+        std::vector<NodeID> presets(mcp->graph->n(), mcp->terminals.size());
+
+        for (size_t i = 0; i < mcp->terminals.size(); ++i) {
+            presets[mcp->terminals[i].position] = i;
+        }
+
+        auto [result, wgt] = ilp_model::computeIlp(mcp->graph, presets,
+                                                   mcp->terminals.size());
+
+        if (mcp->deleted_weight + wgt <
+            static_cast<EdgeWeight>(global_upper_bound)) {
+            for (NodeID n = 0; n < best_solution.size(); ++n) {
+                NodeID n_coarse = mcp->mapped(n);
+                auto t = mcp->graph->getCurrentPosition(n_coarse);
+                best_solution[n] = mcp->graph->getPartitionIndex(t);
+            }
+            global_upper_bound = wgt + mcp->deleted_weight;
+            LOGC(testing) << "Improvement (IN ILP) after time="
+                          << total_time.elapsed()
+                          << " upper_bound=" << global_upper_bound;
+        }
+    }
+#endif
 
     void findSubproblems(std::shared_ptr<multicut_problem> problem) {
         std::queue<NodeID> block;

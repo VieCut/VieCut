@@ -1,5 +1,5 @@
 /******************************************************************************
- * solve_by_ilp.h
+ * ilp_model.h
  *
  * Source of VieCut
  *
@@ -12,28 +12,20 @@
 
 #pragma once
 
+#include <memory>
+#include <utility>
 #include <vector>
 
-#include "gurobi_c++.h"
+#include "gurobi_c++.h" //NOLINT
 
 #include "algorithms/multicut/multicut_problem.h"
 
-class solve_with_ilp {
+class ilp_model {
  public:
-    static void solve(std::shared_ptr<multicut_problem> mcp) {
-        std::vector<NodeID> presets(mcp->graph->n(), mcp->terminals.size());
-
-        for (size_t i = 0; i < mcp->terminals.size(); ++i) {
-            presets[mcp->terminals[i].position] = i;
-        }
-
-        computeIlp(mcp->graph, presets, mcp->terminals.size());
-    }
-
- private:
-    static GRBModel computeIlp(std::shared_ptr<mutable_graph> graph,
-                               const std::vector<NodeID>& presets,
-                               size_t num_terminals) {
+    static std::pair<std::vector<NodeID>, EdgeWeight> computeIlp(
+        std::shared_ptr<mutable_graph> graph,
+        const std::vector<NodeID>& presets,
+        size_t num_terminals) {
         try {
             GRBEnv env;
             GRBModel model = GRBModel(env);
@@ -57,13 +49,13 @@ class solve_with_ilp {
                     if (presets[i] < num_terminals) {
                         bool isCurrent = (presets[i] == q);
                         double f = isCurrent ? 1.0 : 0.0;
-                        nodes[i + q * numNodes] = 
+                        nodes[i + q * numNodes] =
                             model.addVar(f, f, 0, GRB_BINARY);
                         nodes[i + q * numNodes].set(GRB_DoubleAttr_Start, f);
                     } else {
-                        nodes[i + q * numNodes] = 
+                        nodes[i + q * numNodes] =
                             model.addVar(0.0, 1.0, 0, GRB_BINARY);
-                        // nodes[i + q * numNodes].set(GRB_DoubleAttr_Start, 
+                        // nodes[i + q * numNodes].set(GRB_DoubleAttr_Start,
                         // (coarser.getPartitionIndex(i) == q));
                     }
                 }
@@ -76,12 +68,11 @@ class solve_with_ilp {
                 for (EdgeID e : graph->edges_of(n)) {
                     NodeID t = graph->getEdgeTarget(n, e);
                     if (n > graph->getEdgeTarget(n, e)) {
-                        edges[j] = model.addVar(0.0, 1.0, 1, GRB_BINARY);
-                        //double start = (coarser.getPartitionIndex(edge_source[i]) != coarser.getPartitionIndex(coarser.getEdgeTarget(i))) ? 1 : 0;
-                        //edges[j].set(GRB_DoubleAttr_Start, start);
+                        edges[j] = model.addVar(
+                            0.0, 1.0, graph->getEdgeWeight(n, e), GRB_BINARY);
                         for (size_t q = 0; q < num_terminals; q++) {
                             GRBLinExpr cons = nodes[n + q * numNodes]
-                                - nodes[t + q * numNodes];
+                                              - nodes[t + q * numNodes];
                             // Add constraint: valid partiton
                             model.addConstr(edges[j] >= cons, "valid part.");
                             model.addConstr(edges[j] >= -cons, "valid part.");
@@ -100,9 +91,11 @@ class solve_with_ilp {
                 model.addConstr(sumCons == 1);
             }
 
+            model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
             // Optimize model
             model.optimize();
 
+            std::vector<NodeID> result(numNodes);
             // if solution is found
             if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL ||
                 model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
@@ -111,17 +104,19 @@ class solve_with_ilp {
                     for (size_t i = 0; i < numNodes; i++) {
                         auto v = nodes[i + q * numNodes].get(GRB_DoubleAttr_X);
                         if (v == 1) {
-                            LOG1 << v << " is on " << q;   
+                            result[i] = q;
                         }
                     }
                 }
             } else {
                 LOG1 << "No solution";
             }
-
-            return model;
+            EdgeWeight wgt =
+                static_cast<EdgeWeight>(model.get(GRB_DoubleAttr_ObjVal));
+            return std::make_pair(result, wgt);
         } catch (GRBException e) {
             LOG1 << e.getErrorCode() << " Message: " << e.getMessage();
+            exit(1);
         }
     }
 };

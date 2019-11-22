@@ -53,6 +53,8 @@ endif()
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})
 MESSAGE(STATUS "Option: USE_GUROBI " ${USE_GUROBI})
 
+MESSAGE(STATUS ${GUROBI_INCLUDE_DIR})
+
 add_subdirectory(extlib/tlx)
 
 include_directories(
@@ -65,7 +67,7 @@ include_directories(
 )
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fopenmp -g")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -L/home/noea45cs/gurobi811/linux64/lib -lgurobi_c++ -lgurobi81")
 set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG")
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
 
@@ -163,6 +165,8 @@ set(LIBS viecut ${EXTLIBS} ${Profiler_LIBRARIES} ${GUROBI_LIBRARIES})
 else()
 set(LIBS viecut ${EXTLIBS} ${Tcmalloc_LIBRARIES} ${GUROBI_LIBRARIES})
 endif()
+
+message(STATUS "LIBSES ALL OF THEM: ${LIBS}")
 
 build_and_link(kcore)
 build_and_link(mincut_contract)

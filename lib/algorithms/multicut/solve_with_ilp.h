@@ -12,20 +12,28 @@
 
 #pragma once
 
-#include <algorithm>
-#include <queue>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "gurobi_c++.h"
 
-class ilp_improve {
+#include "algorithms/multicut/multicut_problem.h"
+
+class solve_with_ilp {
  public:
-    GRBModel computeIlp(std::shared_ptr<mutable_graph> graph,
-                        double timelimit,
-                        const std::vector<NodeID>& presets,
-                        size_t num_terminals) {
+    static void solve(std::shared_ptr<multicut_problem> mcp) {
+        std::vector<NodeID> presets(mcp->graph->n(), mcp->terminals.size());
+
+        for (size_t i = 0; i < mcp->terminals.size(); ++i) {
+            presets[mcp->terminals[i].position] = i;
+        }
+
+        computeIlp(mcp->graph, presets, mcp->terminals.size());
+    }
+
+ private:
+    static GRBModel computeIlp(std::shared_ptr<mutable_graph> graph,
+                               const std::vector<NodeID>& presets,
+                               size_t num_terminals) {
         try {
             GRBEnv env;
             GRBModel model = GRBModel(env);
@@ -37,7 +45,6 @@ class ilp_improve {
 
             model.set(GRB_IntParam_Threads, 1);
             model.set(GRB_StringAttr_ModelName, "Partition");
-            model.set(GRB_DoubleParam_TimeLimit, timelimit);
             model.set(GRB_DoubleParam_MIPGap, 0);
             model.set(GRB_IntParam_Threads, 1);
             model.set(GRB_IntParam_LogToConsole, 0);

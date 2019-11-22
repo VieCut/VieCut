@@ -220,9 +220,6 @@ class branch_multicut {
                 }
                 bestsol_mutex.unlock();
             }
-            if (configuration::getConfig()->noBranching) {
-                LOG1 << "ALREADY NOT-DELETED-2 " << global_upper_bound;
-            }
         } else {
             nonBranchingContraction(current_problem, thread_id);
             if (current_problem->graph->m() >= edges_before) {
@@ -230,7 +227,16 @@ class branch_multicut {
                     writeGraph(current_problem);
                     return;
                 } else {
-                    branchOnEdge(current_problem, thread_id);
+#ifdef USE_GUROBI
+                    bool branchOnCurrentInstance = false;
+                    if (branchOnCurrentInstance) {
+#endif
+                        branchOnEdge(current_problem, thread_id);
+#ifdef USE_GUROBI
+                    } else {
+                        solve_with_ilp::solve(current_problem);
+                    }
+#endif
                 }
             } else {
                 if (current_problem->lower_bound < global_upper_bound) {
@@ -238,10 +244,6 @@ class branch_multicut {
                         problems.addProblem(current_problem, thread_id);
                     q_cv[thr].notify_all();
                 } else {
-                    if (configuration::getConfig()->noBranching) {
-                        LOG1 << "ALREADY NOT-DELETED-BOUND "
-                             << global_upper_bound;
-                    }
                     // notify all sleeping threads, as we might be finished
                     for (size_t j = 0; j < num_threads; ++j) {
                         q_cv[j].notify_all();

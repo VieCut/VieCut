@@ -66,8 +66,6 @@ int main(int argn, char** argv) {
                     "Disable contraction mechanisms");
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
-    cmdl.add_bool('N', "no_branching", config->noBranching,
-                  "don't branch, but just write graph (for tests)");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -227,6 +225,5 @@ int main(int argn, char** argv) {
               << " n=" << G->number_of_nodes()
               << " m=" << G->number_of_edges() / 2
               << " processes=" << config->threads
-              << " seed=" << config->seed
-              << " nobranch=" << config->noBranching << std::endl;
+              << " seed=" << config->seed << std::endl;
 }

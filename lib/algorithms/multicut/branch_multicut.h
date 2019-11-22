@@ -224,14 +224,10 @@ class branch_multicut {
             nonBranchingContraction(current_problem, thread_id);
             if (current_problem->graph->m() >= edges_before
                 && current_problem->terminals.size() > 1) {
-                if (configuration::getConfig()->noBranching) {
-                    writeGraph(current_problem);
-                    return;
-                } else {
 #ifdef USE_GUROBI
-                    NodeID n = current_problem->graph->n();
-                    bool branchOnCurrentInstance = false;
-                    if (branchOnCurrentInstance) {
+                NodeID n = current_problem->graph->n();
+                bool branchOnCurrentInstance = false;
+                if (branchOnCurrentInstance) {
 #endif
                     branchOnEdge(current_problem, thread_id);
 #ifdef USE_GUROBI
@@ -239,7 +235,6 @@ class branch_multicut {
                     solve_with_ilp(current_problem);
                 }
 #endif
-                }
             } else {
                 if (current_problem->lower_bound < global_upper_bound) {
                     size_t thr =
@@ -253,39 +248,6 @@ class branch_multicut {
                 }
             }
         }
-    }
-
-    void writeGraph(std::shared_ptr<multicut_problem> problem) {
-        std::string outgraph =
-            configuration::getConfig()->graph_filename
-            + "-cc" + std::to_string(configuration::getConfig()->print_cc)
-            + "-branch."
-            + std::to_string(configuration::getConfig()->total_terminals);
-
-        configuration::getConfig()->print_cc++;
-        std::string pos = outgraph + ".vec";
-        std::string part = pos + ".pos";
-
-        graph_io::writeGraphWeighted(problem->graph->to_graph_access(),
-                                     outgraph);
-        std::vector<NodeID> posvec(problem->graph->n(), 0);
-        std::vector<NodeID> partvec(problem->graph->n(), 10000);
-
-        LOG1 << "ALREADY DELETED " << problem->deleted_weight;
-        LOG1 << "Printing graph with " << problem->graph->n()
-             << " nodes and " << problem->graph->m() << " edges!";
-
-        for (auto t : problem->terminals) {
-            if (t.position < problem->graph->n()) {
-                posvec[t.position] = t.original_id;
-                partvec[t.position] = 0;
-            }
-        }
-
-        graph_io gio;
-
-        gio.writeVector(posvec, pos);
-        gio.writeVector(partvec, part);
     }
 
     FlowType flowValue(bool verbose, const std::vector<NodeID>& sol) {

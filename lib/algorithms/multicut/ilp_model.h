@@ -55,8 +55,6 @@ class ilp_model {
                     } else {
                         nodes[i + q * numNodes] =
                             model.addVar(0.0, 1.0, 0, GRB_BINARY);
-                        // nodes[i + q * numNodes].set(GRB_DoubleAttr_Start,
-                        // (coarser.getPartitionIndex(i) == q));
                     }
                 }
             }

@@ -68,7 +68,6 @@ int main(int argn, char** argv) {
                     "Partition file");
     cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
 
-
     if (!cmdl.process(argn, argv))
         return -1;
 

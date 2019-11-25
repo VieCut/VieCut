@@ -229,7 +229,7 @@ class branch_multicut {
                 bool branchOnCurrentInstance = !c->use_ilp;
                 if (!c->differences_set) {
                     c->bound_difference = current_problem->upper_bound
-                        - current_problem->lower_bound;
+                                          - current_problem->lower_bound;
                     c->n = current_problem->graph->n();
                     c->m = current_problem->graph->m();
                     c->differences_set = true;
@@ -237,11 +237,11 @@ class branch_multicut {
 
                 if (branchOnCurrentInstance) {
 #endif
-                    branchOnEdge(current_problem, thread_id);
+                branchOnEdge(current_problem, thread_id);
 #ifdef USE_GUROBI
-                } else {
-                    solve_with_ilp(current_problem);
-                }
+            } else {
+                solve_with_ilp(current_problem);
+            }
 #endif
             } else {
                 if (current_problem->lower_bound < global_upper_bound) {

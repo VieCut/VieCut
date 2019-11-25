@@ -66,6 +66,8 @@ int main(int argn, char** argv) {
                     "Disable contraction mechanisms");
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
+    cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
+
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -224,6 +226,10 @@ int main(int argn, char** argv) {
               << " cut=" << flow
               << " n=" << G->number_of_nodes()
               << " m=" << G->number_of_edges() / 2
+              << " use_ilp=" << config->use_ilp
+              << " difference=" << config->bound_difference
+              << " contract_n=" << config->n
+              << " contract_m=" << config->m
               << " processes=" << config->threads
               << " seed=" << config->seed << std::endl;
 }

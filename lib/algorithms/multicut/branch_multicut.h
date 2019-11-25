@@ -225,8 +225,16 @@ class branch_multicut {
             if (current_problem->graph->m() >= edges_before
                 && current_problem->terminals.size() > 1) {
 #ifdef USE_GUROBI
-                NodeID n = current_problem->graph->n();
-                bool branchOnCurrentInstance = false;
+                auto c = configuration::getConfig();
+                bool branchOnCurrentInstance = !c->use_ilp;
+                if (!c->differences_set) {
+                    c->bound_difference = current_problem->upper_bound
+                        - current_problem->lower_bound;
+                    c->n = current_problem->graph->n();
+                    c->m = current_problem->graph->m();
+                    c->differences_set = true;
+                }
+
                 if (branchOnCurrentInstance) {
 #endif
                     branchOnEdge(current_problem, thread_id);
@@ -566,19 +574,20 @@ class branch_multicut {
     void solve_with_ilp(std::shared_ptr<multicut_problem> mcp) {
         std::vector<NodeID> presets(mcp->graph->n(), mcp->terminals.size());
 
-        for (size_t i = 0; i < mcp->terminals.size(); ++i) {
-            presets[mcp->terminals[i].position] = i;
+        for (size_t i = 0; i < original_terminals.size(); ++i) {
+            NodeID map = mcp->mapped(original_terminals[i]);
+            presets[mcp->graph->getCurrentPosition(map)] = i;
         }
 
         auto [result, wgt] = ilp_model::computeIlp(mcp->graph, presets,
-                                                   mcp->terminals.size());
+                                                   original_terminals.size());
 
         if (mcp->deleted_weight + wgt <
             static_cast<EdgeWeight>(global_upper_bound)) {
             for (NodeID n = 0; n < best_solution.size(); ++n) {
                 NodeID n_coarse = mcp->mapped(n);
                 auto t = mcp->graph->getCurrentPosition(n_coarse);
-                best_solution[n] = mcp->graph->getPartitionIndex(t);
+                best_solution[n] = result[t];
             }
             global_upper_bound = wgt + mcp->deleted_weight;
             LOGC(testing) << "Improvement (IN ILP) after time="

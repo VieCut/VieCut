@@ -20,15 +20,19 @@
 
 #include "algorithms/multicut/multicut_problem.h"
 
+
 class ilp_model {
  public:
+    inline static GRBEnv env;
+
     static std::pair<std::vector<NodeID>, EdgeWeight> computeIlp(
         std::shared_ptr<mutable_graph> graph,
         const std::vector<NodeID>& presets,
-        size_t num_terminals) {
+        size_t num_terminals,
+        size_t terminals_current) {
         try {
-            GRBEnv env;
-            GRBModel model = GRBModel(env);
+            timer ilp_timer;
+            GRBModel model = GRBModel(ilp_model::env);
             NodeID numNodes = graph->number_of_nodes();
             NodeID numEdges = graph->number_of_edges() / 2;
 
@@ -90,17 +94,6 @@ class ilp_model {
             }
 
             model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
-
-            // model.tune();
-
-            // int resultcount = model.get(GRB_IntAttr_TuneResultCount);
-
-            // if (resultcount > 0) {
-            //    LOG1 << "resultcount " << resultcount;
-            //    model.getTuneResult(0);
-            //    model.write("tune.prm");
-            // }
-
             // Optimize model
             model.optimize();
 
@@ -122,6 +115,14 @@ class ilp_model {
             }
             EdgeWeight wgt =
                 static_cast<EdgeWeight>(model.get(GRB_DoubleAttr_ObjVal));
+
+            LOG1 << "SOLUTION time=" << ilp_timer.elapsed()
+                 << " graph=" << configuration::getConfig()->graph_filename
+                 << " n=" << graph->n()
+                 << " m=" << graph->m()
+                 << " wgt=" << wgt
+                 << " original_terminals=" << num_terminals
+                 << " current_terminals=" << terminals_current;
             return std::make_pair(result, wgt);
         } catch (GRBException e) {
             LOG1 << e.getErrorCode() << " Message: " << e.getMessage();

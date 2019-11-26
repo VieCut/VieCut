@@ -226,7 +226,8 @@ class branch_multicut {
                 && current_problem->terminals.size() > 1) {
 #ifdef USE_GUROBI
                 auto c = configuration::getConfig();
-                bool branchOnCurrentInstance = !c->use_ilp;
+                NodeID r = random_functions::nextInt(0, 10000);
+                bool branchOnCurrentInstance = current_problem->graph->n() > r;
                 if (!c->differences_set) {
                     c->bound_difference = current_problem->upper_bound
                                           - current_problem->lower_bound;
@@ -378,9 +379,8 @@ class branch_multicut {
         }
 
         // |-> edge not in multicut
-
         if (!degreeThreeContraction(current_problem, branch_vtx, branch_edge)) {
-        current_problem->graph->contractEdge(branch_vtx, branch_edge);
+            current_problem->graph->contractEdge(branch_vtx, branch_edge);
         }
 
         for (auto& t : current_problem->terminals) {
@@ -400,7 +400,7 @@ class branch_multicut {
 
     bool degreeThreeContraction(std::shared_ptr<multicut_problem> mcp,
                                 NodeID branch_vtx, EdgeID branch_edge) {
-        auto & g = mcp->graph;
+        auto& g = mcp->graph;
         auto c = g->getEdgeWeight(branch_vtx, branch_edge);
         NodeID term = g->getEdgeTarget(branch_vtx, branch_edge);
         EdgeWeight max_incident_wgt = 0;
@@ -414,7 +414,7 @@ class branch_multicut {
             }
         }
 
-        if (max_incident_wgt != c) 
+        if (max_incident_wgt != c)
             return false;
 
         for (EdgeID e = 0; e < g->getNodeDegree(branch_vtx); ++e) {
@@ -613,7 +613,8 @@ class branch_multicut {
         }
 
         auto [result, wgt] = ilp_model::computeIlp(mcp->graph, presets,
-                                                   original_terminals.size());
+                                                   original_terminals.size(),
+                                                   mcp->terminals.size());
 
         if (mcp->deleted_weight + wgt <
             static_cast<EdgeWeight>(global_upper_bound)) {

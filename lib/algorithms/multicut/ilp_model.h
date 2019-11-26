@@ -39,7 +39,7 @@ class ilp_model {
             model.set(GRB_StringAttr_ModelName, "Partition");
             model.set(GRB_DoubleParam_MIPGap, 0);
             model.set(GRB_IntParam_Threads, 1);
-            // model.set(GRB_IntParam_LogToConsole, 0);
+            model.set(GRB_IntParam_LogToConsole, 0);
             model.set(GRB_IntParam_PoolSearchMode, 0);
 
             // Set decision variables for nodes

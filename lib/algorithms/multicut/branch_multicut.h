@@ -378,7 +378,10 @@ class branch_multicut {
         }
 
         // |-> edge not in multicut
+
+        if (!degreeThreeContraction(current_problem, branch_vtx, branch_edge)) {
         current_problem->graph->contractEdge(branch_vtx, branch_edge);
+        }
 
         for (auto& t : current_problem->terminals) {
             if (t.position == branch_vtx) {
@@ -393,6 +396,36 @@ class branch_multicut {
             size_t thr = problems.addProblem(current_problem, thread_id);
             q_cv[thr].notify_all();
         }
+    }
+
+    bool degreeThreeContraction(std::shared_ptr<multicut_problem> mcp,
+                                NodeID branch_vtx, EdgeID branch_edge) {
+        auto & g = mcp->graph;
+        auto c = g->getEdgeWeight(branch_vtx, branch_edge);
+        NodeID term = g->getEdgeTarget(branch_vtx, branch_edge);
+        EdgeWeight max_incident_wgt = 0;
+        if (!(g->getNodeDegree(branch_vtx) == 3))
+            return false;
+
+        for (EdgeID e : g->edges_of(branch_vtx)) {
+            auto wgt = g->getEdgeWeight(branch_vtx, e);
+            if (wgt > max_incident_wgt) {
+                max_incident_wgt = wgt;
+            }
+        }
+
+        if (max_incident_wgt != c) 
+            return false;
+
+        for (EdgeID e = 0; e < g->getNodeDegree(branch_vtx); ++e) {
+            if (g->getEdgeTarget(branch_vtx, e) != term) {
+                g->deleteEdge(branch_vtx, e);
+                mcp->deleted_weight += g->getEdgeWeight(branch_vtx, e);
+                --e;
+            }
+        }
+        g->contractEdge(branch_vtx, 0);
+        return true;
     }
 
     void nonBranchingContraction(std::shared_ptr<multicut_problem> mcp,

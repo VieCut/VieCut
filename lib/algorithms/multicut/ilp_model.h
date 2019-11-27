@@ -45,7 +45,7 @@ class ilp_model {
             model.set(GRB_IntParam_Threads, 1);
             model.set(GRB_IntParam_LogToConsole, 0);
             model.set(GRB_IntParam_PoolSearchMode, 0);
-
+            model.set(GRB_DoubleParam_TimeLimit, 3600.0);
             // Set decision variables for nodes
             for (size_t q = 0; q < num_terminals; q++) {
                 GRBLinExpr nodeTot = 0;

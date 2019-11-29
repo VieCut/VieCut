@@ -28,6 +28,7 @@
 
 #include "algorithms/flow/push_relabel.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
+#include "algorithms/misc/find_bridges.h"
 #include "algorithms/misc/graph_algorithms.h"
 #include "algorithms/multicut/edge_selection.h"
 #include "algorithms/multicut/graph_contraction.h"
@@ -113,6 +114,15 @@ class branch_multicut {
             if (!problems.empty(thread_id)) {
                 std::shared_ptr<multicut_problem> mcp =
                     problems.pullProblem(thread_id);
+                /*LOG1 << "Writing...";
+
+                std::string gid = "graph100";
+                graph_io::writeGraphWeighted(mcp->graph->to_graph_access(), gid);
+
+                for (auto t : mcp->terminals) {
+                    LOG1 << t.position;
+                }
+                LOG1 << "...done!";*/
                 solveProblem(mcp, thread_id);
             } else {
                 if (!im_idle) {
@@ -226,8 +236,8 @@ class branch_multicut {
                 && current_problem->terminals.size() > 1) {
 #ifdef USE_GUROBI
                 auto c = configuration::getConfig();
-                NodeID r = random_functions::nextInt(0, 10000);
-                bool branchOnCurrentInstance = current_problem->graph->n() > r;
+                NodeID r = random_functions::nextInt(0, 300000);
+                bool branchOnCurrentInstance = current_problem->graph->m() > r;
                 if (!c->differences_set) {
                     c->bound_difference = current_problem->upper_bound
                                           - current_problem->lower_bound;

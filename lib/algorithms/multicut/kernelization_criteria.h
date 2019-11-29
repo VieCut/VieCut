@@ -70,6 +70,11 @@ class kernelization_criteria {
                     auto uf_noi = noi.modified_capforest(mcp, noi_limit);
                     contractIfImproved(&uf_noi, mcp, "noi", &active_next);
                 }
+
+                find_bridges fb(mcp->graph);
+                if (fb.findAllBridges()) {
+                    auto result = fb.terminalsOnBothSides(mcp->terminals);
+                }
             }
 
             first_run = false;

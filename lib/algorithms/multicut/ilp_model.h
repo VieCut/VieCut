@@ -20,7 +20,6 @@
 
 #include "algorithms/multicut/multicut_problem.h"
 
-
 class ilp_model {
  public:
     inline static GRBEnv env;

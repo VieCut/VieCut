@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 #include "algorithms/global_mincut/noi_minimum_cut.h"
@@ -74,6 +75,10 @@ class kernelization_criteria {
                 find_bridges fb(mcp->graph);
                 if (fb.findAllBridges()) {
                     auto result = fb.terminalsOnBothSides(mcp->terminals);
+                    if (std::holds_alternative<union_find>(result)) {
+                        contractIfImproved(&std::get<union_find>(result), mcp,
+                                           "bridges", &active_next);
+                    }
                 }
             }
 

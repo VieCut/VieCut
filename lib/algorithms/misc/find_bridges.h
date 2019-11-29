@@ -8,15 +8,23 @@
  *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
+#pragma once
 
+#include <algorithm>
+#include <memory>
+#include <queue>
+#include <stack>
+#include <utility>
 #include <variant>
+#include <vector>
 
-#include <algorithms/multicut/multicut_problem.h>
-#include <data_structure/mutable_graph.h>
+
+#include "algorithms/multicut/multicut_problem.h"
+#include "data_structure/mutable_graph.h"
 
 class find_bridges {
  public:
-    find_bridges(std::shared_ptr<mutable_graph> G)
+    explicit find_bridges(std::shared_ptr<mutable_graph> G)
         : G(G),
           visited(G->n(), false),
           discovered(G->n(), UNDEFINED_NODE),
@@ -24,9 +32,7 @@ class find_bridges {
           lowest(G->n(), UNDEFINED_NODE),
           step(0) { }
 
-    
     bool findAllBridges() {
-        LOG1 << "trying to find bridges!";
         for (NodeID vtx : G->nodes()) {
             if (!visited[vtx]) {
                 findAllBridgesInCC(vtx);
@@ -35,8 +41,9 @@ class find_bridges {
         return bridges.size() > 0;
     }
 
-    std::variant<union_find, std::pair<NodeID, EdgeID>> terminalsOnBothSides(
+    std::variant<union_find, std::pair<NodeID, EdgeID> > terminalsOnBothSides(
         std::vector<terminal> terminals) {
+        LOG1 << "number of bridges " << bridges.size();
         union_find uf(G->n());
         bool return_uf = false;
         for (const auto& [n, e] : bridges) {
@@ -50,18 +57,56 @@ class find_bridges {
             if (sum == 0 || sum == terminals.size()) {
                 // all terminals on one side, contract the other
                 return_uf = true;
-            } 
+                bool invert_side = (sum == terminals.size()) ? false : true;
+                NodeID ctr_n = n;
+                EdgeID ctr_e = e;
+                if (invert_side) {
+                    ctr_n = G->getEdgeTarget(n, e);
+                    ctr_e = G->getReverseEdge(n, e);
+                }
+                std::vector<bool> contracted(G->n(), false);
+                NodeID t = G->getEdgeTarget(ctr_n, ctr_e);
+                uf.Union(ctr_n, t);
+                contracted[ctr_n] = true;
+                contracted[t] = true;
+                std::queue<NodeID> q;
+                q.push(t);
+
+                while (!q.empty()) {
+                    NodeID v = q.front();
+                    q.pop();
+                    for (EdgeID a : G->edges_of(v)) {
+                        NodeID tgt = G->getEdgeTarget(v, a);
+                        if (!contracted[tgt]) {
+                            uf.Union(v, tgt);
+                            contracted[tgt] = true;
+                        }
+                    }
+                }
+
+                for (auto term : terminals) {
+                    if (contracted[term.position]) {
+                        // this can only happen if bridge detection detects
+                        // a bridge that is not actually one.
+                        LOG1 << "CONTRACTING TERMINAL! SANITY CHECK FAILED";
+                        exit(1);
+                    }
+                }
+            }
         }
 
         if (return_uf) {
+            LOG1 << "Returning uf with " << G->n() << " to " << uf.n();
             return uf;
         } else {
+            LOG1 << "TODO: found a high priority edge";
+            ///exit(1);
             return bridges[0];
         }
     }
 
  private:
- void findAllBridgesInCC(NodeID vtx) {
+    void findAllBridgesInCC(NodeID vtx) {
         std::vector<NodeID> path;
         path.emplace_back(vtx);
         parent[vtx] = vtx;

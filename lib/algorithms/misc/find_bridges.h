@@ -45,11 +45,11 @@ class find_bridges {
         for (size_t i = 0; i < bridges.size(); ++i) {
             auto [n, e] = bridges[i];
             if (std::find_if(terminals.begin(), terminals.end(),
-                             [&n](const terminal& t) {
+                             [ = ](const terminal& t) {
                                  return t.position == n;
                              }) != terminals.end()) {
                 bridges[i] =
-                { G->getEdgeTarget(n, e), G->getReverseEdge(n, e) };
+                    { G->getEdgeTarget(n, e), G->getReverseEdge(n, e) };
             }
         }
 

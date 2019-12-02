@@ -28,7 +28,6 @@
 
 #include "algorithms/flow/push_relabel.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
-#include "algorithms/misc/find_bridges.h"
 #include "algorithms/misc/graph_algorithms.h"
 #include "algorithms/multicut/edge_selection.h"
 #include "algorithms/multicut/graph_contraction.h"
@@ -186,8 +185,6 @@ class branch_multicut {
                           << " upper:" << current_problem->upper_bound
                           << " global_upper:" << global_upper_bound
                           << " queue.size:" << problems.size();
-
-            // LOG1 << current_problem.path;
         }
 
         if (current_problem->graph->n() * 2
@@ -377,6 +374,7 @@ class branch_multicut {
             delete_problem->lower_bound = current_problem->lower_bound;
             delete_problem->deleted_weight =
                 current_problem->deleted_weight + max_wgt;
+            delete_problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
 
             delete_problem->lower_bound = current_problem->lower_bound;
             delete_problem->upper_bound =
@@ -391,12 +389,12 @@ class branch_multicut {
         // |-> edge not in multicut
         if (!degreeThreeContraction(current_problem, branch_vtx, branch_edge)) {
             current_problem->graph->contractEdge(branch_vtx, branch_edge);
-        }
-
+            current_problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
         for (auto& t : current_problem->terminals) {
             if (t.position == branch_vtx) {
                 t.invalid_flow = true;
             }
+        }
         }
 
         graph_contraction::deleteEdgesBetweenTerminals(current_problem,
@@ -429,12 +427,16 @@ class branch_multicut {
 
         for (EdgeID e = 0; e < g->getNodeDegree(branch_vtx); ++e) {
             if (g->getEdgeTarget(branch_vtx, e) != term) {
-                g->deleteEdge(branch_vtx, e);
                 mcp->deleted_weight += g->getEdgeWeight(branch_vtx, e);
+                g->deleteEdge(branch_vtx, e);
                 --e;
             }
         }
         g->contractEdge(branch_vtx, 0);
+
+        for (auto& t : mcp->terminals) {
+            t.invalid_flow = true;
+        }
         return true;
     }
 
@@ -460,7 +462,11 @@ class branch_multicut {
             }
             bestsol_mutex.unlock();
         }
-        kc.perform_kernelization(mcp, global_upper_bound, contracting_flow);
+        auto pe = kc.kernelization(mcp, global_upper_bound, contracting_flow);
+        if (pe.has_value()) {
+            mcp->priority_edge = *pe;
+        }
+
     }
 
     FlowType maximumFlow(std::shared_ptr<multicut_problem> problem) {
@@ -701,6 +707,7 @@ class branch_multicut {
     per_thread_problem_queue problems;
     std::vector<NodeID> best_solution;
     timer total_time;
+    std::pair<NodeID, EdgeID> priority_edge;
 
     // parallel
     std::vector<std::condition_variable> q_cv;

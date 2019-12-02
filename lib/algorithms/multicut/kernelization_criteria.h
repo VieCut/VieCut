@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "algorithms/global_mincut/noi_minimum_cut.h"
+#include "algorithms/misc/find_bridges.h"
 #include "algorithms/multicut/graph_contraction.h"
 #include "algorithms/multicut/multicut_problem.h"
 #include "data_structure/union_find.h"
@@ -35,7 +36,10 @@ class kernelization_criteria {
 
     ~kernelization_criteria() { }
 
-    void perform_kernelization(std::shared_ptr<multicut_problem> mcp,
+    // performs kernelization. 
+    // if we find a bridge that separates terminal set, return it to branch on 
+    std::optional<std::pair<NodeID, EdgeID>> kernelization(
+        std::shared_ptr<multicut_problem> mcp,
                                size_t global_upper_bound,
                                EdgeWeight contracting_flow) {
         NodeID num_vtcs = mcp->graph->n();
@@ -78,6 +82,8 @@ class kernelization_criteria {
                     if (std::holds_alternative<union_find>(result)) {
                         contractIfImproved(&std::get<union_find>(result), mcp,
                                            "bridges", &active_next);
+                    } else {
+                        return std::get<std::pair<NodeID, EdgeID>>(result);
                     }
                 }
             }
@@ -86,6 +92,7 @@ class kernelization_criteria {
             active_next.swap(active_current);
             std::fill(active_next.begin(), active_next.end(), false);
         } while (mcp->graph->n() < num_vtcs);
+        return std::nullopt;
     }
 
  private:
@@ -141,6 +148,7 @@ class kernelization_criteria {
                 }
             }
 
+            problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
             graph_contraction::setTerminals(problem, original_terminals);
             graph_contraction::deleteEdgesBetweenTerminals(
                 problem, original_terminals);

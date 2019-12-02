@@ -48,7 +48,9 @@ struct multicut_problem {
                                std::shared_ptr<std::vector<NodeID> > >(),
                            -1,
                            std::numeric_limits<FlowType>::max(),
-                           0, "") { }
+                           0, 
+                           {UNDEFINED_NODE, UNDEFINED_EDGE}, 
+                           "") { }
 
     multicut_problem(std::shared_ptr<mutable_graph> G,
                      std::vector<terminal> term,
@@ -57,12 +59,14 @@ struct multicut_problem {
                      FlowType lower,
                      FlowType upper,
                      EdgeWeight deleted,
+                     std::pair<NodeID, EdgeID> prio,
                      std::string path) : graph(G),
                                          terminals(term),
                                          mappings(mappings),
                                          lower_bound(lower),
                                          upper_bound(upper),
                                          deleted_weight(deleted),
+                                         priority_edge(prio),
                                          path(path) { }
 
     NodeID mapped(NodeID n) const {
@@ -79,5 +83,6 @@ struct multicut_problem {
     FlowType                                            lower_bound;
     FlowType                                            upper_bound;
     EdgeWeight                                          deleted_weight;
+    std::pair<NodeID, EdgeID>                           priority_edge;
     std::string                                         path;
 };

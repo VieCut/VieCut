@@ -43,7 +43,7 @@ class find_bridges {
 
     std::variant<union_find, std::pair<NodeID, EdgeID> > terminalsOnBothSides(
         std::vector<terminal> terminals) {
-        LOG1 << "number of bridges " << bridges.size();
+        LOG1 << "FOUND " << bridges.size() << " BRIDGES";
         union_find uf(G->n());
         bool return_uf = false;
         for (const auto& [n, e] : bridges) {
@@ -96,11 +96,8 @@ class find_bridges {
         }
 
         if (return_uf) {
-            LOG1 << "Returning uf with " << G->n() << " to " << uf.n();
             return uf;
         } else {
-            LOG1 << "TODO: found a high priority edge";
-            ///exit(1);
             return bridges[0];
         }
     }

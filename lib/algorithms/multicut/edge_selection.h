@@ -169,6 +169,13 @@
 static std::tuple<NodeID, EdgeID> findEdge(
     std::shared_ptr<multicut_problem> problem,
     const std::string& edge_selection) {
+    std::pair<NodeID, EdgeID> undefined = {UNDEFINED_NODE, UNDEFINED_EDGE};
+    if (problem->priority_edge != undefined) {
+        LOG1 << "BRANCHING ON BRIDGE THAT SEPARATES TERMINALS!";
+        auto p = problem->priority_edge;
+        problem->priority_edge = undefined;
+        return p;
+    }
 
     if (edge_selection == "random")
         return findRandomEdge(problem);

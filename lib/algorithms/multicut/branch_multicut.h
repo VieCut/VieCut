@@ -67,7 +67,7 @@ class branch_multicut {
           q_mutex(configuration::getConfig()->threads),
           num_threads(configuration::getConfig()->threads),
           branch_invalid(configuration::getConfig()->threads, 0),
-          kc(configuration::getConfig()->contraction_type, original_terminals),
+          kc(original_terminals),
           log_timer(0) { }
 
     ~branch_multicut() { }

@@ -43,7 +43,6 @@ class configuration {
     int random_k = 0;
     size_t bfs_size = 0;
     size_t threads = 1;
-    size_t contraction_type = 0;
     size_t preset_percentage = 0;
     size_t total_terminals = 0;
     size_t print_cc = 0;

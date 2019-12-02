@@ -29,10 +29,8 @@ class kernelization_criteria {
  public:
     static constexpr bool debug = false;
 
-    kernelization_criteria(size_t contraction_type,
-                           std::vector<NodeID> original_terminals)
-        : contraction_type(contraction_type),
-          original_terminals(original_terminals) { }
+    kernelization_criteria(std::vector<NodeID> original_terminals)
+        : original_terminals(original_terminals) { }
 
     ~kernelization_criteria() { }
 
@@ -48,44 +46,32 @@ class kernelization_criteria {
         bool first_run = true;
         do {
             num_vtcs = mcp->graph->n();
-            if (contraction_type < 4) {
-                auto uf_lowdegree = lowDegreeContraction(mcp);
-                contractIfImproved(&uf_lowdegree, mcp, "lowdeg", &active_next);
+            auto uf_lowdegree = lowDegreeContraction(mcp);
+            contractIfImproved(&uf_lowdegree, mcp, "lowdeg", &active_next);
+
+            find_bridges fb(mcp->graph);
+            if (fb.findAllBridges()) {
+                auto result = fb.terminalsOnBothSides(mcp->terminals);
+                if (std::holds_alternative<union_find>(result)) {
+                    contractIfImproved(&std::get<union_find>(result), mcp,
+                                        "bridges", &active_next);
+                } else {
+                    return std::get<std::pair<NodeID, EdgeID>>(result);
+                }
             }
 
-            if (contraction_type < 3) {
-                union_find uf_highdeg =
-                    highDegreeContraction(mcp, active_current);
-                contractIfImproved(
-                    &uf_highdeg, mcp, "high_degree", &active_next);
-            }
+            union_find uf_highdeg = highDegreeContraction(mcp, active_current);
+            contractIfImproved(&uf_highdeg, mcp, "high_degree", &active_next);
 
-            if (contraction_type < 2) {
-                auto uf_tri = triangleDetection(mcp, active_current);
-                contractIfImproved(&uf_tri, mcp, "triangle", &active_next);
-            }
+            auto uf_tri = triangleDetection(mcp, active_current);
+            contractIfImproved(&uf_tri, mcp, "triangle", &active_next);
 
-            if (contraction_type < 1) {
+            if (first_run) {
                 noi_minimum_cut noi;
-                EdgeWeight noi_limit =
-                    global_upper_bound - mcp->deleted_weight
+                EdgeWeight noi_limit = global_upper_bound - mcp->deleted_weight
                     - tlx::div_ceil(contracting_flow, 4);
-
-                if (first_run) {
-                    auto uf_noi = noi.modified_capforest(mcp, noi_limit);
-                    contractIfImproved(&uf_noi, mcp, "noi", &active_next);
-                }
-
-                find_bridges fb(mcp->graph);
-                if (fb.findAllBridges()) {
-                    auto result = fb.terminalsOnBothSides(mcp->terminals);
-                    if (std::holds_alternative<union_find>(result)) {
-                        contractIfImproved(&std::get<union_find>(result), mcp,
-                                           "bridges", &active_next);
-                    } else {
-                        return std::get<std::pair<NodeID, EdgeID>>(result);
-                    }
-                }
+                auto uf_noi = noi.modified_capforest(mcp, noi_limit);
+                contractIfImproved(&uf_noi, mcp, "noi", &active_next);
             }
 
             first_run = false;
@@ -377,7 +363,6 @@ class kernelization_criteria {
         return uf;
     }
 
-    size_t contraction_type;
     std::vector<NodeID> original_terminals;
     constexpr static bool logs = false;
 };

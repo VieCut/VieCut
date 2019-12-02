@@ -62,8 +62,6 @@ int main(int argn, char** argv) {
                     "edge selection rule");
     cmdl.add_string('q', "queue_type", config->queue_type,
                     "Type of priority queue used");
-    cmdl.add_size_t('c', "contraction_type", config->contraction_type,
-                    "Disable contraction mechanisms");
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
     cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
@@ -218,7 +216,6 @@ int main(int argn, char** argv) {
     FlowType flow = mc.multicut(G, terminals);
     std::cout << "RESULT selection_rule=" << config->edge_selection
               << " pq=" << config->queue_type
-              << " contraction_type=" << config->contraction_type
               << " graph=" << config->graph_filename
               << " time=" << t.elapsed()
               << " terminals=" << num_terminals

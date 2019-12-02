@@ -14,6 +14,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "data_structure/mutable_graph.h"
@@ -48,8 +49,8 @@ struct multicut_problem {
                                std::shared_ptr<std::vector<NodeID> > >(),
                            -1,
                            std::numeric_limits<FlowType>::max(),
-                           0, 
-                           {UNDEFINED_NODE, UNDEFINED_EDGE}, 
+                           0,
+                           { UNDEFINED_NODE, UNDEFINED_EDGE },
                            "") { }
 
     multicut_problem(std::shared_ptr<mutable_graph> G,

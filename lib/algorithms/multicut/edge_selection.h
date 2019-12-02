@@ -15,6 +15,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "algorithms/multicut/multicut_problem.h"
@@ -169,7 +170,7 @@
 static std::tuple<NodeID, EdgeID> findEdge(
     std::shared_ptr<multicut_problem> problem,
     const std::string& edge_selection) {
-    std::pair<NodeID, EdgeID> undefined = {UNDEFINED_NODE, UNDEFINED_EDGE};
+    std::pair<NodeID, EdgeID> undefined = { UNDEFINED_NODE, UNDEFINED_EDGE };
     if (problem->priority_edge != undefined) {
         auto p = problem->priority_edge;
         problem->priority_edge = undefined;

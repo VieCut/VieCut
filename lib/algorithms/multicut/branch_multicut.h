@@ -24,6 +24,7 @@
 #include <queue>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "algorithms/flow/push_relabel.h"
@@ -381,7 +382,7 @@ class branch_multicut {
             delete_problem->mappings = current_problem->mappings;
             delete_problem->deleted_weight =
                 current_problem->deleted_weight + max_wgt;
-            delete_problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
+            delete_problem->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
             delete_problem->lower_bound = current_problem->lower_bound;
             delete_problem->upper_bound =
                 current_problem->upper_bound + max_wgt;
@@ -395,7 +396,7 @@ class branch_multicut {
         // |-> edge not in multicut
         if (!degreeThreeContraction(current_problem, branch_vtx, branch_edge)) {
             current_problem->graph->contractEdge(branch_vtx, branch_edge);
-            current_problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
+            current_problem->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
             for (size_t i = 0; i < current_problem->terminals.size(); ++i) {
                 if (i == target_terminal_id) {
                     current_problem->terminals[i].invalid_flow = true;
@@ -429,7 +430,7 @@ class branch_multicut {
         }
 
         if (max_incident_wgt != c)
-            return false;            
+            return false;
 
         for (EdgeID e = 0; e < g->getNodeDegree(branch_vtx); ++e) {
             if (g->getEdgeTarget(branch_vtx, e) != term) {
@@ -472,7 +473,6 @@ class branch_multicut {
         if (pe.has_value()) {
             mcp->priority_edge = *pe;
         }
-
     }
 
     FlowType maximumFlow(std::shared_ptr<multicut_problem> problem) {

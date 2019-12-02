@@ -18,7 +18,6 @@
 #include <variant>
 #include <vector>
 
-
 #include "algorithms/multicut/multicut_problem.h"
 #include "data_structure/mutable_graph.h"
 
@@ -43,14 +42,14 @@ class find_bridges {
 
     std::variant<union_find, std::pair<NodeID, EdgeID> > terminalsOnBothSides(
         std::vector<terminal> terminals) {
-        
         for (size_t i = 0; i < bridges.size(); ++i) {
             auto [n, e] = bridges[i];
-            if (std::find_if(terminals.begin(), terminals.end(), 
-                [&n](const terminal& t) {
-                    return t.position == n;    
-                }) != terminals.end()) {
-                bridges[i] = {G->getEdgeTarget(n, e), G->getReverseEdge(n, e)};
+            if (std::find_if(terminals.begin(), terminals.end(),
+                             [&n](const terminal& t) {
+                                 return t.position == n;
+                             }) != terminals.end()) {
+                bridges[i] =
+                { G->getEdgeTarget(n, e), G->getReverseEdge(n, e) };
             }
         }
 
@@ -113,7 +112,6 @@ class find_bridges {
     }
 
  private:
-
     void backtrackTo(std::vector<NodeID>* path, NodeID n) {
         while (path->size() > 0 && path->back() != parent[n]) {
             // explicit backtracking to avoid recursion

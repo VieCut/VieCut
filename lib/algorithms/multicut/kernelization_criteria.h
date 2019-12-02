@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -29,17 +30,17 @@ class kernelization_criteria {
  public:
     static constexpr bool debug = false;
 
-    kernelization_criteria(std::vector<NodeID> original_terminals)
+    explicit kernelization_criteria(std::vector<NodeID> original_terminals)
         : original_terminals(original_terminals) { }
 
     ~kernelization_criteria() { }
 
-    // performs kernelization. 
-    // if we find a bridge that separates terminal set, return it to branch on 
-    std::optional<std::pair<NodeID, EdgeID>> kernelization(
+    // performs kernelization.
+    // if we find a bridge that separates terminal set, return it to branch on
+    std::optional<std::pair<NodeID, EdgeID> > kernelization(
         std::shared_ptr<multicut_problem> mcp,
-                               size_t global_upper_bound,
-                               EdgeWeight contracting_flow) {
+        size_t global_upper_bound,
+        EdgeWeight contracting_flow) {
         NodeID num_vtcs = mcp->graph->n();
         std::vector<bool> active_current(mcp->graph->getOriginalNodes(), true);
         std::vector<bool> active_next(mcp->graph->getOriginalNodes(), false);
@@ -54,9 +55,9 @@ class kernelization_criteria {
                 auto result = fb.terminalsOnBothSides(mcp->terminals);
                 if (std::holds_alternative<union_find>(result)) {
                     contractIfImproved(&std::get<union_find>(result), mcp,
-                                        "bridges", &active_next);
+                                       "bridges", &active_next);
                 } else {
-                    return std::get<std::pair<NodeID, EdgeID>>(result);
+                    return std::get<std::pair<NodeID, EdgeID> >(result);
                 }
             }
 
@@ -69,7 +70,7 @@ class kernelization_criteria {
             if (first_run) {
                 noi_minimum_cut noi;
                 EdgeWeight noi_limit = global_upper_bound - mcp->deleted_weight
-                    - tlx::div_ceil(contracting_flow, 4);
+                                       - tlx::div_ceil(contracting_flow, 4);
                 auto uf_noi = noi.modified_capforest(mcp, noi_limit);
                 contractIfImproved(&uf_noi, mcp, "noi", &active_next);
             }
@@ -134,7 +135,7 @@ class kernelization_criteria {
                 }
             }
 
-            problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
+            problem->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
             graph_contraction::setTerminals(problem, original_terminals);
             graph_contraction::deleteEdgesBetweenTerminals(
                 problem, original_terminals);

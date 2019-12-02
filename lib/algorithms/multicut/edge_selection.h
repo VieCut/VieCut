@@ -171,7 +171,6 @@ static std::tuple<NodeID, EdgeID> findEdge(
     const std::string& edge_selection) {
     std::pair<NodeID, EdgeID> undefined = {UNDEFINED_NODE, UNDEFINED_EDGE};
     if (problem->priority_edge != undefined) {
-        LOG1 << "BRANCHING ON BRIDGE THAT SEPARATES TERMINALS!";
         auto p = problem->priority_edge;
         problem->priority_edge = undefined;
         return p;

@@ -363,6 +363,7 @@ class push_relabel {
         LOGC(extended_logs) << "updates " << m_global_updates
                             << " relabel " << m_num_relabels
                             << " pushes " << m_pushes;
+
         return std::make_pair(total_flow, source_set);
     }
 

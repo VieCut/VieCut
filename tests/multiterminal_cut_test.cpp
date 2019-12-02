@@ -105,7 +105,7 @@ TEST(MultiterminalCutTest, FourClustersWeighted) {
 }
 
 TEST(MultiterminalCutTest, FourClustersMinCutUnequal) {
-    std::vector<size_t> sizes = { 1, 10, 50, 100 };
+    std::vector<size_t> sizes = { 1, 4, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
 

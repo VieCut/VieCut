@@ -350,6 +350,14 @@ class branch_multicut {
         auto [branch_vtx, branch_edge] =
             findEdge(current_problem, edge_selection);
 
+        NodeID target_terminal_id = UNDEFINED_NODE;
+        auto b = current_problem->graph->getEdgeTarget(branch_vtx, branch_edge);
+        for (size_t i = 0; i < current_problem->terminals.size(); ++i) {
+            if (current_problem->terminals[i].position == b) {
+                target_terminal_id = i;
+            }
+        }
+
         size_t max_wgt =
             current_problem->graph->getEdgeWeight(branch_vtx, branch_edge);
         // |-> edge in multicut
@@ -364,18 +372,16 @@ class branch_multicut {
             delete_problem->graph->deleteEdge(branch_vtx, branch_edge);
             delete_problem->terminals = current_problem->terminals;
 
-            for (auto& t : delete_problem->terminals) {
-                if (t.position != branch_vtx) {
-                    t.invalid_flow = true;
+            for (size_t i = 0; i < delete_problem->terminals.size(); ++i) {
+                if (i != target_terminal_id) {
+                    delete_problem->terminals[i].invalid_flow = true;
                 }
             }
 
             delete_problem->mappings = current_problem->mappings;
-            delete_problem->lower_bound = current_problem->lower_bound;
             delete_problem->deleted_weight =
                 current_problem->deleted_weight + max_wgt;
             delete_problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
-
             delete_problem->lower_bound = current_problem->lower_bound;
             delete_problem->upper_bound =
                 current_problem->upper_bound + max_wgt;
@@ -390,11 +396,11 @@ class branch_multicut {
         if (!degreeThreeContraction(current_problem, branch_vtx, branch_edge)) {
             current_problem->graph->contractEdge(branch_vtx, branch_edge);
             current_problem->priority_edge = {UNDEFINED_NODE, UNDEFINED_EDGE};
-        for (auto& t : current_problem->terminals) {
-            if (t.position == branch_vtx) {
-                t.invalid_flow = true;
+            for (size_t i = 0; i < current_problem->terminals.size(); ++i) {
+                if (i == target_terminal_id) {
+                    current_problem->terminals[i].invalid_flow = true;
+                }
             }
-        }
         }
 
         graph_contraction::deleteEdgesBetweenTerminals(current_problem,
@@ -423,7 +429,7 @@ class branch_multicut {
         }
 
         if (max_incident_wgt != c)
-            return false;
+            return false;            
 
         for (EdgeID e = 0; e < g->getNodeDegree(branch_vtx); ++e) {
             if (g->getEdgeTarget(branch_vtx, e) != term) {

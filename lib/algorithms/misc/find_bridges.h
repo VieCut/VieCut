@@ -103,9 +103,30 @@ class find_bridges {
     }
 
  private:
+
+    void backtrackTo(std::vector<NodeID>* path, NodeID n) {
+        while (path->size() > 0 && path->back() != parent[n]) {
+            // explicit backtracking to avoid recursion
+            NodeID b = path->back();
+            path->pop_back();
+            for (EdgeID e : G->edges_of(b)) {
+                NodeID t = G->getEdgeTarget(b, e);
+                if (parent[t] == b) {
+                    lowest[b] = std::min(lowest[b], lowest[t]);
+                    if (lowest[t] > discovered[b]) {
+                        bridges.emplace_back(b, e);
+                    }
+                } else {
+                    if (t != parent[b]) {
+                        lowest[b] = std::min(lowest[b], discovered[t]);
+                    }
+                }
+            }
+        }
+    }
+
     void findAllBridgesInCC(NodeID vtx) {
         std::vector<NodeID> path;
-        path.emplace_back(vtx);
         parent[vtx] = vtx;
         stack.push(vtx);
         while (!stack.empty()) {
@@ -114,24 +135,7 @@ class find_bridges {
             if (visited[n])
                 continue;
 
-            while (path.size() > 1 && path.back() != parent[n]) {
-                // explicit backtracking to avoid recursion
-                NodeID b = path.back();
-                path.pop_back();
-                for (EdgeID e : G->edges_of(b)) {
-                    NodeID t = G->getEdgeTarget(b, e);
-                    if (parent[t] == b) {
-                        lowest[b] = std::min(lowest[b], lowest[t]);
-                        if (lowest[t] > discovered[b]) {
-                            bridges.emplace_back(b, e);
-                        }
-                    } else {
-                        if (t != parent[b]) {
-                            lowest[b] = std::min(lowest[b], discovered[t]);
-                        }
-                    }
-                }
-            }
+            backtrackTo(&path, n);
 
             path.emplace_back(n);
             // DFS, check whether alternative path exists when backtracking
@@ -144,6 +148,16 @@ class find_bridges {
                 if (!visited[t]) {
                     parent[t] = n;
                     stack.push(t);
+                }
+            }
+        }
+
+        backtrackTo(&path, vtx);
+        for (EdgeID e : G->edges_of(vtx)) {
+            NodeID t = G->getEdgeTarget(vtx, e);
+            if (parent[t] == vtx) {
+                if (lowest[t] > discovered[vtx]) {
+                    bridges.emplace_back(vtx, e);
                 }
             }
         }

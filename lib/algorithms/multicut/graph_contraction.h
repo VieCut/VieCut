@@ -104,6 +104,9 @@ class graph_contraction {
         }
 
         mcp->deleted_weight += del_weight;
+        if (del_weight > 0) {
+            mcp->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
+        }
         setTerminals(mcp, original_terminals);
     }
 

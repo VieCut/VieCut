@@ -42,21 +42,6 @@ class find_bridges {
 
     std::variant<union_find, std::pair<NodeID, EdgeID> > terminalsOnBothSides(
         std::vector<terminal> terminals) {
-        for (size_t i = 0; i < bridges.size(); ++i) {
-            // can't use structured binding here due to P0588R1, as we use n
-            // in lambda function
-            NodeID n;
-            EdgeID e;
-            std::tie(n, e) = bridges[i];
-            if (std::find_if(terminals.begin(), terminals.end(),
-                             [ = ](const terminal& t) {
-                                 return t.position == n;
-                             }) != terminals.end()) {
-                bridges[i] =
-                    { G->getEdgeTarget(n, e), G->getReverseEdge(n, e) };
-            }
-        }
-
         union_find uf(G->n());
         bool return_uf = false;
         for (const auto& [n, e] : bridges) {

@@ -114,15 +114,23 @@ class branch_multicut {
             if (!problems.empty(thread_id)) {
                 std::shared_ptr<multicut_problem> mcp =
                     problems.pullProblem(thread_id);
-                /*LOG1 << "Writing...";
 
-                std::string gid = "graph100";
-                graph_io::writeGraphWeighted(mcp->graph->to_graph_access(), gid);
+                /*if (mcp->graph->n() < 2000) {
+                    graphs++;
+                    if (graphs == 100) {
+                    LOG1 << "Writing...";
 
-                for (auto t : mcp->terminals) {
-                    LOG1 << t.position;
-                }
-                LOG1 << "...done!";*/
+                    std::string gid = "graph100";
+                    graph_io::writeGraphWeighted(mcp->graph->to_graph_access(), gid);
+
+                    for (auto t : mcp->terminals) {
+                        LOG1 << t.position;
+                    }
+                    LOG1 << "...done!";
+                    exit(1);
+                    }
+                }*/
+
                 solveProblem(mcp, thread_id);
             } else {
                 if (!im_idle) {
@@ -235,7 +243,7 @@ class branch_multicut {
 #ifdef USE_GUROBI
                 auto c = configuration::getConfig();
                 NodeID r = random_functions::nextInt(0, 300000);
-                bool branchOnCurrentInstance = current_problem->graph->m() > r;
+                bool branchOnCurrentInstance = true;// current_problem->graph->m() > r;
                 if (!c->differences_set) {
                     c->bound_difference = current_problem->upper_bound
                                           - current_problem->lower_bound;
@@ -348,13 +356,24 @@ class branch_multicut {
             return;
         }
 
+        if (configuration::getConfig()->multibranch) {
+            // TODO(anoe): not implemented yet
+        } else {
+            singleBranch(current_problem, thread_id);
+        }
+    }
+
+    void singleBranch(std::shared_ptr<multicut_problem> current_problem,
+                      size_t thread_id) {
         auto [branch_vtx, branch_edge] =
             findEdge(current_problem, edge_selection);
 
         NodeID target_terminal_id = UNDEFINED_NODE;
-        auto b = current_problem->graph->getEdgeTarget(branch_vtx, branch_edge);
+        auto b = current_problem->graph->getEdgeTarget(branch_vtx,
+                                                       branch_edge);
         for (size_t i = 0; i < current_problem->terminals.size(); ++i) {
-            if (current_problem->terminals[i].position == b) {
+            if (current_problem->terminals[i].position == b ||
+                current_problem->terminals[i].position == branch_vtx) {
                 target_terminal_id = i;
             }
         }
@@ -382,7 +401,8 @@ class branch_multicut {
             delete_problem->mappings = current_problem->mappings;
             delete_problem->deleted_weight =
                 current_problem->deleted_weight + max_wgt;
-            delete_problem->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
+            delete_problem->priority_edge =
+            { UNDEFINED_NODE, UNDEFINED_EDGE };
             delete_problem->lower_bound = current_problem->lower_bound;
             delete_problem->upper_bound =
                 current_problem->upper_bound + max_wgt;
@@ -392,7 +412,6 @@ class branch_multicut {
                 q_cv[thr].notify_all();
             }
         }
-
         // |-> edge not in multicut
         if (!degreeThreeContraction(current_problem, branch_vtx, branch_edge)) {
             current_problem->graph->contractEdge(branch_vtx, branch_edge);
@@ -727,4 +746,6 @@ class branch_multicut {
     kernelization_criteria kc;
     std::atomic<double> log_timer;
     std::mutex bestsol_mutex;
+
+    std::atomic<size_t> graphs = 0;
 };

@@ -167,6 +167,39 @@
     return std::make_tuple(problem->terminals[t].position, e);
 }
 
+auto compare = [](const std::pair<size_t, size_t>& p1,
+                  const std::pair<size_t, size_t>& p2) {
+                   if (p1.first == p2.first) {
+                       return p1.second > p2.second;
+                   } else {
+                       return p1.first > p2.first;
+                   }
+               };
+
+[[maybe_unused]] static std::tuple<NodeID, EdgeID> mostTerminalNeighbours(
+    std::shared_ptr<multicut_problem> problem) {
+    std::vector<std::pair<size_t, size_t> > neighbours(problem->graph->n(),
+                                                       { 0, 0 });
+
+    std::pair<size_t, size_t> maxPair = { 0, 0 };
+    NodeID maxID = UNDEFINED_NODE;
+    for (const auto& t : problem->terminals) {
+        NodeID term = t.position;
+        for (EdgeID e : problem->graph->edges_of(term)) {
+            NodeID neighbour = problem->graph->getEdgeTarget(term, e);
+            EdgeWeight edgeweight = problem->graph->getEdgeWeight(term, e);
+            auto [num, weight] = neighbours[neighbour];
+            neighbours[neighbour] = { num + 1, weight + edgeweight };
+            if (compare(neighbours[neighbour], maxPair)) {
+                maxPair = neighbours[neighbour];
+                maxID = neighbour;
+            }
+        }
+    }
+    LOG1 << maxID << " is largest with " << maxPair;
+    return findHeavyEdge(problem);
+}
+
 static std::tuple<NodeID, EdgeID> findEdge(
     std::shared_ptr<multicut_problem> problem,
     const std::string& edge_selection) {
@@ -195,5 +228,5 @@ static std::tuple<NodeID, EdgeID> findEdge(
     if (edge_selection == "heavy_vertex")
         return findHeavyVertex(problem);
 
-    return findHeavyVertex(problem);
+    return mostTerminalNeighbours(problem);
 }

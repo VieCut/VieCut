@@ -176,8 +176,8 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
                    }
                };
 
-[[maybe_unused]] static std::tuple<NodeID, EdgeID> mostTerminalNeighbours(
-    std::shared_ptr<multicut_problem> problem) {
+[[maybe_unused]] static std::tuple<NodeID, std::vector<size_t> >
+mostTerminalNeighbours(std::shared_ptr<multicut_problem> problem) {
     std::vector<std::pair<size_t, size_t> > neighbours(problem->graph->n(),
                                                        { 0, 0 });
 
@@ -196,11 +196,39 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
             }
         }
     }
-    LOG1 << maxID << " is largest with " << maxPair;
-    return findHeavyEdge(problem);
+
+    std::vector<size_t> neighbouring_terminals;
+    EdgeWeight heavy = 0;
+    for (size_t i = 0; i < problem->terminals.size(); ++i) {
+        NodeID p = problem->terminals[i].position;
+        for (EdgeID e : problem->graph->edges_of(p)) {
+            if (problem->graph->getEdgeTarget(p, e) == maxID) {
+                neighbouring_terminals.emplace_back(i);
+                heavy = std::max(heavy, problem->graph->getEdgeWeight(p, e));
+                break;
+            }
+        }
+    }
+
+    // if 'maxID' is not connected to all terminals and non-terminal neighbors
+    // are heavier than heaviest edge to terminal neighbour
+    // we also need to include case in which 'maxID' is in neither neighbors
+    // block
+    auto ngbr_w = problem->graph->getWeightedNodeDegree(maxID) - maxPair.second;
+    if (neighbouring_terminals.size() < problem->terminals.size()
+        && ngbr_w > heavy) {
+        neighbouring_terminals.emplace_back(UNDEFINED_NODE);
+    }
+
+    return { maxID, neighbouring_terminals };
 }
 
-static std::tuple<NodeID, EdgeID> findEdge(
+static std::tuple<NodeID, std::vector<size_t> > findEdgeMultiBranch(
+    std::shared_ptr<multicut_problem> problem) {
+    return mostTerminalNeighbours(problem);
+}
+
+static std::tuple<NodeID, EdgeID> findEdgeSingleBranch(
     std::shared_ptr<multicut_problem> problem) {
     std::string edge_selection = configuration::getConfig()->edge_selection;
     std::pair<NodeID, EdgeID> undefined = { UNDEFINED_NODE, UNDEFINED_EDGE };
@@ -229,5 +257,5 @@ static std::tuple<NodeID, EdgeID> findEdge(
     if (edge_selection == "heavy_vertex")
         return findHeavyVertex(problem);
 
-    return mostTerminalNeighbours(problem);
+    return findHeavyVertex(problem);
 }

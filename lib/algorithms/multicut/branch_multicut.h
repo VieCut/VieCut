@@ -357,14 +357,26 @@ class branch_multicut {
 
         if (configuration::getConfig()->multibranch) {
             // TODO(anoe): not implemented yet
+            multiBranch(problem, thread_id);
         } else {
             singleBranch(problem, thread_id);
         }
     }
 
+    void multiBranch(std::shared_ptr<multicut_problem> problem,
+                     size_t thread_id) {
+        auto [vertex, terminal_ids] = findEdgeMultiBranch(problem);
+
+        for (size_t i = 0; i < terminal_ids.size(); ++i) {
+            const auto& t = terminal_ids[i];
+        }
+
+        // TODO(anoe): continue here
+    }
+
     void singleBranch(std::shared_ptr<multicut_problem> problem,
                       size_t thread_id) {
-        auto [b_vtx, b_edge] = findEdge(problem);
+        auto [b_vtx, b_edge] = findEdgeSingleBranch(problem);
         NodeID target_terminal_id = UNDEFINED_NODE;
         auto b = problem->graph->getEdgeTarget(b_vtx, b_edge);
         for (size_t i = 0; i < problem->terminals.size(); ++i) {

@@ -67,7 +67,7 @@ class graph_contraction {
         }
     }
 
-    static void deleteEdgesBetweenTerminals(
+    static void deleteTermEdges(
         std::shared_ptr<multicut_problem> mcp,
         const std::vector<NodeID>& original_terminals) {
         // Setting edge weights to 0 and adding their weight

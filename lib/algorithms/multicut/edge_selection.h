@@ -201,9 +201,10 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
 }
 
 static std::tuple<NodeID, EdgeID> findEdge(
-    std::shared_ptr<multicut_problem> problem,
-    const std::string& edge_selection) {
+    std::shared_ptr<multicut_problem> problem) {
+    std::string edge_selection = configuration::getConfig()->edge_selection;
     std::pair<NodeID, EdgeID> undefined = { UNDEFINED_NODE, UNDEFINED_EDGE };
+
     if (problem->priority_edge != undefined) {
         auto p = problem->priority_edge;
         problem->priority_edge = undefined;

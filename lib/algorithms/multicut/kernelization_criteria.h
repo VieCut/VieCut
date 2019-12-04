@@ -137,8 +137,7 @@ class kernelization_criteria {
 
             problem->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
             graph_contraction::setTerminals(problem, original_terminals);
-            graph_contraction::deleteEdgesBetweenTerminals(
-                problem, original_terminals);
+            graph_contraction::deleteTermEdges(problem, original_terminals);
             if (debug)
                 graph_algorithms::checkGraphValidity(problem->graph);
         }

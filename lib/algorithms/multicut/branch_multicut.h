@@ -228,10 +228,8 @@ class branch_multicut {
                     global_upper_bound = max;
                     for (NodeID n = 0; n < best_solution.size(); ++n) {
                         NodeID n_coarse = problem->mapped(n);
-                        auto t = problem->graph->getCurrentPosition(
-                            n_coarse);
-                        best_solution[n] =
-                            problem->graph->getPartitionIndex(t);
+                        auto t = problem->graph->getCurrentPosition(n_coarse);
+                        best_solution[n] = problem->graph->getPartitionIndex(t);
                     }
                 }
                 bestsol_mutex.unlock();
@@ -326,7 +324,6 @@ class branch_multicut {
     void branchOnEdge(std::shared_ptr<multicut_problem> problem,
                       size_t thread_id) {
         graph_contraction::deleteTermEdges(problem, original_terminals);
-
         if (!problem->graph->number_of_edges()) {
             if (static_cast<FlowType>(problem->deleted_weight)
                 < global_upper_bound) {
@@ -344,10 +341,8 @@ class branch_multicut {
 
                     for (NodeID n = 0; n < best_solution.size(); ++n) {
                         NodeID n_coarse = problem->mapped(n);
-                        auto t = problem->graph->getCurrentPosition(
-                            n_coarse);
-                        best_solution[n] =
-                            problem->graph->getPartitionIndex(t);
+                        auto t = problem->graph->getCurrentPosition(n_coarse);
+                        best_solution[n] = problem->graph->getPartitionIndex(t);
                     }
                 }
                 bestsol_mutex.unlock();

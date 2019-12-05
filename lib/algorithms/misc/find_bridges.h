@@ -47,15 +47,29 @@ class find_bridges {
         for (const auto& [n, e] : bridges) {
             size_t sum = 0;
             for (const auto& t : terminals) {
+                NodeID b_tgt = G->getEdgeTarget(n, e);
                 NodeID tpos = t.position;
-                bool on_right = (lowest[tpos] <= discovered[n]);
+                bool on_right = false;
+                while (true) {
+                    if (tpos == b_tgt) {
+                        on_right = true;
+                        break;
+                    }
+
+                    if (parent[tpos] == tpos) {
+                        on_right = false;
+                        break;
+                    }
+
+                    tpos = parent[tpos];
+                }
                 sum += on_right;
             }
 
             if (sum == 0 || sum == terminals.size()) {
                 // all terminals on one side, contract the other
                 return_uf = true;
-                bool invert_side = (sum == terminals.size()) ? false : true;
+                bool invert_side = (sum == terminals.size()) ? true : false;
                 NodeID ctr_n = n;
                 EdgeID ctr_e = e;
                 if (invert_side) {

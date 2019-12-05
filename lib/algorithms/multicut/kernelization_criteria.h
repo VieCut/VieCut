@@ -160,20 +160,14 @@ class kernelization_criteria {
             if (graph->getNodeDegree(n) == 1) {
                 NodeID tgt = graph->getEdgeTarget(n, 0);
                 uf.Union(n, tgt);
-
                 if (graph->getNodeDegree(tgt) == 3) {
                     // this will become a degree 2 vertex
                     // so we run the degree 2 contraction
-
                     EdgeID reverse = graph->getReverseEdge(n, 0);
                     EdgeID non_n_1 = 0 + (reverse == 0);
                     EdgeID non_n_2 = 1 + (reverse <= 1);
-
-                    NodeID n1 = graph->getEdgeTarget(tgt, non_n_1);
-                    NodeID n2 = graph->getEdgeTarget(tgt, non_n_2);
-                    EdgeWeight e1 = graph->getEdgeWeight(tgt, non_n_1);
-                    EdgeWeight e2 = graph->getEdgeWeight(tgt, non_n_2);
-
+                    auto [n1, e1] = graph->getEdge(tgt, non_n_1);
+                    auto [n2, e2] = graph->getEdge(tgt, non_n_2);
                     // merge with stronger connected neighbour
                     NodeID larger = e1 >= e2 ? n1 : n2;
                     uf.Union(tgt, larger);
@@ -182,11 +176,8 @@ class kernelization_criteria {
             }
 
             if (graph->getNodeDegree(n) == 2) {
-                NodeID n1 = graph->getEdgeTarget(n, 0);
-                NodeID n2 = graph->getEdgeTarget(n, 1);
-                EdgeWeight e1 = graph->getEdgeWeight(n, 0);
-                EdgeWeight e2 = graph->getEdgeWeight(n, 1);
-
+                auto [n1, e1] = graph->getEdge(n, 0);
+                auto [n2, e2] = graph->getEdge(n, 1);
                 // merge with stronger connected neighbour
                 NodeID larger = e1 >= e2 ? n1 : n2;
                 uf.Union(n, larger);

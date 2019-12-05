@@ -180,7 +180,6 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
 mostTerminalNeighbours(std::shared_ptr<multicut_problem> problem) {
     std::vector<std::pair<size_t, size_t> > neighbours(problem->graph->n(),
                                                        { 0, 0 });
-
     std::pair<size_t, size_t> maxPair = { 0, 0 };
     NodeID maxID = UNDEFINED_NODE;
     for (const auto& t : problem->terminals) {
@@ -210,7 +209,7 @@ mostTerminalNeighbours(std::shared_ptr<multicut_problem> problem) {
         }
     }
 
-    //TODO(anoe): disregarding impossible terminals
+    // TODO(anoe): disregarding impossible terminals
 
     // if 'maxID' is not connected to all terminals and non-terminal neighbors
     // are heavier than heaviest edge to terminal neighbour
@@ -226,7 +225,7 @@ mostTerminalNeighbours(std::shared_ptr<multicut_problem> problem) {
 }
 
 static std::tuple<NodeID, std::vector<size_t> >
-    findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
+findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
     return mostTerminalNeighbours(problem);
 }
 

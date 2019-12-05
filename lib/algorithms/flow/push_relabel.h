@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "algorithms/misc/graph_algorithms.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
 #include "tools/timer.h"

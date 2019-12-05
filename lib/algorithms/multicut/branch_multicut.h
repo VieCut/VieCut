@@ -24,6 +24,7 @@
 #include <queue>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -167,7 +168,7 @@ class branch_multicut {
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 
-        uint64_t max_size = 250UL * 1024UL * 1024UL * 1024UL;
+        uint64_t max_size = 200UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
             LOG1 << "RESULT Memoryout";
             exit(1);
@@ -384,13 +385,25 @@ class branch_multicut {
                 new_p = problem;
             }
 
-            //first delete edges to terminals not picked
-            for (EdgeID e : new_p->graph->edges_of(vertex)) {
-                auto [tgt, wgt] = new_p->graph->getEdge(vertex, e);
-                if (terminals.count(tgt) > 0 && tgt != ctr_terminal) {
-                    new_p->graph->deleteEdge(vertex, e);
-                    new_p->deleted_weight += wgt;
-                    --e;
+            NodeID coarse_vtx = new_p->graph->containedVertices(vertex)[0];
+            bool finished = false;
+            // first delete edges to terminals not picked
+            while (!finished) {
+                finished = true;
+                for (size_t e = 0; e <
+                     new_p->graph->get_first_invalid_edge(vertex); ++e) {
+                    auto [tgt, wgt] = new_p->graph->getEdge(vertex, e);
+                    if (terminals.count(tgt) > 0 && tgt != ctr_terminal) {
+                        new_p->graph->deleteEdge(vertex, e);
+                        auto p = new_p->graph->getCurrentPosition(coarse_vtx);
+                        new_p->deleted_weight += wgt;
+                        if (p != vertex) {
+                            vertex = p;
+                            finished = false;
+                            break;
+                        }
+                        --e;
+                    }
                 }
             }
 
@@ -402,6 +415,7 @@ class branch_multicut {
                 }
             }
             graph_contraction::setTerminals(new_p, original_terminals);
+
             if (problem->lower_bound < global_upper_bound) {
                 size_t thr = problems.addProblem(new_p, thread_id);
                 q_cv[thr].notify_all();

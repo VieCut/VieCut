@@ -9,6 +9,8 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#pragma once
+
 #include <memory>
 #include <queue>
 #include <tuple>
@@ -20,7 +22,6 @@
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
 #include "data_structure/mutable_graph.h"
-#pragma once
 
 class graph_algorithms {
  public:

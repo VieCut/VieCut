@@ -287,6 +287,10 @@ class mutable_graph {
             weighted_degree[target] + weight - curr_weight;
     }
 
+    std::pair<NodeID, EdgeWeight> getEdge(NodeID node, EdgeID edge) const {
+        return { getEdgeTarget(node, edge), getEdgeWeight(node, edge) };
+    }
+
     NodeID getEdgeTarget(NodeID node, EdgeID edge) const {
         return vertices[node][edge].target;
     }

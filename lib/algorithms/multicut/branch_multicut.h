@@ -356,7 +356,6 @@ class branch_multicut {
         }
 
         if (configuration::getConfig()->multibranch) {
-            // TODO(anoe): not implemented yet
             multiBranch(problem, thread_id);
         } else {
             singleBranch(problem, thread_id);
@@ -366,12 +365,53 @@ class branch_multicut {
     void multiBranch(std::shared_ptr<multicut_problem> problem,
                      size_t thread_id) {
         auto [vertex, terminal_ids] = findEdgeMultiBranch(problem);
-
-        for (size_t i = 0; i < terminal_ids.size(); ++i) {
-            const auto& t = terminal_ids[i];
+        std::unordered_set<NodeID> terminals;
+        for (const auto& t : problem->terminals) {
+            terminals.emplace(t.position);
         }
 
-        // TODO(anoe): continue here
+        for (size_t i = 0; i < terminal_ids.size(); ++i) {
+            NodeID ctr_terminal = terminal_ids[i];
+            std::shared_ptr<multicut_problem> new_p;
+            if (i < terminal_ids.size() - 1) {
+                new_p = std::make_shared<multicut_problem>();
+                new_p->graph = std::make_shared<mutable_graph>(*problem->graph);
+                new_p->terminals = problem->terminals;
+                new_p->mappings = problem->mappings;
+                new_p->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
+                new_p->lower_bound = problem->lower_bound;
+                new_p->upper_bound = problem->upper_bound;
+                new_p->deleted_weight = problem->deleted_weight;
+                for (size_t j = 0; j < new_p->terminals.size(); ++j) {
+                    new_p->terminals[j].invalid_flow = true;
+                }
+            } else {
+                new_p = problem;
+            }
+
+            //first delete edges to terminals not picked
+            for (EdgeID e : new_p->graph->edges_of(vertex)) {
+                auto [tgt, wgt] = new_p->graph->getEdge(vertex, e);
+                if (terminals.count(tgt) > 0 && tgt != ctr_terminal) {
+                    new_p->graph->deleteEdge(vertex, e);
+                    new_p->deleted_weight += wgt;
+                    --e;
+                }
+            }
+
+            for (EdgeID e : new_p->graph->edges_of(vertex)) {
+                NodeID tgt = new_p->graph->getEdgeTarget(vertex, e);
+                if (tgt == ctr_terminal) {
+                    new_p->graph->contractEdge(vertex, e);
+                    break;
+                }
+            }
+            graph_contraction::setTerminals(new_p, original_terminals);
+            if (problem->lower_bound < global_upper_bound) {
+                size_t thr = problems.addProblem(new_p, thread_id);
+                q_cv[thr].notify_all();
+            }
+        }
     }
 
     void singleBranch(std::shared_ptr<multicut_problem> problem,

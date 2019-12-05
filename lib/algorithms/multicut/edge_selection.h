@@ -203,12 +203,14 @@ mostTerminalNeighbours(std::shared_ptr<multicut_problem> problem) {
         NodeID p = problem->terminals[i].position;
         for (EdgeID e : problem->graph->edges_of(p)) {
             if (problem->graph->getEdgeTarget(p, e) == maxID) {
-                neighbouring_terminals.emplace_back(i);
+                neighbouring_terminals.emplace_back(p);
                 heavy = std::max(heavy, problem->graph->getEdgeWeight(p, e));
                 break;
             }
         }
     }
+
+    //TODO(anoe): disregarding impossible terminals
 
     // if 'maxID' is not connected to all terminals and non-terminal neighbors
     // are heavier than heaviest edge to terminal neighbour
@@ -220,11 +222,11 @@ mostTerminalNeighbours(std::shared_ptr<multicut_problem> problem) {
         neighbouring_terminals.emplace_back(UNDEFINED_NODE);
     }
 
-    return { maxID, neighbouring_terminals };
+    return std::make_pair(maxID, neighbouring_terminals);
 }
 
-static std::tuple<NodeID, std::vector<size_t> > findEdgeMultiBranch(
-    std::shared_ptr<multicut_problem> problem) {
+static std::tuple<NodeID, std::vector<size_t> >
+    findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
     return mostTerminalNeighbours(problem);
 }
 

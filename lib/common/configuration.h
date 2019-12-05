@@ -59,7 +59,7 @@ class configuration {
     bool find_lowest_conductance = false;
     bool blacklist = true;
     bool set_node_in_cut = false;
-    bool multibranch = false;
+    bool multibranch = true;
 
     // karger-stein:
     size_t optimal = 0;

@@ -186,10 +186,8 @@ class branch_multicut {
             log_timer = time_added + log_timer;
 
             LOGC(testing) << "After " << total_time.elapsed()
-                          << " - terminals:"
-                          << problem->terminals.size()
-                          << " vertices:"
-                          << problem->graph->number_of_nodes()
+                          << " - terminals:" << problem->terminals.size()
+                          << " vertices:" << problem->graph->n()
                           << " deleted:" << problem->deleted_weight
                           << " lower:" << problem->lower_bound
                           << " upper:" << problem->upper_bound
@@ -215,25 +213,9 @@ class branch_multicut {
         NodeID edges_before = problem->graph->m();
 
         if (problem->terminals.size() == 2) {
-            FlowType max =
-                maximumFlow(problem) + problem->deleted_weight;
-
-            if (max < global_upper_bound) {
-                bestsol_mutex.lock();
-                if (max < global_upper_bound) {
-                    LOGC(testing) << "Improvement after time="
-                                  << total_time.elapsed() << " upper_bound="
-                                  << problem->upper_bound;
-                    LOGC(testing) << problem->path;
-
-                    global_upper_bound = max;
-                    for (NodeID n = 0; n < best_solution.size(); ++n) {
-                        NodeID n_coarse = problem->mapped(n);
-                        auto t = problem->graph->getCurrentPosition(n_coarse);
-                        best_solution[n] = problem->graph->getPartitionIndex(t);
-                    }
-                }
-                bestsol_mutex.unlock();
+            maximumFlow(problem);
+            if (problem->upper_bound < global_upper_bound) {
+                updateBestSolution(problem);
             }
         } else {
             nonBranchingContraction(problem, thread_id);
@@ -272,6 +254,23 @@ class branch_multicut {
                 }
             }
         }
+    }
+
+    void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
+        bestsol_mutex.lock();
+        if (problem->upper_bound < global_upper_bound) {
+            LOGC(testing) << "Improvement after time="
+                            << total_time.elapsed() << " upper_bound="
+                            << problem->upper_bound;
+
+            global_upper_bound = problem->upper_bound;
+            for (NodeID n = 0; n < best_solution.size(); ++n) {
+                NodeID n_coarse = problem->mapped(n);
+                auto t = problem->graph->getCurrentPosition(n_coarse);
+                best_solution[n] = problem->graph->getPartitionIndex(t);
+            }
+        }
+        bestsol_mutex.unlock();
     }
 
     FlowType flowValue(bool verbose, const std::vector<NodeID>& sol) {
@@ -326,27 +325,9 @@ class branch_multicut {
                       size_t thread_id) {
         graph_contraction::deleteTermEdges(problem, original_terminals);
         if (!problem->graph->number_of_edges()) {
-            if (static_cast<FlowType>(problem->deleted_weight)
-                < global_upper_bound) {
-                bestsol_mutex.lock();
-                if (static_cast<FlowType>(problem->deleted_weight)
-                    < global_upper_bound) {
-                    global_upper_bound =
-                        std::min(static_cast<FlowType>(
-                                     problem->deleted_weight),
-                                 global_upper_bound);
-                    LOGC(testing) << "noedges - Improvement after time="
-                                  << total_time.elapsed() << " upper_bound="
-                                  << problem->upper_bound;
-                    LOGC(testing) << problem->path;
-
-                    for (NodeID n = 0; n < best_solution.size(); ++n) {
-                        NodeID n_coarse = problem->mapped(n);
-                        auto t = problem->graph->getCurrentPosition(n_coarse);
-                        best_solution[n] = problem->graph->getPartitionIndex(t);
-                    }
-                }
-                bestsol_mutex.unlock();
+            problem->upper_bound = problem->deleted_weight;
+            if (problem->upper_bound < global_upper_bound) {
+                updateBestSolution(problem);
             }
             return;
         }
@@ -518,23 +499,7 @@ class branch_multicut {
                                  size_t thread_id) {
         FlowType flow = maximumIsolatingFlow(problem, thread_id);
         if (problem->upper_bound < global_upper_bound) {
-            bestsol_mutex.lock();
-            // check again inside mutex as global_upper_bound might have changed
-            if (problem->upper_bound < global_upper_bound) {
-                global_upper_bound = problem->upper_bound;
-
-                for (NodeID n = 0; n < best_solution.size(); ++n) {
-                    NodeID n_coarse = problem->mapped(n);
-                    auto t = problem->graph->getCurrentPosition(n_coarse);
-                    best_solution[n] = problem->graph->getPartitionIndex(t);
-                }
-
-                global_upper_bound = flowValue(false, best_solution);
-                LOGC(testing) << "Improvement after time="
-                              << total_time.elapsed() << " upper_bound="
-                              << global_upper_bound;
-            }
-            bestsol_mutex.unlock();
+            updateBestSolution(problem);
         }
         auto pe = kc.kernelization(problem, global_upper_bound, flow);
         if (pe.has_value()) {
@@ -571,6 +536,7 @@ class branch_multicut {
             G->setPartitionIndex(n, term0);
         }
 
+        problem->upper_bound = flow + problem->deleted_weight;
         return flow;
     }
 
@@ -706,17 +672,11 @@ class branch_multicut {
                                                    original_terminals.size(),
                                                    problem->terminals.size());
 
-        if (problem->deleted_weight + wgt <
-            static_cast<EdgeWeight>(global_upper_bound)) {
-            for (NodeID n = 0; n < best_solution.size(); ++n) {
-                NodeID n_coarse = problem->mapped(n);
-                auto t = problem->graph->getCurrentPosition(n_coarse);
-                best_solution[n] = result[t];
-            }
-            global_upper_bound = wgt + problem->deleted_weight;
-            LOGC(testing) << "Improvement (IN ILP) after time="
-                          << total_time.elapsed()
-                          << " upper_bound=" << global_upper_bound;
+        problem->upper_bound = problem->deleted_weight + wgt;
+
+
+        if (problem->upper_bound < global_upper_bound) {
+            updateBestSolution(problem);
         }
     }
 #endif

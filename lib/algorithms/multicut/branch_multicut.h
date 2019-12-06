@@ -393,6 +393,7 @@ class branch_multicut {
                 for (size_t e = 0; e <
                      new_p->graph->get_first_invalid_edge(vertex); ++e) {
                     auto [tgt, wgt] = new_p->graph->getEdge(vertex, e);
+
                     if (terminals.count(tgt) > 0 && tgt != ctr_terminal) {
                         new_p->graph->deleteEdge(vertex, e);
                         auto p = new_p->graph->getCurrentPosition(coarse_vtx);
@@ -416,7 +417,7 @@ class branch_multicut {
             }
             graph_contraction::setTerminals(new_p, original_terminals);
 
-            if (problem->lower_bound < global_upper_bound) {
+            if (new_p->lower_bound < global_upper_bound) {
                 size_t thr = problems.addProblem(new_p, thread_id);
                 q_cv[thr].notify_all();
             }

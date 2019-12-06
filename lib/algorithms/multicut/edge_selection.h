@@ -85,6 +85,7 @@
             }
         }
     }
+
     return std::make_tuple(max_id_t, max_id_e);
 }
 
@@ -201,17 +202,18 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
 
 static std::tuple<NodeID, std::vector<size_t> >
 findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
+    // NodeID vtx = mostTerminalNeighbours(problem);
+    auto [n, e] = findHeavyVertex(problem);
+    NodeID vtx = problem->graph->getEdgeTarget(n, e);
 
-    NodeID n = mostTerminalNeighbours(problem);
-
-    std::vector<std::pair<size_t, EdgeWeight>> neighbouring_terminals;
+    std::vector<std::pair<size_t, EdgeWeight> > neighbouring_terminals;
     EdgeWeight heavy = 0;
     EdgeWeight sumToTerminals = 0;
     for (size_t i = 0; i < problem->terminals.size(); ++i) {
         NodeID p = problem->terminals[i].position;
         for (EdgeID e : problem->graph->edges_of(p)) {
             auto [tgt, wgt] = problem->graph->getEdge(p, e);
-            if (tgt == n) {
+            if (tgt == vtx) {
                 neighbouring_terminals.emplace_back(p, wgt);
                 heavy = std::max(heavy, wgt);
                 sumToTerminals += wgt;
@@ -221,12 +223,12 @@ findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
     }
 
     std::vector<size_t> possible_terminals;
-    EdgeWeight nodeDegree = problem->graph->getWeightedNodeDegree(n);
+    EdgeWeight nodeDegree = problem->graph->getWeightedNodeDegree(vtx);
     EdgeWeight nonTerminalWeight = nodeDegree - sumToTerminals;
 
     for (const auto& nt : neighbouring_terminals) {
-        // only when weight to this terminal + nonterminal is heavier than 
-        // heaviest edge to terminal this could be better than that. 
+        // only when weight to this terminal + nonterminal is heavier than
+        // heaviest edge to terminal this could be better than that.
         // second part is to make sure that if nonTerminalWeight is zero, at
         // least one value thats maximum gets returned
         if (nonTerminalWeight + nt.second > heavy || heavy == nt.second) {
@@ -234,16 +236,16 @@ findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
         }
     }
 
-    // if 'n' is not connected to all terminals and non-terminal neighbors
+    // if 'vtx' is not connected to all terminals and non-terminal neighbors
     // are heavier than heaviest edge to terminal neighbour
-    // we also need to include case in which 'n' is in neither neighbors
+    // we also need to include case in which 'vtx' is in neither neighbors
     // block
     if (neighbouring_terminals.size() < problem->terminals.size()
         && nonTerminalWeight > heavy) {
         possible_terminals.emplace_back(UNDEFINED_NODE);
     }
 
-    return std::make_pair(n, possible_terminals);
+    return std::make_pair(vtx, possible_terminals);
 }
 
 static std::tuple<NodeID, EdgeID> findEdgeSingleBranch(

@@ -97,9 +97,16 @@ class find_bridges {
                 }
 
                 for (auto term : terminals) {
-                    if (contracted[term.position]) {
+                    if (contracted[term.position] && term.position != n) {
                         // this can only happen if bridge detection detects
                         // a bridge that is not actually one.
+                        for (auto term : terminals) {
+                            LOG1 << "t " << term.position;
+                        }
+
+                        LOG1 << contracted;
+                        sLOG1 << n << e;
+                        LOG1 << G;
                         LOG1 << "CONTRACTING TERMINAL! SANITY CHECK FAILED";
                         exit(1);
                     }

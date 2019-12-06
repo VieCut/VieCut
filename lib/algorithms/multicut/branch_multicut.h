@@ -54,7 +54,11 @@ using namespace std::chrono_literals;
 
 class branch_multicut {
  public:
+#ifndef NDEBUG
+    static const bool debug = true;
+#else
     static const bool debug = false;
+#endif
     static const bool testing = true;
 
     branch_multicut(std::shared_ptr<mutable_graph> original_graph,
@@ -77,7 +81,10 @@ class branch_multicut {
     size_t find_multiterminal_cut(std::shared_ptr<multicut_problem> problem) {
         best_solution.resize(original_graph.number_of_nodes());
         auto cfg = configuration::getConfig();
+        maximumIsolatingFlow(problem, 0);
         problems.addProblem(problem, 0);
+        updateBestSolution(problem);
+
         std::vector<std::thread> threads;
         is_finished = false;
         idle_threads = 0;
@@ -195,62 +202,47 @@ class branch_multicut {
                           << " queue.size:" << problems.size();
         }
 
-        if (problem->graph->n() * 2
-            < problem->graph->getOriginalNodes()) {
+        if (problem->graph->n() * 2 < problem->graph->getOriginalNodes()) {
             auto map = std::make_shared<std::vector<NodeID> >();
-
-            for (size_t i = 0;
-                 i < problem->graph->getOriginalNodes(); ++i) {
-                map->emplace_back(
-                    problem->graph->getCurrentPosition(i));
+            for (size_t i = 0; i < problem->graph->getOriginalNodes(); ++i) {
+                map->emplace_back(problem->graph->getCurrentPosition(i));
             }
-
             problem->mappings.emplace_back(map);
             problem->graph = problem->graph->simplify();
         }
-
         graph_contraction::setTerminals(problem, original_terminals);
         NodeID edges_before = problem->graph->m();
-
-        if (problem->terminals.size() == 2) {
-            maximumFlow(problem);
-            if (problem->upper_bound < global_upper_bound) {
-                updateBestSolution(problem);
+        nonBranchingContraction(problem);
+        if (problem->graph->m() >= edges_before
+            && problem->terminals.size() > 1) {
+#ifdef USE_GUROBI
+            auto c = configuration::getConfig();
+            NodeID r = random_functions::nextInt(0, 300000);
+            bool branchOnCurrentInstance = problem->graph->m() > r;
+            if (!c->differences_set) {
+                c->bound_difference = problem->upper_bound
+                                      - problem->lower_bound;
+                c->n = problem->graph->n();
+                c->m = problem->graph->m();
+                c->differences_set = true;
             }
+
+            if (branchOnCurrentInstance) {
+#endif
+            branchOnEdge(problem, thread_id);
+#ifdef USE_GUROBI
         } else {
-            nonBranchingContraction(problem, thread_id);
-            if (problem->graph->m() >= edges_before
-                && problem->terminals.size() > 1) {
-#ifdef USE_GUROBI
-                auto c = configuration::getConfig();
-                NodeID r = random_functions::nextInt(0, 300000);
-                bool branchOnCurrentInstance = problem->graph->m() > r;
-                if (!c->differences_set) {
-                    c->bound_difference = problem->upper_bound
-                                          - problem->lower_bound;
-                    c->n = problem->graph->n();
-                    c->m = problem->graph->m();
-                    c->differences_set = true;
-                }
-
-                if (branchOnCurrentInstance) {
+            solve_with_ilp(problem);
+        }
 #endif
-                branchOnEdge(problem, thread_id);
-#ifdef USE_GUROBI
+        } else {
+            if (problem->lower_bound < global_upper_bound) {
+                size_t thr = problems.addProblem(problem, thread_id);
+                q_cv[thr].notify_all();
             } else {
-                solve_with_ilp(problem);
-            }
-#endif
-            } else {
-                if (problem->lower_bound < global_upper_bound) {
-                    size_t thr =
-                        problems.addProblem(problem, thread_id);
-                    q_cv[thr].notify_all();
-                } else {
-                    // notify all sleeping threads, as we might be finished
-                    for (size_t j = 0; j < num_threads; ++j) {
-                        q_cv[j].notify_all();
-                    }
+                // notify all sleeping threads, as we might be finished
+                for (size_t j = 0; j < num_threads; ++j) {
+                    q_cv[j].notify_all();
                 }
             }
         }
@@ -260,14 +252,28 @@ class branch_multicut {
         bestsol_mutex.lock();
         if (problem->upper_bound < global_upper_bound) {
             LOGC(testing) << "Improvement after time="
-                            << total_time.elapsed() << " upper_bound="
-                            << problem->upper_bound;
+                          << total_time.elapsed() << " upper_bound="
+                          << problem->upper_bound;
 
             global_upper_bound = problem->upper_bound;
             for (NodeID n = 0; n < best_solution.size(); ++n) {
                 NodeID n_coarse = problem->mapped(n);
                 auto t = problem->graph->getCurrentPosition(n_coarse);
                 best_solution[n] = problem->graph->getPartitionIndex(t);
+            }
+
+            if (debug) {
+                std::vector<size_t> term_in_block(original_terminals.size(), 0);
+                for (const auto& t : original_terminals) {
+                    ++term_in_block[best_solution[t]];
+                }
+
+                for (size_t i = 0; i < term_in_block.size(); ++i) {
+                    if (term_in_block[i] != 1) {
+                        LOG1 << term_in_block[i] << " terminals on block " << i;
+                        exit(1);
+                    }
+                }
             }
         }
         bestsol_mutex.unlock();
@@ -396,11 +402,36 @@ class branch_multicut {
                     break;
                 }
             }
-            graph_contraction::setTerminals(new_p, original_terminals);
 
-            if (new_p->lower_bound < global_upper_bound) {
-                size_t thr = problems.addProblem(new_p, thread_id);
-                q_cv[thr].notify_all();
+            graph_contraction::deleteTermEdges(new_p, original_terminals);
+            if (new_p->terminals.size() == 2) {
+                maximumFlow(new_p);
+                if (new_p->upper_bound < global_upper_bound) {
+                    updateBestSolution(new_p);
+                }
+            } else if (new_p->terminals.size() > 2) {
+                maximumIsolatingFlow(new_p, thread_id);
+                graph_contraction::deleteTermEdges(new_p, original_terminals);
+                if (new_p->graph->m() == 0) {
+                    new_p->upper_bound = new_p->deleted_weight;
+                    if (new_p->upper_bound < global_upper_bound) {
+                        updateBestSolution(new_p);
+                    }
+                    continue;
+                }
+
+                if (new_p->lower_bound < global_upper_bound) {
+                    if (new_p->upper_bound < global_upper_bound) {
+                        updateBestSolution(new_p);
+                    }
+
+                    size_t thr = problems.addProblem(new_p, thread_id);
+                    q_cv[thr].notify_all();
+                }
+            } else {
+                if (new_p->upper_bound < global_upper_bound) {
+                    updateBestSolution(new_p);
+                }
             }
         }
     }
@@ -495,19 +526,14 @@ class branch_multicut {
         return true;
     }
 
-    void nonBranchingContraction(std::shared_ptr<multicut_problem> problem,
-                                 size_t thread_id) {
-        FlowType flow = maximumIsolatingFlow(problem, thread_id);
-        if (problem->upper_bound < global_upper_bound) {
-            updateBestSolution(problem);
-        }
-        auto pe = kc.kernelization(problem, global_upper_bound, flow);
+    void nonBranchingContraction(std::shared_ptr<multicut_problem> problem) {
+        auto pe = kc.kernelization(problem, global_upper_bound);
         if (pe.has_value()) {
             problem->priority_edge = *pe;
         }
     }
 
-    FlowType maximumFlow(std::shared_ptr<multicut_problem> problem) {
+    void maximumFlow(std::shared_ptr<multicut_problem> problem) {
         push_relabel pr;
         auto G = problem->graph;
 
@@ -537,13 +563,11 @@ class branch_multicut {
         }
 
         problem->upper_bound = flow + problem->deleted_weight;
-        return flow;
     }
 
-    FlowType maximumIsolatingFlow(std::shared_ptr<multicut_problem> problem,
-                                  size_t thread_id) {
+    void maximumIsolatingFlow(std::shared_ptr<multicut_problem> problem,
+                              size_t thread_id) {
         graph_contraction::setTerminals(problem, original_terminals);
-        std::vector<FlowType> isolating_flow;
         std::vector<std::vector<NodeID> > maxVolIsoBlock;
         std::vector<NodeID> curr_terminals;
         std::vector<NodeID> orig_index;
@@ -625,17 +649,7 @@ class branch_multicut {
                 maximum = deg;
             }
             sum += deg;
-
-            isolating_flow.emplace_back(deg);
         }
-
-        std::sort(isolating_flow.begin(), isolating_flow.end());
-
-        FlowType contr_flow = 0;
-
-        if (isolating_flow.size() >= 2)
-            contr_flow = sum - isolating_flow[isolating_flow.size() - 1]
-                         - isolating_flow[isolating_flow.size() - 2];
 
         for (NodeID n : problem->graph->nodes()) {
             problem->graph->setPartitionIndex(n, max_index);
@@ -655,7 +669,7 @@ class branch_multicut {
             graph_algorithms::checkGraphValidity(problem->graph);
         }
 
-        return contr_flow;
+        graph_contraction::setTerminals(problem, original_terminals);
     }
 
 #ifdef USE_GUROBI
@@ -671,11 +685,12 @@ class branch_multicut {
         auto [result, wgt] = ilp_model::computeIlp(problem->graph, presets,
                                                    original_terminals.size(),
                                                    problem->terminals.size());
-
         problem->upper_bound = problem->deleted_weight + wgt;
 
-
         if (problem->upper_bound < global_upper_bound) {
+            for (const auto & n : problem->graph->nodes()) {
+                problem->graph->setPartitionIndex(n, result[n]);
+            }
             updateBestSolution(problem);
         }
     }

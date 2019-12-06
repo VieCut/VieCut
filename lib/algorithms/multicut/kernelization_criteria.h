@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -38,47 +39,68 @@ class kernelization_criteria {
     // performs kernelization.
     // if we find a bridge that separates terminal set, return it to branch on
     std::optional<std::pair<NodeID, EdgeID> > kernelization(
-        std::shared_ptr<multicut_problem> mcp,
-        size_t global_upper_bound,
-        EdgeWeight contracting_flow) {
-        NodeID num_vtcs = mcp->graph->n();
-        std::vector<bool> active_current(mcp->graph->getOriginalNodes(), true);
-        std::vector<bool> active_next(mcp->graph->getOriginalNodes(), false);
+        std::shared_ptr<multicut_problem> problem,
+        size_t global_upper_bound) {
+        NodeID num_vtcs = problem->graph->n();
+        NodeID begin = num_vtcs;
+        std::vector<bool> active_c(problem->graph->getOriginalNodes(), true);
+        std::vector<bool> active_n(problem->graph->getOriginalNodes(), false);
         bool first_run = true;
         do {
-            num_vtcs = mcp->graph->n();
-            auto uf_lowdegree = lowDegreeContraction(mcp);
-            contractIfImproved(&uf_lowdegree, mcp, "lowdeg", &active_next);
+            num_vtcs = problem->graph->n();
+            auto uf_lowdegree = lowDegreeContraction(problem);
+            contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
 
-            find_bridges fb(mcp->graph);
+            find_bridges fb(problem->graph);
             if (fb.findAllBridges()) {
-                auto result = fb.terminalsOnBothSides(mcp->terminals);
+                auto result = fb.terminalsOnBothSides(problem->terminals);
                 if (std::holds_alternative<union_find>(result)) {
-                    contractIfImproved(&std::get<union_find>(result), mcp,
-                                       "bridges", &active_next);
+                    contractIfImproved(&std::get<union_find>(result), problem,
+                                       "bridges", &active_n);
                 } else {
                     return std::get<std::pair<NodeID, EdgeID> >(result);
                 }
             }
 
-            union_find uf_highdeg = highDegreeContraction(mcp, active_current);
-            contractIfImproved(&uf_highdeg, mcp, "high_degree", &active_next);
+            union_find uf_high = highDegreeContraction(problem, active_c);
+            contractIfImproved(&uf_high, problem, "high_degree", &active_n);
 
-            auto uf_tri = triangleDetection(mcp, active_current);
-            contractIfImproved(&uf_tri, mcp, "triangle", &active_next);
+            auto uf_tri = triangleDetection(problem, active_c);
+            contractIfImproved(&uf_tri, problem, "triangle", &active_n);
 
             if (first_run) {
+                std::vector<EdgeWeight> flow_values;
+                EdgeWeight sum = 0;
+                for (size_t i = 0; i < problem->terminals.size(); ++i) {
+                    NodeID orig_id = problem->terminals[i].original_id;
+                    NodeID term_id = problem->mapped(
+                        original_terminals[orig_id]);
+                    NodeID pos = problem->graph->getCurrentPosition(term_id);
+                    EdgeWeight deg = problem->graph->getWeightedNodeDegree(pos);
+                    flow_values.emplace_back(deg);
+                    sum += deg;
+                }
+
+                std::sort(flow_values.begin(), flow_values.end());
+
+                FlowType contr_flow = 0;
+
+                if (flow_values.size() >= 2)
+                    contr_flow = sum - flow_values[flow_values.size() - 1]
+                                 - flow_values[flow_values.size() - 2];
                 noi_minimum_cut noi;
-                EdgeWeight noi_limit = global_upper_bound - mcp->deleted_weight
-                                       - tlx::div_ceil(contracting_flow, 4);
-                auto uf_noi = noi.modified_capforest(mcp, noi_limit);
-                contractIfImproved(&uf_noi, mcp, "noi", &active_next);
+                EdgeWeight noi_limit = global_upper_bound
+                                       - problem->deleted_weight
+                                       - tlx::div_ceil(contr_flow, 4);
+                auto uf_noi = noi.modified_capforest(problem, noi_limit);
+                contractIfImproved(&uf_noi, problem, "noi", &active_n);
             }
 
             first_run = false;
-            active_next.swap(active_current);
-            std::fill(active_next.begin(), active_next.end(), false);
-        } while (mcp->graph->n() < num_vtcs);
+            active_n.swap(active_c);
+            std::fill(active_n.begin(), active_n.end(), false);
+        } while (problem->graph->n() < num_vtcs);
+        LOG1 << begin << " to " << problem->graph->n();
         return std::nullopt;
     }
 
@@ -252,20 +274,20 @@ class kernelization_criteria {
         return uf;
     }
 
-    union_find triangleDetection(std::shared_ptr<multicut_problem> mcp,
+    union_find triangleDetection(std::shared_ptr<multicut_problem> problem,
                                  const std::vector<bool>& active) {
-        auto graph = mcp->graph;
+        auto graph = problem->graph;
 
-        graph_contraction::setTerminals(mcp, original_terminals);
-        union_find uf(mcp->graph->number_of_nodes());
-        std::vector<bool> terminals(mcp->graph->number_of_nodes(), false);
+        graph_contraction::setTerminals(problem, original_terminals);
+        union_find uf(problem->graph->number_of_nodes());
+        std::vector<bool> terminals(problem->graph->number_of_nodes(), false);
 
-        for (const auto& p : mcp->terminals) {
+        for (const auto& p : problem->terminals) {
             terminals[p.position] = true;
         }
 
-        std::vector<EdgeID> marked(mcp->graph->n(), UNDEFINED_EDGE);
-        std::vector<bool> done(mcp->graph->n(), false);
+        std::vector<EdgeID> marked(problem->graph->n(), UNDEFINED_EDGE);
+        std::vector<bool> done(problem->graph->n(), false);
 
         for (NodeID v1 : graph->nodes()) {
             NodeID in = graph->containedVertices(v1)[0];

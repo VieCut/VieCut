@@ -725,10 +725,10 @@ class mutable_graph {
         G->start_construction(number_of_nodes());
         for (NodeID n : G->nodes()) {
             G->new_node();
-
             for (EdgeID e : edges_of(n)) {
                 G->new_edge(n, getEdgeTarget(n, e), getEdgeWeight(n, e));
             }
+            G->setPartitionIndex(n, getPartitionIndex(n));
         }
         G->finish_construction();
         return G;

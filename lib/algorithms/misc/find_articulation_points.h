@@ -1,5 +1,5 @@
 /******************************************************************************
- * find_bridges.h
+ * find_articulation_points.h
  *
  * Source of VieCut.
  *
@@ -20,10 +20,11 @@
 
 #include "algorithms/multicut/multicut_problem.h"
 #include "data_structure/mutable_graph.h"
+#include "data_structure/union_find.h"
 
-class find_bridges {
+class find_articulation_points {
  public:
-    explicit find_bridges(std::shared_ptr<mutable_graph> G)
+    explicit find_articulation_points(std::shared_ptr<mutable_graph> G)
         : G(G),
           visited(G->n(), false),
           discovered(G->n(), UNDEFINED_NODE),
@@ -31,27 +32,26 @@ class find_bridges {
           lowest(G->n(), UNDEFINED_NODE),
           step(0) { }
 
-    bool findAllBridges() {
+    bool findAllArticulationPoints() {
         for (NodeID vtx : G->nodes()) {
             if (!visited[vtx]) {
-                findAllBridgesInCC(vtx);
+                findAllArticulationPointsInCC(vtx);
             }
         }
-        return bridges.size() > 0;
+        return articulation_points.size() > 0;
     }
 
-    std::variant<union_find, std::pair<NodeID, EdgeID> > terminalsOnBothSides(
+    std::optional<union_find> terminalsOnBothSides(
         const std::vector<terminal>& terminals) {
         union_find uf(G->n());
         bool return_uf = false;
-        for (const auto& [n, e] : bridges) {
+        for (const auto& n : articulation_points) {
             size_t sum = 0;
             for (const auto& t : terminals) {
-                NodeID b_tgt = G->getEdgeTarget(n, e);
                 NodeID tpos = t.position;
                 bool on_right = false;
                 while (true) {
-                    if (tpos == b_tgt) {
+                    if (tpos == n) {
                         on_right = true;
                         break;
                     }
@@ -70,19 +70,21 @@ class find_bridges {
                 // all terminals on one side, contract the other
                 return_uf = true;
                 bool invert_side = (sum == terminals.size()) ? true : false;
-                NodeID ctr_n = n;
-                EdgeID ctr_e = e;
-                if (invert_side) {
-                    ctr_n = G->getEdgeTarget(n, e);
-                    ctr_e = G->getReverseEdge(n, e);
-                }
+
                 std::vector<bool> contracted(G->n(), false);
-                NodeID t = G->getEdgeTarget(ctr_n, ctr_e);
-                uf.Union(ctr_n, t);
-                contracted[ctr_n] = true;
-                contracted[t] = true;
+
                 std::queue<NodeID> q;
-                q.push(t);
+                contracted[n] = true;
+                for (EdgeID e : G->edges_of(n)) {
+                    NodeID t = G->getEdgeTarget(n, e);
+                    bool is_parent = (parent[t] == n);
+
+                    if (is_parent != invert_side) {
+                        contracted[t] = true;
+                        q.push(t);
+                        uf.Union(n, t);
+                    }
+                }
 
                 while (!q.empty()) {
                     NodeID v = q.front();
@@ -105,7 +107,6 @@ class find_bridges {
                         }
 
                         LOG1 << contracted;
-                        sLOG1 << n << e;
                         LOG1 << G;
                         LOG1 << "CONTRACTING TERMINAL! SANITY CHECK FAILED";
                         exit(1);
@@ -116,8 +117,6 @@ class find_bridges {
 
         if (return_uf) {
             return uf;
-        } else {
-            return bridges[0];
         }
     }
 
@@ -131,8 +130,8 @@ class find_bridges {
                 NodeID t = G->getEdgeTarget(b, e);
                 if (parent[t] == b) {
                     lowest[b] = std::min(lowest[b], lowest[t]);
-                    if (lowest[t] > discovered[b]) {
-                        bridges.emplace_back(b, e);
+                    if (parent[b] != b && lowest[t] >= discovered[b]) {
+                        articulation_points.emplace_back(b);
                     }
                 } else {
                     if (t != parent[b]) {
@@ -143,7 +142,7 @@ class find_bridges {
         }
     }
 
-    void findAllBridgesInCC(NodeID vtx) {
+    void findAllArticulationPointsInCC(NodeID vtx) {
         std::vector<NodeID> path;
         parent[vtx] = vtx;
         stack.push(vtx);
@@ -171,14 +170,8 @@ class find_bridges {
         }
 
         backtrackTo(&path, vtx);
-        for (EdgeID e : G->edges_of(vtx)) {
-            NodeID t = G->getEdgeTarget(vtx, e);
-            if (parent[t] == vtx) {
-                if (lowest[t] > discovered[vtx]) {
-                    bridges.emplace_back(vtx, e);
-                }
-            }
-        }
+        // disregard if vtx is an articulation point, as that would require a
+        // different contraction mechanism
     }
 
     std::shared_ptr<mutable_graph> G;
@@ -188,6 +181,6 @@ class find_bridges {
     std::vector<NodeID> lowest;
 
     std::stack<NodeID> stack;
-    std::vector<std::pair<NodeID, EdgeID> > bridges;
+    std::vector<NodeID> articulation_points;
     size_t step;
 };

@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "algorithms/global_mincut/noi_minimum_cut.h"
+#include "algorithms/misc/find_articulation_points.h"
 #include "algorithms/misc/find_bridges.h"
 #include "algorithms/multicut/graph_contraction.h"
 #include "algorithms/multicut/multicut_problem.h"

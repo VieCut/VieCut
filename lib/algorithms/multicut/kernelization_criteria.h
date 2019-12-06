@@ -42,7 +42,6 @@ class kernelization_criteria {
         std::shared_ptr<multicut_problem> problem,
         size_t global_upper_bound) {
         NodeID num_vtcs = problem->graph->n();
-        NodeID begin = num_vtcs;
         std::vector<bool> active_c(problem->graph->getOriginalNodes(), true);
         std::vector<bool> active_n(problem->graph->getOriginalNodes(), false);
         bool first_run = true;
@@ -100,7 +99,6 @@ class kernelization_criteria {
             active_n.swap(active_c);
             std::fill(active_n.begin(), active_n.end(), false);
         } while (problem->graph->n() < num_vtcs);
-        LOG1 << begin << " to " << problem->graph->n();
         return std::nullopt;
     }
 

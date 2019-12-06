@@ -123,9 +123,9 @@ class branch_multicut {
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
 
-                /*if (problem->graph->n() < 2000) {
+                /*if (problem->graph->n() < 5000) {
                     graphs++;
-                    if (graphs == 100) {
+                    if (graphs == 1) {
                     LOG1 << "Writing...";
 
                     std::string gid = "graph100";
@@ -211,23 +211,20 @@ class branch_multicut {
             problem->graph = problem->graph->simplify();
         }
         graph_contraction::setTerminals(problem, original_terminals);
-        NodeID edges_before = problem->graph->m();
         nonBranchingContraction(problem);
-        if (problem->graph->m() >= edges_before
-            && problem->terminals.size() > 1) {
 #ifdef USE_GUROBI
-            auto c = configuration::getConfig();
-            NodeID r = random_functions::nextInt(0, 300000);
-            bool branchOnCurrentInstance = problem->graph->m() > r;
-            if (!c->differences_set) {
-                c->bound_difference = problem->upper_bound
-                                      - problem->lower_bound;
-                c->n = problem->graph->n();
-                c->m = problem->graph->m();
-                c->differences_set = true;
-            }
+        auto c = configuration::getConfig();
+        NodeID r = random_functions::nextInt(0, 300000);
+        bool branchOnCurrentInstance = problem->graph->m() > r;
+        if (!c->differences_set) {
+            c->bound_difference = problem->upper_bound
+                                    - problem->lower_bound;
+            c->n = problem->graph->n();
+            c->m = problem->graph->m();
+            c->differences_set = true;
+        }
 
-            if (branchOnCurrentInstance) {
+        if (branchOnCurrentInstance) {
 #endif
             branchOnEdge(problem, thread_id);
 #ifdef USE_GUROBI
@@ -235,17 +232,6 @@ class branch_multicut {
             solve_with_ilp(problem);
         }
 #endif
-        } else {
-            if (problem->lower_bound < global_upper_bound) {
-                size_t thr = problems.addProblem(problem, thread_id);
-                q_cv[thr].notify_all();
-            } else {
-                // notify all sleeping threads, as we might be finished
-                for (size_t j = 0; j < num_threads; ++j) {
-                    q_cv[j].notify_all();
-                }
-            }
-        }
     }
 
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {

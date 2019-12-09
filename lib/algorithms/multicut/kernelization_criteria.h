@@ -69,7 +69,7 @@ class kernelization_criteria {
                     contractIfImproved(&uf.value(), problem, "aps", &active_n);
                 }
             }
-
+            
             union_find uf_high = highDegreeContraction(problem, active_c);
             contractIfImproved(&uf_high, problem, "high_degree", &active_n);
 

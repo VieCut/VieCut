@@ -77,7 +77,8 @@ class find_articulation_points {
                 contracted[n] = true;
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID t = G->getEdgeTarget(n, e);
-                    bool is_parent = (parent[t] == n);
+                    bool is_parent = (parent[t] == n)
+                        && (lowest[t] >= discovered[n]);
 
                     if (is_parent != invert_side) {
                         contracted[t] = true;
@@ -94,6 +95,7 @@ class find_articulation_points {
                         if (!contracted[tgt]) {
                             uf.Union(v, tgt);
                             contracted[tgt] = true;
+                            q.push(tgt);
                         }
                     }
                 }
@@ -106,6 +108,7 @@ class find_articulation_points {
                             LOG1 << "t " << term.position;
                         }
 
+                        LOG1 << n;
                         LOG1 << contracted;
                         LOG1 << G;
                         LOG1 << "CONTRACTING TERMINAL! SANITY CHECK FAILED";

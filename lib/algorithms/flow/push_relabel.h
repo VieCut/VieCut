@@ -284,7 +284,6 @@ class push_relabel {
         // thus, parallel_flows is set to true
         auto source_set = solve_max_flow_min_cut(
             G, sources, curr_source, compute_source_set, true).second;
-
         return source_set;
     }
 

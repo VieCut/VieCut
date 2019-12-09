@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "algorithms/global_mincut/noi_minimum_cut.h"
+#include "algorithms/misc/equal_neighborhood.h"
 #include "algorithms/misc/find_articulation_points.h"
 #include "algorithms/misc/find_bridges.h"
 #include "algorithms/multicut/graph_contraction.h"
@@ -69,6 +70,10 @@ class kernelization_criteria {
                     contractIfImproved(&uf.value(), problem, "aps", &active_n);
                 }
             }
+
+            equal_neighborhood en;
+            union_find uf_en = en.findEqualNeighborhoods(problem);
+            contractIfImproved(&uf_en, problem, "equal_nbrhd", &active_n);
             
             union_find uf_high = highDegreeContraction(problem, active_c);
             contractIfImproved(&uf_high, problem, "high_degree", &active_n);

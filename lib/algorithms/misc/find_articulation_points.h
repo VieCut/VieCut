@@ -116,6 +116,8 @@ class find_articulation_points {
         }
 
         if (return_uf) {
+            LOG1 << "found " << articulation_points.size() << " aps";
+            LOG1 << "contract from " << G->n() << " to " << uf.n();
             return uf;
         }
     }

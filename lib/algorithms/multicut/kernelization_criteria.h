@@ -51,7 +51,7 @@ class kernelization_criteria {
             auto uf_lowdegree = lowDegreeContraction(problem);
             contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
 
-            find_bridges fb(problem->graph);
+            /*find_bridges fb(problem->graph);
             if (fb.findAllBridges()) {
                 auto result = fb.terminalsOnBothSides(problem->terminals);
                 if (std::holds_alternative<union_find>(result)) {
@@ -59,6 +59,14 @@ class kernelization_criteria {
                                        "bridges", &active_n);
                 } else {
                     return std::get<std::pair<NodeID, EdgeID> >(result);
+                }
+            }*/
+
+            find_articulation_points find_aps(problem->graph);
+            if (find_aps.findAllArticulationPoints()) {
+                auto uf = find_aps.terminalsOnBothSides(problem->terminals);
+                if (uf.has_value()) {
+                    contractIfImproved(&uf.value(), problem, "aps", &active_n);
                 }
             }
 

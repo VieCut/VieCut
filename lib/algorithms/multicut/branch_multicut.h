@@ -569,7 +569,7 @@ class branch_multicut {
         std::vector<std::future<std::vector<NodeID> > > futures;
         // so futures don't lose their object :)
         std::vector<push_relabel> prs(problem->terminals.size());
-        if (problems.size() < 0) {
+        if (problems.size() == 0) {
             // in the beginning when we don't have many problems
             // already (but big graphs), we can start a thread per flow.
             // later on, we have a problem for each processor to work on,

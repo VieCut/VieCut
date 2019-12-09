@@ -119,6 +119,8 @@ class find_articulation_points {
             LOG1 << "found " << articulation_points.size() << " aps";
             LOG1 << "contract from " << G->n() << " to " << uf.n();
             return uf;
+        } else {
+            return std::nullopt;
         }
     }
 

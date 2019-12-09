@@ -123,7 +123,7 @@ class branch_multicut {
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
 
-                /*if (problem->graph->n() < 5000) {
+                /*if (problem->graph->n() < 1000) {
                     graphs++;
                     if (graphs == 1) {
                     LOG1 << "Writing...";
@@ -237,9 +237,6 @@ class branch_multicut {
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
         bestsol_mutex.lock();
         if (problem->upper_bound < global_upper_bound) {
-            LOGC(testing) << "Improvement after time="
-                          << total_time.elapsed() << " upper_bound="
-                          << problem->upper_bound;
 
             global_upper_bound = problem->upper_bound;
             for (NodeID n = 0; n < best_solution.size(); ++n) {
@@ -261,6 +258,12 @@ class branch_multicut {
                     }
                 }
             }
+
+            global_upper_bound = flowValue(false, best_solution);
+
+            LOGC(testing) << "Improvement after time="
+                          << total_time.elapsed() << " upper_bound="
+                          << global_upper_bound;
         }
         bestsol_mutex.unlock();
     }
@@ -566,7 +569,7 @@ class branch_multicut {
         std::vector<std::future<std::vector<NodeID> > > futures;
         // so futures don't lose their object :)
         std::vector<push_relabel> prs(problem->terminals.size());
-        if (problems.size() == 0) {
+        if (problems.size() < static_cast<size_t>(omp_get_num_threads())) {
             // in the beginning when we don't have many problems
             // already (but big graphs), we can start a thread per flow.
             // later on, we have a problem for each processor to work on,

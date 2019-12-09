@@ -56,6 +56,11 @@ class find_articulation_points {
                         break;
                     }
 
+                    if (parent[tpos] == n) {
+                        on_right = (lowest[tpos] >= discovered[n]);
+                        break;
+                    }
+
                     if (parent[tpos] == tpos) {
                         on_right = false;
                         break;
@@ -119,8 +124,6 @@ class find_articulation_points {
         }
 
         if (return_uf) {
-            LOG1 << "found " << articulation_points.size() << " aps";
-            LOG1 << "contract from " << G->n() << " to " << uf.n();
             return uf;
         } else {
             return std::nullopt;

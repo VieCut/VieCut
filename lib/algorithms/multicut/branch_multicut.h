@@ -122,19 +122,17 @@ class branch_multicut {
             if (!problems.empty(thread_id)) {
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
-                /* if (problem->graph->n() < 1000) {
-                     graphs++;
-                     if (graphs == 1) {
-                     LOG1 << "Writing...";
-                     std::string gid = "graph100";
-                     graph_io::writeGraphWeighted(problem->graph->to_graph_access(), gid);
-                     for (auto t : problem->terminals) {
-                         LOG1 << t.position;
-                     }
-                     LOG1 << "...done!";
-                     exit(1);
-                     }
-                 }*/
+                /*if (problem->graph->n() < 2000) {
+                    bestsol_mutex.lock();
+                    LOG1 << "Writing...";
+                    std::string gid = "graph100";
+                    graph_io::writeGraphWeighted(problem->graph->to_graph_access(), gid);
+                    for (auto t : problem->terminals) {
+                        LOG1 << t.position;
+                    }
+                    LOG1 << "...done!";
+                    exit(1);
+                }*/
 
                 solveProblem(problem, thread_id);
             } else {
@@ -754,6 +752,4 @@ class branch_multicut {
     kernelization_criteria kc;
     std::atomic<double> log_timer;
     std::mutex bestsol_mutex;
-
-    std::atomic<size_t> graphs = 0;
 };

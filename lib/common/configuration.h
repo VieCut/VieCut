@@ -60,7 +60,7 @@ class configuration {
     bool blacklist = true;
     bool set_node_in_cut = false;
     bool multibranch = true;
-    size_t neighborhood_degrees = 10;
+    size_t neighborhood_degrees = 50;
 
     // karger-stein:
     size_t optimal = 0;

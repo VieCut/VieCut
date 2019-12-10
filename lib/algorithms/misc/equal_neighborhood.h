@@ -22,7 +22,7 @@
 
 // from boost::hash
 template <class T>
-inline void hash_combine(std::size_t& seed, const T& v) { //NOLINT
+inline void hash_combine(std::size_t& seed, const T& v) { // NOLINT
     std::hash<T> hasher;
     seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
@@ -37,7 +37,8 @@ class equal_neighborhood {
     equal_neighborhood() { }
 
     void findEqualNeighborhoodsNonNeighbors(
-        std::shared_ptr<multicut_problem> problem, union_find* uf) {
+        std::shared_ptr<multicut_problem> problem,
+        const std::vector<bool>& active, union_find* uf) {
         std::shared_ptr<mutable_graph> G = problem->graph;
 
         std::unordered_set<NodeID> terminals;
@@ -46,6 +47,11 @@ class equal_neighborhood {
         }
 
         for (NodeID n : G->nodes()) {
+            NodeID in = G->containedVertices(n)[0];
+            if (!active[in]) {
+                continue;
+            }
+
             if (terminals.count(n) > 0) {
                 continue;
             }
@@ -102,7 +108,8 @@ class equal_neighborhood {
     }
 
     void findEqualNeighborhoodsNeighbors(
-        std::shared_ptr<multicut_problem> problem, union_find* uf) {
+        std::shared_ptr<multicut_problem> problem,
+        const std::vector<bool>& active, union_find* uf) {
         std::shared_ptr<mutable_graph> G = problem->graph;
         std::unordered_set<NodeID> terminals;
         for (const auto& t : problem->terminals) {
@@ -110,6 +117,11 @@ class equal_neighborhood {
         }
 
         for (NodeID n : G->nodes()) {
+            NodeID in = G->containedVertices(n)[0];
+            if (!active[in]) {
+                continue;
+            }
+
             if (terminals.count(n) > 0) {
                 continue;
             }
@@ -159,10 +171,11 @@ class equal_neighborhood {
     }
 
     union_find findEqualNeighborhoods(
-        std::shared_ptr<multicut_problem> problem) {
+        std::shared_ptr<multicut_problem> problem,
+        const std::vector<bool>& active) {
         union_find uf(problem->graph->n());
-        findEqualNeighborhoodsNonNeighbors(problem, &uf);
-        findEqualNeighborhoodsNeighbors(problem, &uf);
+        findEqualNeighborhoodsNonNeighbors(problem, active, &uf);
+        findEqualNeighborhoodsNeighbors(problem, active, &uf);
         return uf;
     }
 

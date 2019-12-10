@@ -29,7 +29,7 @@ auto pairs = [](const std::pair<NodeID, EdgeWeight> p1,
 
 class equal_neighborhood {
  public:
-    //explicit equal_neighborhood() {};
+    explicit equal_neighborhood() {};
 
     union_find findEqualNeighborhoods(
         std::shared_ptr<multicut_problem> problem) {
@@ -59,32 +59,35 @@ class equal_neighborhood {
                 }
 
                 if (results.count(seed) > 0) {
-                    NodeID o = results[seed];
-                    std::vector<std::pair<NodeID, EdgeWeight>> neighbors_n;
-                    std::vector<std::pair<NodeID, EdgeWeight>> neighbors_o;
+                    auto range = results.equal_range(seed);
+                    for (auto it = range.first; it != range.second; ++it) {
+                        NodeID o = it->second;
+                        std::vector<std::pair<NodeID, EdgeWeight>> ngbrs_n;
+                        std::vector<std::pair<NodeID, EdgeWeight>> ngbrs_o;
 
-                    for (EdgeID e : G->edges_of(n)) {
-                        auto [tgt, wgt] = G->getEdge(n, e);
-                        neighbors_n.emplace_back(tgt, wgt);
-                    }
-
-                    for (EdgeID e : G->edges_of(o)) {
-                        auto [tgt, wgt] = G->getEdge(o, e);
-                        neighbors_o.emplace_back(tgt, wgt);
-                    }
-
-                    std::sort(neighbors_n.begin(), neighbors_n.end(), pairs);
-                    std::sort(neighbors_o.begin(), neighbors_o.end(), pairs);
-                    bool difference_found = false;
-                    for (size_t i = 0; i < neighbors_n.size(); ++i) {
-                        if (neighbors_n[i] != neighbors_o[i]) {
-                            difference_found = true;
-                            break;
+                        for (EdgeID e : G->edges_of(n)) {
+                            auto [tgt, wgt] = G->getEdge(n, e);
+                            ngbrs_n.emplace_back(tgt, wgt);
                         }
-                    }
 
-                    if (!difference_found) {
-                        uf.Union(n, o);
+                        for (EdgeID e : G->edges_of(o)) {
+                            auto [tgt, wgt] = G->getEdge(o, e);
+                            ngbrs_o.emplace_back(tgt, wgt);
+                        }
+
+                        std::sort(ngbrs_n.begin(), ngbrs_n.end(), pairs);
+                        std::sort(ngbrs_o.begin(), ngbrs_o.end(), pairs);
+                        bool difference_found = false;
+                        for (size_t i = 0; i < ngbrs_n.size(); ++i) {
+                            if (ngbrs_n[i] != ngbrs_o[i]) {
+                                difference_found = true;
+                                break;
+                            }
+                        }
+
+                        if (!difference_found) {
+                            uf.Union(n, o);
+                        }
                     }
                 } else {
                     results.emplace(seed, n);
@@ -96,5 +99,5 @@ class equal_neighborhood {
     }
 
  private:
-    std::unordered_map<size_t, NodeID> results;
+    std::unordered_multimap<size_t, NodeID> results;
 };

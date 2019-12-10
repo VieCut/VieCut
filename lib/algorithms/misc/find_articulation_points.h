@@ -83,7 +83,7 @@ class find_articulation_points {
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID t = G->getEdgeTarget(n, e);
                     bool is_parent = (parent[t] == n)
-                        && (lowest[t] >= discovered[n]);
+                                     && (lowest[t] >= discovered[n]);
 
                     if (is_parent != invert_side) {
                         contracted[t] = true;

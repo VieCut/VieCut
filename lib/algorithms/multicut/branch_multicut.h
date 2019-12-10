@@ -122,19 +122,19 @@ class branch_multicut {
             if (!problems.empty(thread_id)) {
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
-               /* if (problem->graph->n() < 1000) {
-                    graphs++;
-                    if (graphs == 1) {
-                    LOG1 << "Writing...";
-                    std::string gid = "graph100";
-                    graph_io::writeGraphWeighted(problem->graph->to_graph_access(), gid);
-                    for (auto t : problem->terminals) {
-                        LOG1 << t.position;
-                    }
-                    LOG1 << "...done!";
-                    exit(1);
-                    }
-                }*/
+                /* if (problem->graph->n() < 1000) {
+                     graphs++;
+                     if (graphs == 1) {
+                     LOG1 << "Writing...";
+                     std::string gid = "graph100";
+                     graph_io::writeGraphWeighted(problem->graph->to_graph_access(), gid);
+                     for (auto t : problem->terminals) {
+                         LOG1 << t.position;
+                     }
+                     LOG1 << "...done!";
+                     exit(1);
+                     }
+                 }*/
 
                 solveProblem(problem, thread_id);
             } else {
@@ -215,7 +215,7 @@ class branch_multicut {
         bool branchOnCurrentInstance = problem->graph->m() > r;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
-                                    - problem->lower_bound;
+                                  - problem->lower_bound;
             c->n = problem->graph->n();
             c->m = problem->graph->m();
             c->differences_set = true;
@@ -223,18 +223,17 @@ class branch_multicut {
 
         if (branchOnCurrentInstance) {
 #endif
-            branchOnEdge(problem, thread_id);
+        branchOnEdge(problem, thread_id);
 #ifdef USE_GUROBI
-        } else {
-            solve_with_ilp(problem);
-        }
+    } else {
+        solve_with_ilp(problem);
+    }
 #endif
     }
 
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
         bestsol_mutex.lock();
         if (problem->upper_bound < global_upper_bound) {
-
             global_upper_bound = problem->upper_bound;
             for (NodeID n = 0; n < best_solution.size(); ++n) {
                 NodeID n_coarse = problem->mapped(n);
@@ -674,7 +673,7 @@ class branch_multicut {
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (problem->upper_bound < global_upper_bound) {
-            for (const auto & n : problem->graph->nodes()) {
+            for (const auto& n : problem->graph->nodes()) {
                 problem->graph->setPartitionIndex(n, result[n]);
             }
             updateBestSolution(problem);

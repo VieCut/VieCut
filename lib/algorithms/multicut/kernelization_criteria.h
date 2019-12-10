@@ -74,7 +74,7 @@ class kernelization_criteria {
             equal_neighborhood en;
             union_find uf_en = en.findEqualNeighborhoods(problem);
             contractIfImproved(&uf_en, problem, "equal_nbrhd", &active_n);
-            
+
             union_find uf_high = highDegreeContraction(problem, active_c);
             contractIfImproved(&uf_high, problem, "high_degree", &active_n);
 

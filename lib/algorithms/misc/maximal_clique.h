@@ -10,7 +10,10 @@
  *****************************************************************************/
 #pragma once
 
+#include <algorithm>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "algorithms/misc/equal_neighborhood.h"
 #include "algorithms/multicut/multicut_problem.h"
@@ -47,7 +50,6 @@ class maximal_clique {
     std::vector<std::pair<NodeID, EdgeWeight> > neighborhoodIntersection(
         std::vector<std::pair<NodeID, EdgeWeight> >* neighborhood,
         std::vector<std::pair<NodeID, EdgeWeight> >* current) {
-
         size_t n_id = 0;
         size_t p_id = 0;
 

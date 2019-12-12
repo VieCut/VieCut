@@ -377,7 +377,6 @@ class branch_multicut {
                 }
             }
 
-
             for (EdgeID e : new_p->graph->edges_of(vertex)) {
                 NodeID tgt = new_p->graph->getEdgeTarget(vertex, e);
                 if (tgt == ctr_terminal) {

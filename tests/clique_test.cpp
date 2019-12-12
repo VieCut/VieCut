@@ -9,7 +9,6 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-
 #include "algorithms/misc/maximal_clique.h"
 #include "algorithms/multicut/multicut_problem.h"
 #include "common/configuration.h"

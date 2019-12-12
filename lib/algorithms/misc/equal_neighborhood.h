@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include "algorithms/multicut/multicut_problem.h"
+#include "common/configuration.h"
 #include "data_structure/mutable_graph.h"
 #include "data_structure/union_find.h"
 

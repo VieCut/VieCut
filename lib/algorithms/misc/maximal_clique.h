@@ -12,41 +12,42 @@
 
 #include <memory>
 
+#include "algorithms/misc/equal_neighborhood.h"
 #include "algorithms/multicut/multicut_problem.h"
 #include "data_structure/mutable_graph.h"
 
-
-
 class maximal_clique {
  public:
-    maximal_clique() { };
+    maximal_clique() { }
 
-    void findCliques(std::shared_ptr<multicut_problem> problem) {
-        for (NodeID n : problem->graph->nodes()) {
+    std::vector<std::vector<NodeID> > findCliques(
+        std::shared_ptr<mutable_graph> graph) {
+        for (NodeID n : graph->nodes()) {
             std::vector<std::pair<NodeID, EdgeWeight> > P;
-            std::vector<NodeID> R = {n};
+            std::vector<NodeID> R = { n };
             std::vector<std::pair<NodeID, EdgeWeight> > X;
 
-            for (EdgeID e : problem->graph->edges_of(n)) {
-                P.emplace_back(problem->graph->getEdge(n, e));
+            for (EdgeID e : graph->edges_of(n)) {
+                NodeID t = graph->getEdgeTarget(n, e);
+                if (t > n) {
+                    P.emplace_back(graph->getEdge(n, e));
+                } else {
+                    X.emplace_back(graph->getEdge(n, e));
+                }
             }
 
             std::sort(P.begin(), P.end(), pairs);
+            std::sort(X.begin(), X.end(), pairs);
 
-            X = P;
-
-           // LOG1 << "starting" << P << R << X;
-
-
-
-            bronKerbosch(problem->graph, &P, &R, &X);
+            bronKerbosch(graph, &P, &R, &X);
         }
+        return cliques;
     }
 
     std::vector<std::pair<NodeID, EdgeWeight> > neighborhoodIntersection(
         std::vector<std::pair<NodeID, EdgeWeight> >* neighborhood,
         std::vector<std::pair<NodeID, EdgeWeight> >* current) {
-        
+
         size_t n_id = 0;
         size_t p_id = 0;
 
@@ -71,11 +72,12 @@ class maximal_clique {
         return intersect;
     }
 
-    void bronKerbosch(std::shared_ptr<mutable_graph> graph, 
+    void bronKerbosch(std::shared_ptr<mutable_graph> graph,
                       std::vector<std::pair<NodeID, EdgeWeight> >* P,
                       std::vector<NodeID>* R,
                       std::vector<std::pair<NodeID, EdgeWeight> >* X) {
         if (P->size() == 0 && X->size() == 0) {
+            cliques.emplace_back(*R);
             LOG1 << "clique" << *R;
         }
 
@@ -89,36 +91,31 @@ class maximal_clique {
             std::sort(neighborhood.begin(), neighborhood.end(), pairs);
             auto nextP = neighborhoodIntersection(&neighborhood, P);
             auto nextX = neighborhoodIntersection(&neighborhood, X);
-            
+
             std::vector<NodeID> nextR = *R;
             nextR.emplace_back(n);
-            
+
             bronKerbosch(graph, &nextP, &nextR, &nextX);
             // remove n from P
-            auto f = std::find_if(nextP.begin(), nextP.end(), 
-                [=](const auto el1) {
-                    return (el1.first == n);
-                });
+            auto f = std::find_if(P->begin(), P->end(),
+                                  [=](const auto el1) {
+                                      return (el1.first == n);
+                                  });
 
-            if (f != nextP.end()) {
-                nextP.erase(f);
+            if (f != P->end()) {
+                P->erase(f);
             }
 
-            *P = nextP;
+            auto f2 = std::lower_bound(X->begin(), X->end(), n,
+                                       [](const auto& p1, const auto& p2) {
+                                           return p1.first < p2;
+                                       });
 
-            auto f2 = std::lower_bound(nextX.begin(), nextX.end(), n,
-                [](const auto& p1, const auto& p2) {
-                    return p1.first < p2;
-                });
-
-            if (f2 == nextX.end() || (*f2).first != n) {
-                nextX.insert(f2, std::make_pair(n, 0));
+            if (f2 == X->end() || (*f2).first != n) {
+                X->insert(f2, std::make_pair(n, 0));
             }
-
-            *X = nextX;
         }
-
-
     }
 
+    std::vector<std::vector<NodeID> > cliques;
 };

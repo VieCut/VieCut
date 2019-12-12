@@ -23,6 +23,7 @@
 #include "algorithms/misc/equal_neighborhood.h"
 #include "algorithms/misc/find_articulation_points.h"
 #include "algorithms/misc/find_bridges.h"
+#include "algorithms/misc/maximal_clique.h"
 #include "algorithms/multicut/graph_contraction.h"
 #include "algorithms/multicut/multicut_problem.h"
 #include "data_structure/union_find.h"
@@ -51,6 +52,9 @@ class kernelization_criteria {
             num_vtcs = problem->graph->n();
             auto uf_lowdegree = lowDegreeContraction(problem);
             contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
+
+            maximal_clique mq;
+            mq.findCliques(problem);
 
             /*find_bridges fb(problem->graph);
             if (fb.findAllBridges()) {

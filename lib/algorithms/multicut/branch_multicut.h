@@ -209,8 +209,7 @@ class branch_multicut {
         nonBranchingContraction(problem);
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
-        NodeID r = random_functions::nextInt(0, 300000);
-        bool branchOnCurrentInstance = problem->graph->m() > r;
+        bool branchOnCurrentInstance = problem->graph->m() > 300000;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;
@@ -360,14 +359,14 @@ class branch_multicut {
             // first delete edges to terminals not picked
             while (!finished) {
                 finished = true;
+                vertex = new_p->graph->getCurrentPosition(coarse_vtx);
                 for (size_t e = 0; e <
                      new_p->graph->get_first_invalid_edge(vertex); ++e) {
                     auto [tgt, wgt] = new_p->graph->getEdge(vertex, e);
-
                     if (terminals.count(tgt) > 0 && tgt != ctr_terminal) {
                         new_p->graph->deleteEdge(vertex, e);
-                        auto p = new_p->graph->getCurrentPosition(coarse_vtx);
                         new_p->deleted_weight += wgt;
+                        auto p = new_p->graph->getCurrentPosition(coarse_vtx);
                         if (p != vertex) {
                             vertex = p;
                             finished = false;
@@ -377,6 +376,7 @@ class branch_multicut {
                     }
                 }
             }
+
 
             for (EdgeID e : new_p->graph->edges_of(vertex)) {
                 NodeID tgt = new_p->graph->getEdgeTarget(vertex, e);

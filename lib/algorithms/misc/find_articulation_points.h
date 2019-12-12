@@ -4,7 +4,7 @@
  * Source of VieCut.
  *
  ******************************************************************************
- * Copyright (C) 2018 Alexander Noe <alexander.noe@univie.ac.at>
+ * Copyright (C) 2019 Alexander Noe <alexander.noe@univie.ac.at>
  *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/

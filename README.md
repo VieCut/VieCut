@@ -10,6 +10,8 @@ This is the code repository to accompany our papers:
 
 *Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
 
+The instances used for the third paper can be found on the [website](http://viecut.taa.univie.ac.at) for VieCut.
+
 The papers can be freely accessed online in the arXiv.
 
 If you use this code in the context of an academic publication, we ask that you cite the applicable papers:

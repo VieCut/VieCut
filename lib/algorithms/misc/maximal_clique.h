@@ -42,23 +42,26 @@ class maximal_clique {
             std::sort(P.begin(), P.end(), pairs);
             std::sort(X.begin(), X.end(), pairs);
 
-            bronKerbosch(graph, &P, &R, &X, 0);
+            bronKerbosch(graph, &P, &R, &X, 0, 0);
         }
         return cliques;
     }
 
     std::vector<std::pair<NodeID, EdgeWeight> > neighborhoodIntersection(
         std::vector<std::pair<NodeID, EdgeWeight> >* neighborhood,
-        std::vector<std::pair<NodeID, EdgeWeight> >* current) {
+        std::vector<std::pair<NodeID, EdgeWeight> >* current,
+        size_t* external_weight) {
         size_t n_id = 0;
         size_t p_id = 0;
         std::vector<std::pair<NodeID, EdgeWeight> > intersect;
         while (n_id < neighborhood->size() && p_id < current->size()) {
             if ((*neighborhood)[n_id].first < (*current)[p_id].first) {
+                *external_weight += (*neighborhood)[n_id].second;
                 ++n_id;
                 continue;
             }
             if ((*neighborhood)[n_id].first > (*current)[p_id].first) {
+                *external_weight += (*current)[p_id].second;
                 ++p_id;
                 continue;
             }
@@ -72,17 +75,18 @@ class maximal_clique {
         return intersect;
     }
 
-    void bronKerbosch(std::shared_ptr<mutable_graph> graph,
+    bool bronKerbosch(std::shared_ptr<mutable_graph> graph,
                       std::vector<std::pair<NodeID, EdgeWeight> >* P,
                       std::vector<NodeID>* R,
                       std::vector<std::pair<NodeID, EdgeWeight> >* X,
-                      size_t depth) {
+                      size_t depth,
+                      size_t ex_weight) {
         if (P->size() == 0) {
             if (X->size() == 0) {
                 cliques.emplace_back(*R);
                 LOG1 << "new clique " << cliques.back();
             }
-            return;
+            return true;
         }
 
         NodeID n = (*P)[0].first;
@@ -91,9 +95,6 @@ class maximal_clique {
             neighborhood.emplace_back(graph->getEdge(n, e));
         }
         std::sort(neighborhood.begin(), neighborhood.end(), pairs);
-
-        std::vector<NodeID> non_neighbors;
-
         size_t n_id = 0;
         size_t p_id = 0;
         std::vector<std::pair<NodeID, EdgeWeight> > intersect;
@@ -123,13 +124,23 @@ class maximal_clique {
             }
             std::sort(neighborhood.begin(), neighborhood.end(), pairs);
 
-            auto nextP = neighborhoodIntersection(&neighborhood, P);
-            auto nextX = neighborhoodIntersection(&neighborhood, X);
+            size_t unused = 0;
+            auto nextP = neighborhoodIntersection(&neighborhood, P, &ex_weight);
+
+            if (ex_weight > 2 * (P->size() + R->size())) {
+                return false;
+            }
+
+            auto nextX = neighborhoodIntersection(&neighborhood, X, &unused);
 
             std::vector<NodeID> nextR = *R;
             nextR.emplace_back(n);
 
-            bronKerbosch(graph, &nextP, &nextR, &nextX, depth + 1);
+            if (!bronKerbosch(graph, &nextP, &nextR, 
+                              &nextX, depth + 1, ex_weight)) {
+                return false;
+            }
+
             // remove n from P
             auto f = std::find_if(P->begin(), P->end(),
                                   [=](const auto el1) {
@@ -149,6 +160,7 @@ class maximal_clique {
                 X->insert(f2, std::make_pair(n, 0));
             }
         }
+        return true;
     }
 
     std::vector<std::vector<NodeID> > cliques;

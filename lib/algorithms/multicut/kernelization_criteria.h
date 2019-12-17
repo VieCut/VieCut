@@ -53,8 +53,8 @@ class kernelization_criteria {
             auto uf_lowdegree = lowDegreeContraction(problem);
             contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
 
-            // maximal_clique mq;
-            // mq.findCliques(problem->graph);
+            maximal_clique mq;
+            mq.findCliques(problem->graph);
 
             find_articulation_points find_aps(problem->graph);
             if (find_aps.findAllArticulationPoints()) {

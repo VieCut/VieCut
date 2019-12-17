@@ -219,12 +219,17 @@ class maximal_clique {
 
         for (const auto& c : cliques) {
             std::unordered_set<NodeID> clique_set;
+            bool finished = false;
             for (const NodeID& n : c) {
                 clique_set.emplace(n);
                 if (terms.count(n) > 0) {
-                    continue;
+                    finished = true;
+                    break;
                 }
             }
+
+            if (finished)
+                continue;
 
             EdgeWeight max_edgeweight = 0;
             EdgeWeight min_internal_weight = UNDEFINED_EDGE;
@@ -239,16 +244,17 @@ class maximal_clique {
                         max_edgeweight = std::max(max_edgeweight, wgt);
                     }
                 }
-
                 EdgeWeight node_internal =
                     problem->graph->getWeightedNodeDegree(n) - node_external;
-
                 if (node_external > node_internal) {
-                    continue;
+                    finished = true;
+                    break;
                 }
-
                 external += node_external;
             }
+
+            if (finished)
+                continue;
 
             EdgeWeight external_limit = std::max(
                 min_internal_weight, 2 * min_internal_weight - max_edgeweight);

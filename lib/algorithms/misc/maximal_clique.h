@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <memory>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -83,18 +84,18 @@ class maximal_clique {
             }
 
             if (n < p && n < x) {
-                while ((*R)[r_id] < n) {
+                while (r_id < R->size() && (*R)[r_id] < n) {
                     ++r_id;
                 }
 
-                if ((*R)[r_id] != n) {
+                if (r_id >= R->size() || (*R)[r_id] != n) {
                     external_weight += (*N)[n_id - 1].second;
                 }
                 continue;
             }
 
             if (n == x) {
-                auto new_w = (*N)[n_id].second + (*X)[x_id].second;
+                auto new_w = (*N)[n_id - 1].second + (*X)[x_id].second;
                 intersect_x.emplace_back(n, new_w);
                 ++x_id;
             }
@@ -104,7 +105,7 @@ class maximal_clique {
             }
 
             if (n == p) {
-                auto new_w = (*N)[n_id].second + (*P)[p_id].second;
+                auto new_w = (*N)[n_id - 1].second + (*P)[p_id].second;
                 intersect_p.emplace_back(n, new_w);
                 ++p_id;
             }
@@ -123,14 +124,14 @@ class maximal_clique {
                       std::vector<std::pair<NodeID, EdgeWeight> >* X,
                       size_t depth,
                       size_t ex_weight) {
-        if (ex_weight > (P->size() + R->size() - 1)) {
+        if (ex_weight > 2 * (P->size() + R->size() - 1)) {
             return false;
         }
 
         if (P->size() == 0) {
             if (X->size() == 0) {
                 cliques.emplace_back(*R);
-                LOG1 << "new clique " << cliques.back()
+                LOG0 << "new clique " << cliques.back()
                      << " with ex-weight " << ex_weight;
             }
             return true;
@@ -206,6 +207,63 @@ class maximal_clique {
             }
         }
         return true;
+    }
+
+    union_find contractSemiIsolatedCliques(
+        std::shared_ptr<multicut_problem> problem) {
+        std::unordered_set<NodeID> terms;
+        union_find uf(problem->graph->n());
+        for (const auto& t : problem->terminals) {
+            terms.emplace(t.position);
+        }
+
+        for (const auto& c : cliques) {
+            std::unordered_set<NodeID> clique_set;
+            for (const NodeID& n : c) {
+                clique_set.emplace(n);
+                if (terms.count(n) > 0) {
+                    continue;
+                }
+            }
+
+            EdgeWeight max_edgeweight = 0;
+            EdgeWeight min_internal_weight = UNDEFINED_EDGE;
+
+            EdgeWeight external = 0;
+            for (const NodeID& n : c) {
+                EdgeWeight node_external = 0;
+                for (const EdgeID& e : problem->graph->edges_of(n)) {
+                    auto [tgt, wgt] = problem->graph->getEdge(n, e);
+                    if (clique_set.count(tgt) == 0) {
+                        node_external += wgt;
+                        max_edgeweight = std::max(max_edgeweight, wgt);
+                    }
+                }
+
+                EdgeWeight node_internal =
+                    problem->graph->getWeightedNodeDegree(n) - node_external;
+
+                if (node_external > node_internal) {
+                    continue;
+                }
+
+                external += node_external;
+            }
+
+            EdgeWeight external_limit = std::max(
+                min_internal_weight, 2 * min_internal_weight - max_edgeweight);
+
+            if (external <= external_limit) {
+                for (const NodeID& n : c) {
+                    uf.Union(n, c[0]);
+                }
+            } else {
+                LOG1 << "Not cliquesing because "
+                     << external << " > " << external_limit;
+            }
+        }
+        LOG1 << "contracting from " << problem->graph->n() << " to " << uf.n();
+        return uf;
     }
 
     std::vector<std::vector<NodeID> > cliques;

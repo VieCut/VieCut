@@ -53,9 +53,6 @@ class kernelization_criteria {
             auto uf_lowdegree = lowDegreeContraction(problem);
             contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
 
-            maximal_clique mq;
-            mq.findCliques(problem->graph);
-
             find_articulation_points find_aps(problem->graph);
             if (find_aps.findAllArticulationPoints()) {
                 auto uf = find_aps.terminalsOnBothSides(problem->terminals);
@@ -75,6 +72,11 @@ class kernelization_criteria {
             contractIfImproved(&uf_tri, problem, "triangle", &active_n);
 
             if (first_run) {
+                maximal_clique mq;
+                mq.findCliques(problem->graph);
+                auto uf_mq = mq.contractSemiIsolatedCliques(problem);
+                contractIfImproved(&uf_mq, problem, "clique", &active_n);
+
                 std::vector<EdgeWeight> flow_values;
                 EdgeWeight sum = 0;
                 for (size_t i = 0; i < problem->terminals.size(); ++i) {

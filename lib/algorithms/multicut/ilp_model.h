@@ -31,6 +31,8 @@ class ilp_model {
         size_t terminals_current) {
         try {
             timer ilp_timer;
+            LOG1 << "starting ilp on graph with " << graph->n() << " vertices "
+                 << "and " << graph->m() << " edges!";
             GRBModel model = GRBModel(ilp_model::env);
             NodeID numNodes = graph->number_of_nodes();
             NodeID numEdges = graph->number_of_edges() / 2;

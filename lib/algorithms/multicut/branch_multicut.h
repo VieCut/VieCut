@@ -209,7 +209,7 @@ class branch_multicut {
         nonBranchingContraction(problem);
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
-        bool branchOnCurrentInstance = problem->graph->m() > 300000;
+        bool branchOnCurrentInstance = problem->graph->n() > 3000;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;

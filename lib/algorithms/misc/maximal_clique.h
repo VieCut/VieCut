@@ -46,18 +46,20 @@ class maximal_clique {
             std::sort(P.begin(), P.end(), pairs);
             std::sort(X.begin(), X.end(), pairs);
 
-            bronKerbosch(graph, &P, &R, &X, 0, external);
+            bronKerbosch(graph, &P, &R, &X, 0, external, UNDEFINED_EDGE);
         }
         return cliques;
     }
 
     std::tuple<std::vector<std::pair<NodeID, EdgeWeight> >,
-               std::vector<std::pair<NodeID, EdgeWeight> >, size_t>
+               std::vector<std::pair<NodeID, EdgeWeight> >, size_t, EdgeWeight>
     neighborhoodIntersection(std::vector<std::pair<NodeID, EdgeWeight> >* N,
                              std::vector<std::pair<NodeID, EdgeWeight> >* P,
                              std::vector<NodeID>* R,
                              std::vector<std::pair<NodeID, EdgeWeight> >* X,
-                             size_t external_weight) {
+                             size_t external_weight,
+                             EdgeWeight lightest) {
+        EdgeWeight new_lightest = lightest;
         size_t n_id = 0;
         size_t p_id = 0;
         size_t r_id = 0;
@@ -107,6 +109,7 @@ class maximal_clique {
             if (n == p) {
                 auto new_w = (*N)[n_id - 1].second + (*P)[p_id].second;
                 intersect_p.emplace_back(n, new_w);
+                new_lightest = std::min((*N)[n_id - 1].second, new_lightest);
                 ++p_id;
             }
 
@@ -115,7 +118,8 @@ class maximal_clique {
             }
         }
 
-        return std::make_tuple(intersect_p, intersect_x, external_weight);
+        return std::make_tuple(intersect_p, intersect_x,
+                               external_weight, new_lightest);
     }
 
     bool bronKerbosch(std::shared_ptr<mutable_graph> graph,
@@ -123,8 +127,9 @@ class maximal_clique {
                       std::vector<NodeID>* R,
                       std::vector<std::pair<NodeID, EdgeWeight> >* X,
                       size_t depth,
-                      size_t ex_weight) {
-        if (ex_weight > 2 * (P->size() + R->size() - 1)) {
+                      EdgeWeight ex_weight,
+                      EdgeWeight lightest) {
+        if (ex_weight > (lightest * 2 * (P->size() + R->size() - 1))) {
             return false;
         }
 
@@ -172,10 +177,13 @@ class maximal_clique {
             }
             std::sort(neighborhood.begin(), neighborhood.end(), pairs);
 
-            auto [nextP, nextX, current_ex_weight] =
-                neighborhoodIntersection(&neighborhood, P, R, X, ex_weight);
+            auto [nextP, nextX, current_ex_weight, next_lightest] =
+                neighborhoodIntersection(&neighborhood, P, R, X,
+                    ex_weight, lightest);
+            lightest = next_lightest;
 
-            if (current_ex_weight >= 2 * (P->size() + R->size() - 1)) {
+            if (current_ex_weight >=
+                2 * lightest * (P->size() + R->size() - 1)) {
                 return false;
             }
 
@@ -183,7 +191,7 @@ class maximal_clique {
             nextR.emplace_back(n);
 
             if (!bronKerbosch(graph, &nextP, &nextR,
-                              &nextX, depth + 1, current_ex_weight)) {
+                              &nextX, depth + 1, current_ex_weight, lightest)) {
                 return false;
             }
 
@@ -231,24 +239,25 @@ class maximal_clique {
             if (finished)
                 continue;
 
-            EdgeWeight max_edgeweight = 0;
-            EdgeWeight min_internal_weight = UNDEFINED_EDGE;
+            EdgeWeight min_edgeweight = UNDEFINED_EDGE;
 
             EdgeWeight external = 0;
             for (const NodeID& n : c) {
                 EdgeWeight node_external = 0;
                 for (const EdgeID& e : problem->graph->edges_of(n)) {
                     auto [tgt, wgt] = problem->graph->getEdge(n, e);
-                    if (clique_set.count(tgt) == 0) {
+                    if (clique_set.count(tgt) > 0) {
+                        min_edgeweight = std::min(min_edgeweight, wgt);
+                    } else {
                         node_external += wgt;
-                        max_edgeweight = std::max(max_edgeweight, wgt);
                     }
                 }
                 EdgeWeight node_internal =
                     problem->graph->getWeightedNodeDegree(n) - node_external;
-                if (node_external > node_internal) {
-                    finished = true;
-                    break;
+
+                if (node_internal < c.size() - 1) {
+                    LOG1 << "THIS IS NOT A CLIQUE!";
+                    exit(1);
                 }
                 external += node_external;
             }
@@ -256,19 +265,25 @@ class maximal_clique {
             if (finished)
                 continue;
 
-            EdgeWeight external_limit = std::max(
-                min_internal_weight, 2 * min_internal_weight - max_edgeweight);
+            EdgeWeight external_limit = 2 * min_edgeweight * (c.size() - 1);
 
-            if (external <= external_limit) {
+            if (external <= external_limit && c.size() > 1) {
+                LOG1 << "cluster";
                 for (const NodeID& n : c) {
+                    std::cout << n << ": ";
+                    for (EdgeID e : problem->graph->edges_of(n)) {
+                        auto [t, w] = problem->graph->getEdge(n, e);
+                        std::cout << "(" << t << "," << w << ") ";
+                    }
+
+                    std::cout << std::endl;
                     uf.Union(n, c[0]);
                 }
-            } else {
-                LOG1 << "Not cliquesing because "
-                     << external << " > " << external_limit;
             }
         }
-        LOG1 << "contracting from " << problem->graph->n() << " to " << uf.n();
+        if (problem->graph->n() > uf.n())
+            LOG1 << "contracting from " << problem->graph->n()
+                 << " to " << uf.n();
         return uf;
     }
 

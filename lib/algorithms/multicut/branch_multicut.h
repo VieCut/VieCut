@@ -16,7 +16,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
-#include <future>
 #include <iterator>
 #include <limits>
 #include <memory>
@@ -28,12 +27,12 @@
 #include <utility>
 #include <vector>
 
-#include "algorithms/flow/push_relabel.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/misc/graph_algorithms.h"
 #include "algorithms/multicut/edge_selection.h"
 #include "algorithms/multicut/graph_contraction.h"
 #include "algorithms/multicut/kernelization_criteria.h"
+#include "algorithms/multicut/maximum_flow.h"
 #include "algorithms/multicut/multicut_problem.h"
 #include "algorithms/multicut/problem_queues/per_thread_problem_queue.h"
 #include "algorithms/multicut/problem_queues/single_problem_queue.h"
@@ -42,7 +41,6 @@
 #include "data_structure/union_find.h"
 #include "gperftools/malloc_extension.h"
 #include "io/graph_io.h"
-#include "tlx/math/div_ceil.hpp"
 #include "tools/timer.h"
 #include "tools/vector.h"
 
@@ -74,6 +72,7 @@ class branch_multicut {
           num_threads(configuration::getConfig()->threads),
           branch_invalid(configuration::getConfig()->threads, 0),
           kc(original_terminals),
+          mf(original_terminals),
           log_timer(0) { }
 
     ~branch_multicut() { }
@@ -81,7 +80,7 @@ class branch_multicut {
     size_t find_multiterminal_cut(std::shared_ptr<multicut_problem> problem) {
         best_solution.resize(original_graph.number_of_nodes());
         auto cfg = configuration::getConfig();
-        maximumIsolatingFlow(problem, 0);
+        mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
         problems.addProblem(problem, 0);
         updateBestSolution(problem);
 
@@ -387,12 +386,12 @@ class branch_multicut {
 
             graph_contraction::deleteTermEdges(new_p, original_terminals);
             if (new_p->terminals.size() == 2) {
-                maximumFlow(new_p);
+                mf.maximumFlow(new_p);
                 if (new_p->upper_bound < global_upper_bound) {
                     updateBestSolution(new_p);
                 }
             } else if (new_p->terminals.size() > 2) {
-                maximumIsolatingFlow(new_p, thread_id);
+                mf.maximumIsolatingFlow(new_p, thread_id, /* parallel */ true);
                 graph_contraction::deleteTermEdges(new_p, original_terminals);
                 if (new_p->graph->m() == 0) {
                     new_p->upper_bound = new_p->deleted_weight;
@@ -515,145 +514,6 @@ class branch_multicut {
         }
     }
 
-    void maximumFlow(std::shared_ptr<multicut_problem> problem) {
-        push_relabel pr;
-        auto G = problem->graph;
-
-        std::vector<NodeID> current_terminals;
-        for (const auto& t : problem->terminals) {
-            current_terminals.emplace_back(t.position);
-        }
-
-        auto [flow, isolating_block] =
-            pr.solve_max_flow_min_cut(G, current_terminals, 0, true);
-
-        NodeID term0 = problem->terminals[0].original_id;
-        NodeID term1 = problem->terminals[1].original_id;
-
-        for (NodeID n : problem->graph->nodes()) {
-            G->setPartitionIndex(n, term1);
-        }
-
-        for (size_t i = 0; i < original_terminals.size(); ++i) {
-            NodeID c =
-                G->getCurrentPosition(problem->mapped(original_terminals[i]));
-            G->setPartitionIndex(c, i);
-        }
-
-        for (NodeID n : isolating_block) {
-            G->setPartitionIndex(n, term0);
-        }
-
-        problem->upper_bound = flow + problem->deleted_weight;
-    }
-
-    void maximumIsolatingFlow(std::shared_ptr<multicut_problem> problem,
-                              size_t thread_id) {
-        graph_contraction::setTerminals(problem, original_terminals);
-        std::vector<std::vector<NodeID> > maxVolIsoBlock;
-        std::vector<NodeID> curr_terminals;
-        std::vector<NodeID> orig_index;
-        for (const auto& t : problem->terminals) {
-            curr_terminals.emplace_back(t.position);
-            orig_index.emplace_back(t.original_id);
-        }
-
-        bool parallel_flows = false;
-        std::vector<std::future<std::vector<NodeID> > > futures;
-        // so futures don't lose their object :)
-        std::vector<push_relabel> prs(problem->terminals.size());
-        if (problems.size() == 0) {
-            // in the beginning when we don't have many problems
-            // already (but big graphs), we can start a thread per flow.
-            // later on, we have a problem for each processor to work on,
-            // so we run sequential flows
-            parallel_flows = true;
-        }
-
-        for (NodeID i = 0; i < problem->terminals.size(); ++i) {
-            if (problem->terminals[i].invalid_flow) {
-                if (parallel_flows) {
-                    maxVolIsoBlock.emplace_back();
-                    cpu_set_t all_cores;
-                    CPU_ZERO(&all_cores);
-                    for (size_t i = 0; i < num_threads; ++i) {
-                        CPU_SET(i, &all_cores);
-                    }
-
-                    sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
-                    futures.emplace_back(
-                        std::async(&push_relabel::callable_max_flow,
-                                   &prs[i],
-                                   problem->graph, curr_terminals, i, true));
-                } else {
-                    push_relabel pr;
-                    maxVolIsoBlock.emplace_back(
-                        pr.solve_max_flow_min_cut(problem->graph,
-                                                  curr_terminals,
-                                                  i,
-                                                  true).second);
-                }
-
-                problem->terminals[i].invalid_flow = false;
-            } else {
-                maxVolIsoBlock.emplace_back();
-                maxVolIsoBlock.back().emplace_back(
-                    problem->terminals[i].position);
-            }
-        }
-
-        if (parallel_flows) {
-            for (size_t i = 0; i < futures.size(); ++i) {
-                auto& t = futures[i];
-                maxVolIsoBlock[i] = t.get();
-            }
-
-            cpu_set_t my_id;
-            CPU_ZERO(&my_id);
-            CPU_SET(thread_id, &my_id);
-            sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
-        }
-
-        graph_contraction::contractIsolatingBlocks(problem, maxVolIsoBlock);
-
-        EdgeWeight maximum = 0;
-        FlowType sum = 0;
-        size_t max_index = 0;
-
-        for (size_t i = 0; i < problem->terminals.size(); ++i) {
-            NodeID orig_id = problem->terminals[i].original_id;
-            NodeID term_id = problem->mapped(original_terminals[orig_id]);
-            NodeID pos = problem->graph->getCurrentPosition(term_id);
-            EdgeWeight deg = problem->graph->getWeightedNodeDegree(pos);
-
-            if (deg > maximum) {
-                max_index = orig_id;
-                maximum = deg;
-            }
-            sum += deg;
-        }
-
-        for (NodeID n : problem->graph->nodes()) {
-            problem->graph->setPartitionIndex(n, max_index);
-        }
-
-        for (size_t l = 0; l < original_terminals.size(); ++l) {
-            NodeID l_coarse = problem->mapped(original_terminals[l]);
-            NodeID v = problem->graph->getCurrentPosition(l_coarse);
-            problem->graph->setPartitionIndex(v, l);
-        }
-
-        problem->upper_bound = problem->deleted_weight + sum - maximum;
-        problem->lower_bound = problem->deleted_weight + tlx::div_ceil(sum, 2);
-
-        // findSubproblems(problem);
-        if (debug) {
-            graph_algorithms::checkGraphValidity(problem->graph);
-        }
-
-        graph_contraction::setTerminals(problem, original_terminals);
-    }
-
 #ifdef USE_GUROBI
     void solve_with_ilp(std::shared_ptr<multicut_problem> problem) {
         std::vector<NodeID> presets(problem->graph->n(),
@@ -749,6 +609,7 @@ class branch_multicut {
     bool is_finished;
 
     kernelization_criteria kc;
+    maximum_flow mf;
     std::atomic<double> log_timer;
     std::mutex bestsol_mutex;
 };

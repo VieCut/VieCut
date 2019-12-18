@@ -1,0 +1,171 @@
+/******************************************************************************
+ * maximum_flow.h
+ *
+ * Source of VieCut
+ *
+ ******************************************************************************
+ * Copyright (C) 2019 Alexander Noe <alexander.noe@univie.ac.at>
+ *
+ * Published under the MIT license in the LICENSE file.
+ *****************************************************************************/
+#pragma once
+
+#include <future>
+#include <memory>
+#include <vector>
+
+#include "algorithms/flow/push_relabel.h"
+#include "algorithms/multicut/multicut_problem.h"
+#include "algorithms/multicut/graph_contraction.h"
+#include "common/configuration.h"
+#include "common/definitions.h"
+#include "tlx/math/div_ceil.hpp"
+
+class maximum_flow {
+ public:
+    explicit maximum_flow(std::vector<NodeID> o)
+        : original_terminals(o),
+          num_threads(configuration::getConfig()->threads) { }
+
+    void maximumFlow(std::shared_ptr<multicut_problem> problem) {
+        push_relabel pr;
+        auto G = problem->graph;
+
+        std::vector<NodeID> current_terminals;
+        for (const auto& t : problem->terminals) {
+            current_terminals.emplace_back(t.position);
+        }
+
+        auto [flow, isolating_block] =
+            pr.solve_max_flow_min_cut(G, current_terminals, 0, true);
+
+        NodeID term0 = problem->terminals[0].original_id;
+        NodeID term1 = problem->terminals[1].original_id;
+
+        for (NodeID n : problem->graph->nodes()) {
+            G->setPartitionIndex(n, term1);
+        }
+
+        for (size_t i = 0; i < original_terminals.size(); ++i) {
+            NodeID c =
+                G->getCurrentPosition(problem->mapped(original_terminals[i]));
+            G->setPartitionIndex(c, i);
+        }
+
+        for (NodeID n : isolating_block) {
+            G->setPartitionIndex(n, term0);
+        }
+
+        problem->upper_bound = flow + problem->deleted_weight;
+    }
+
+
+
+    void maximumIsolatingFlow(std::shared_ptr<multicut_problem> problem,
+                              size_t thread_id, bool parallel) {
+        graph_contraction::setTerminals(problem, original_terminals);
+        std::vector<std::vector<NodeID> > maxVolIsoBlock;
+        std::vector<NodeID> curr_terminals;
+        std::vector<NodeID> orig_index;
+        for (const auto& t : problem->terminals) {
+            curr_terminals.emplace_back(t.position);
+            orig_index.emplace_back(t.original_id);
+        }
+
+        bool parallel_flows = false;
+        std::vector<std::future<std::vector<NodeID> > > futures;
+        // so futures don't lose their object :)
+        std::vector<push_relabel> prs(problem->terminals.size());
+        if (parallel) {
+            // in the beginning when we don't have many problems
+            // already (but big graphs), we can start a thread per flow.
+            // later on, we have a problem for each processor to work on,
+            // so we run sequential flows
+            parallel_flows = true;
+        }
+
+        for (NodeID i = 0; i < problem->terminals.size(); ++i) {
+            if (problem->terminals[i].invalid_flow) {
+                if (parallel_flows) {
+                    maxVolIsoBlock.emplace_back();
+                    cpu_set_t all_cores;
+                    CPU_ZERO(&all_cores);
+                    for (size_t i = 0; i < num_threads; ++i) {
+                        CPU_SET(i, &all_cores);
+                    }
+
+                    sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
+                    futures.emplace_back(
+                        std::async(&push_relabel::callable_max_flow,
+                                   &prs[i],
+                                   problem->graph, curr_terminals, i, true));
+                } else {
+                    push_relabel pr;
+                    maxVolIsoBlock.emplace_back(
+                        pr.solve_max_flow_min_cut(problem->graph,
+                                                  curr_terminals,
+                                                  i,
+                                                  true).second);
+                }
+
+                problem->terminals[i].invalid_flow = false;
+            } else {
+                maxVolIsoBlock.emplace_back();
+                maxVolIsoBlock.back().emplace_back(
+                    problem->terminals[i].position);
+            }
+        }
+
+        if (parallel_flows) {
+            for (size_t i = 0; i < futures.size(); ++i) {
+                auto& t = futures[i];
+                maxVolIsoBlock[i] = t.get();
+            }
+
+            cpu_set_t my_id;
+            CPU_ZERO(&my_id);
+            CPU_SET(thread_id, &my_id);
+            sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
+        }
+
+        graph_contraction::contractIsolatingBlocks(problem, maxVolIsoBlock);
+
+        EdgeWeight maximum = 0;
+        FlowType sum = 0;
+        size_t max_index = 0;
+
+        for (size_t i = 0; i < problem->terminals.size(); ++i) {
+            NodeID orig_id = problem->terminals[i].original_id;
+            NodeID term_id = problem->mapped(original_terminals[orig_id]);
+            NodeID pos = problem->graph->getCurrentPosition(term_id);
+            EdgeWeight deg = problem->graph->getWeightedNodeDegree(pos);
+
+            if (deg > maximum) {
+                max_index = orig_id;
+                maximum = deg;
+            }
+            sum += deg;
+        }
+
+        for (NodeID n : problem->graph->nodes()) {
+            problem->graph->setPartitionIndex(n, max_index);
+        }
+
+        for (size_t l = 0; l < original_terminals.size(); ++l) {
+            NodeID l_coarse = problem->mapped(original_terminals[l]);
+            NodeID v = problem->graph->getCurrentPosition(l_coarse);
+            problem->graph->setPartitionIndex(v, l);
+        }
+
+        problem->upper_bound = problem->deleted_weight + sum - maximum;
+        problem->lower_bound = problem->deleted_weight + tlx::div_ceil(sum, 2);
+
+        // findSubproblems(problem);
+
+        graph_contraction::setTerminals(problem, original_terminals);
+    }
+
+
+    std::vector<NodeID> original_terminals;
+    size_t num_threads;
+};

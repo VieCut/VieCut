@@ -179,7 +179,7 @@ class maximal_clique {
 
             auto [nextP, nextX, current_ex_weight, next_lightest] =
                 neighborhoodIntersection(&neighborhood, P, R, X,
-                    ex_weight, lightest);
+                                         ex_weight, lightest);
             lightest = next_lightest;
 
             if (current_ex_weight >=

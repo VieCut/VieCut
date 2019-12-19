@@ -12,11 +12,12 @@
 
 #include <future>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include "algorithms/flow/push_relabel.h"
-#include "algorithms/multicut/multicut_problem.h"
 #include "algorithms/multicut/graph_contraction.h"
+#include "algorithms/multicut/multicut_problem.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "tlx/math/div_ceil.hpp"
@@ -27,7 +28,7 @@ class maximum_flow {
         : original_terminals(o),
           num_threads(configuration::getConfig()->threads) { }
 
-    void maximumFlow(std::shared_ptr<multicut_problem> problem) {
+    void maximumSTFlow(std::shared_ptr<multicut_problem> problem) {
         push_relabel pr;
         auto G = problem->graph;
 
@@ -59,7 +60,42 @@ class maximum_flow {
         problem->upper_bound = flow + problem->deleted_weight;
     }
 
+    union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem) {
+        union_find uf(problem->graph->n());
+        std::unordered_set<NodeID> previous;
+        for (size_t i = 0; i < 5; ++i) {
+            NodeID r = random_functions::nextInt(0, problem->graph->n() - 1);
+            EdgeWeight max = problem->graph->getMaxDegree();
+            size_t num_tries = 0;
+            while ((max >= (problem->graph->getWeightedNodeDegree(r)
+                            + num_tries++))
+                   || uf.Find(r) != r || previous.count(r) > 0) {
+                r = random_functions::nextInt(0, problem->graph->n() - 1);
+            }
 
+            previous.insert(r);
+            std::vector<NodeID> terms;
+            for (const auto& t : problem->terminals) {
+                terms.emplace_back(t.position);
+            }
+            terms.emplace_back(r);
+            push_relabel pr;
+            size_t num_t = terms.size() - 1;
+            auto [flow, sourceSet] =
+                pr.solve_max_flow_min_cut(problem->graph, terms, num_t, true);
+
+            for (const auto& s : sourceSet) {
+                uf.Union(s, r);
+            }
+
+            if (sourceSet.size() > 1)
+                LOG1 << sourceSet.size() << " from vertex "
+                     << r << " with degree "
+                     << problem->graph->getWeightedNodeDegree(r) << " (max: "
+                     << problem->graph->getMaxDegree() << ")";
+        }
+        return uf;
+    }
 
     void maximumIsolatingFlow(std::shared_ptr<multicut_problem> problem,
                               size_t thread_id, bool parallel) {
@@ -164,7 +200,6 @@ class maximum_flow {
 
         graph_contraction::setTerminals(problem, original_terminals);
     }
-
 
     std::vector<NodeID> original_terminals;
     size_t num_threads;

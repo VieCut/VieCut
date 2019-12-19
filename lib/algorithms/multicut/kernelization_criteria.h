@@ -25,6 +25,7 @@
 #include "algorithms/misc/find_bridges.h"
 #include "algorithms/misc/maximal_clique.h"
 #include "algorithms/multicut/graph_contraction.h"
+#include "algorithms/multicut/maximum_flow.h"
 #include "algorithms/multicut/multicut_problem.h"
 #include "data_structure/union_find.h"
 #include "tlx/logger.hpp"
@@ -35,7 +36,8 @@ class kernelization_criteria {
     static constexpr bool debug = false;
 
     explicit kernelization_criteria(std::vector<NodeID> original_terminals)
-        : original_terminals(original_terminals) { }
+        : original_terminals(original_terminals),
+          mf(original_terminals) { }
 
     ~kernelization_criteria() { }
 
@@ -61,6 +63,9 @@ class kernelization_criteria {
                 }
             }
 
+            union_find uf_mf = mf.nonTerminalFlow(problem);
+            contractIfImproved(&uf_mf, problem, "flow", &active_n);
+
             equal_neighborhood en;
             union_find uf_en = en.findEqualNeighborhoods(problem, active_c);
             contractIfImproved(&uf_en, problem, "equal_nbrhd", &active_n);
@@ -72,10 +77,10 @@ class kernelization_criteria {
             contractIfImproved(&uf_tri, problem, "triangle", &active_n);
 
             if (first_run) {
-                maximal_clique mq;
-                mq.findCliques(problem->graph);
-                auto uf_mq = mq.contractSemiIsolatedCliques(problem);
-                contractIfImproved(&uf_mq, problem, "clique", &active_n);
+                // maximal_clique mq;
+                // mq.findCliques(problem->graph);
+                // auto uf_mq = mq.contractSemiIsolatedCliques(problem);
+                // contractIfImproved(&uf_mq, problem, "clique", &active_n);
 
                 std::vector<EdgeWeight> flow_values;
                 EdgeWeight sum = 0;
@@ -384,5 +389,6 @@ class kernelization_criteria {
     }
 
     std::vector<NodeID> original_terminals;
+    maximum_flow mf;
     constexpr static bool logs = false;
 };

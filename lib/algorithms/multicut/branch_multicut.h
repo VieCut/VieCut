@@ -386,7 +386,7 @@ class branch_multicut {
 
             graph_contraction::deleteTermEdges(new_p, original_terminals);
             if (new_p->terminals.size() == 2) {
-                mf.maximumFlow(new_p);
+                mf.maximumSTFlow(new_p);
                 if (new_p->upper_bound < global_upper_bound) {
                     updateBestSolution(new_p);
                 }

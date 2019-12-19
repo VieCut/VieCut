@@ -88,8 +88,8 @@ class maximum_flow {
             terms.emplace_back(r);
             push_relabel pr;
             size_t num_t = terms.size() - 1;
-            auto [flow, sourceSet] =
-                pr.solve_max_flow_min_cut(problem->graph, terms, num_t, true);
+            auto sourceSet = pr.solve_max_flow_min_cut(
+                problem->graph, terms, num_t, true).second;
 
             for (const auto& s : sourceSet) {
                 uf.Union(s, r);

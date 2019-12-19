@@ -25,12 +25,12 @@ class ilp_model {
     inline static GRBEnv env;
 
     static std::pair<std::vector<NodeID>, EdgeWeight> computeIlp(
-        std::shared_ptr<mutable_graph> graph,
+        std::shared_ptr<multicut_problem> problem,
         const std::vector<NodeID>& presets,
         size_t num_terminals,
-        size_t terminals_current,
-        EdgeWeight deleted) {
+        bool parallel) {
         try {
+            std::shared_ptr<mutable_graph> graph = problem->graph;
             timer ilp_timer;
             LOG1 << "starting ilp on graph with " << graph->n() << " vertices "
                  << "and " << graph->m() << " edges!";
@@ -38,14 +38,26 @@ class ilp_model {
             NodeID numNodes = graph->number_of_nodes();
             NodeID numEdges = graph->number_of_edges() / 2;
 
+            NodeID max_weight = 0;
+            NodeID max_id = 0;
+            for (size_t i = 0; i < problem->terminals.size(); ++i) {
+                NodeID v = problem->terminals[i].position;
+                if (graph->getWeightedNodeDegree(v) > max_weight) {
+                    max_weight = graph->getWeightedNodeDegree(v);
+                    max_id = i;
+                }
+            }
+
             std::vector<GRBVar> nodes(numNodes * num_terminals);
             std::vector<GRBVar> edges(numEdges);
 
             model.set(GRB_IntParam_Threads, 1);
             model.set(GRB_StringAttr_ModelName, "Partition");
             model.set(GRB_DoubleParam_MIPGap, 0);
-            model.set(GRB_IntParam_Threads, 1);
-            model.set(GRB_IntParam_LogToConsole, 0);
+            if (!parallel) {
+                model.set(GRB_IntParam_Threads, 1);
+                model.set(GRB_IntParam_LogToConsole, 0);
+            }
             model.set(GRB_IntParam_PoolSearchMode, 0);
             model.set(GRB_DoubleParam_TimeLimit, 3600.0);
             // Set decision variables for nodes
@@ -61,6 +73,8 @@ class ilp_model {
                     } else {
                         nodes[i + q * numNodes] =
                             model.addVar(0.0, 1.0, 0, GRB_BINARY);
+                        nodes[i + q * numNodes].set(GRB_DoubleAttr_Start,
+                                                    (max_id == q));
                     }
                 }
             }
@@ -74,6 +88,14 @@ class ilp_model {
                     if (n > graph->getEdgeTarget(n, e)) {
                         edges[j] = model.addVar(
                             0.0, 1.0, graph->getEdgeWeight(n, e), GRB_BINARY);
+                        // there is no edge between terminals, we mark edges
+                        // that are incident to non-maximal weight terminal
+                        double start = ((presets[n] < num_terminals
+                                         || presets[t] < num_terminals)
+                                        && presets[n] != max_id
+                                        && presets[t] != max_id)
+                            ? 1.0 : 0.0;
+                        edges[j].set(GRB_DoubleAttr_Start, start);
                         for (size_t q = 0; q < num_terminals; q++) {
                             GRBLinExpr cons = nodes[n + q * numNodes]
                                               - nodes[t + q * numNodes];
@@ -123,9 +145,9 @@ class ilp_model {
                  << " n=" << graph->n()
                  << " m=" << graph->m()
                  << " wgt=" << wgt
-                 << " total=" << wgt + deleted
+                 << " total=" << wgt + problem->deleted_weight
                  << " original_terminals=" << num_terminals
-                 << " current_terminals=" << terminals_current;
+                 << " current_terminals=" << problem->terminals.size();
             return std::make_pair(result, wgt);
         } catch (GRBException e) {
             LOG1 << e.getErrorCode() << " Message: " << e.getMessage();

@@ -391,7 +391,7 @@ class branch_multicut {
                     updateBestSolution(new_p);
                 }
             } else if (new_p->terminals.size() > 2) {
-                mf.maximumIsolatingFlow(new_p, thread_id, /* parallel */ true);
+                mf.maximumIsolatingFlow(new_p, thread_id, problems.size() > 0);
                 graph_contraction::deleteTermEdges(new_p, original_terminals);
                 if (new_p->graph->m() == 0) {
                     new_p->upper_bound = new_p->deleted_weight;
@@ -524,10 +524,11 @@ class branch_multicut {
             presets[problem->graph->getCurrentPosition(map)] = i;
         }
 
-        auto [result, wgt] = ilp_model::computeIlp(problem->graph, presets,
+        LOG1 << "start with del " << problem->deleted_weight;
+
+        auto [result, wgt] = ilp_model::computeIlp(problem, presets,
                                                    original_terminals.size(),
-                                                   problem->terminals.size(),
-                                                   problem->deleted_weight);
+                                                   problems.size() == 0);
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (problem->upper_bound < global_upper_bound) {

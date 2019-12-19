@@ -28,7 +28,8 @@ class ilp_model {
         std::shared_ptr<multicut_problem> problem,
         const std::vector<NodeID>& presets,
         size_t num_terminals,
-        bool parallel) {
+        bool parallel,
+        size_t thread_id) {
         try {
             std::shared_ptr<mutable_graph> graph = problem->graph;
             timer ilp_timer;
@@ -58,10 +59,17 @@ class ilp_model {
                 model.set(GRB_IntParam_Threads, 1);
                 model.set(GRB_IntParam_LogToConsole, 0);
             } else {
-                model.set(GRB_IntParam_Threads,
-                          configuration::getConfig()->threads);
+                size_t threads = configuration::getConfig()->threads;
+                model.set(GRB_IntParam_Threads, threads);
                 LOG1 << "Running parallel ILP with "
                      << model.get(GRB_IntParam_Threads) << " threads";
+                cpu_set_t all_cores;
+                CPU_ZERO(&all_cores);
+                for (size_t i = 0; i < threads; ++i) {
+                    CPU_SET(i, &all_cores);
+                }
+
+                sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
             }
             model.set(GRB_IntParam_PoolSearchMode, 0);
             model.set(GRB_DoubleParam_TimeLimit, 3600.0);
@@ -153,6 +161,14 @@ class ilp_model {
                  << " total=" << wgt + problem->deleted_weight
                  << " original_terminals=" << num_terminals
                  << " current_terminals=" << problem->terminals.size();
+
+            if (parallel) {
+                cpu_set_t my_id;
+                CPU_ZERO(&my_id);
+                CPU_SET(thread_id, &my_id);
+                sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
+            }
+
             return std::make_pair(result, wgt);
         } catch (GRBException e) {
             LOG1 << e.getErrorCode() << " Message: " << e.getMessage();

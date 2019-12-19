@@ -222,7 +222,7 @@ class branch_multicut {
         branchOnEdge(problem, thread_id);
 #ifdef USE_GUROBI
     } else {
-        solve_with_ilp(problem);
+        solve_with_ilp(problem, thread_id);
     }
 #endif
     }
@@ -515,7 +515,8 @@ class branch_multicut {
     }
 
 #ifdef USE_GUROBI
-    void solve_with_ilp(std::shared_ptr<multicut_problem> problem) {
+    void solve_with_ilp(std::shared_ptr<multicut_problem> problem,
+                        size_t thread_id) {
         std::vector<NodeID> presets(problem->graph->n(),
                                     problem->terminals.size());
 
@@ -528,7 +529,8 @@ class branch_multicut {
 
         auto [result, wgt] = ilp_model::computeIlp(problem, presets,
                                                    original_terminals.size(),
-                                                   problems.size() == 0);
+                                                   problems.size() == 0,
+                                                   thread_id);
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (problem->upper_bound < global_upper_bound) {

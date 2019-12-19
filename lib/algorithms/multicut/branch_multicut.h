@@ -391,7 +391,7 @@ class branch_multicut {
                     updateBestSolution(new_p);
                 }
             } else if (new_p->terminals.size() > 2) {
-                mf.maximumIsolatingFlow(new_p, thread_id, problems.size() > 0);
+                mf.maximumIsolatingFlow(new_p, thread_id, problems.size() == 0);
                 graph_contraction::deleteTermEdges(new_p, original_terminals);
                 if (new_p->graph->m() == 0) {
                     new_p->upper_bound = new_p->deleted_weight;

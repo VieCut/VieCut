@@ -57,6 +57,11 @@ class ilp_model {
             if (!parallel) {
                 model.set(GRB_IntParam_Threads, 1);
                 model.set(GRB_IntParam_LogToConsole, 0);
+            } else {
+                model.set(GRB_IntParam_Threads,
+                          configuration::getConfig()->threads);
+                LOG1 << "Running parallel ILP with "
+                     << model.get(GRB_IntParam_Threads) << " threads";
             }
             model.set(GRB_IntParam_PoolSearchMode, 0);
             model.set(GRB_DoubleParam_TimeLimit, 3600.0);

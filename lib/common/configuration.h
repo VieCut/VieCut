@@ -61,6 +61,7 @@ class configuration {
     bool set_node_in_cut = false;
     bool multibranch = true;
     size_t neighborhood_degrees = 50;
+    size_t random_flows = 5;
 
     // karger-stein:
     size_t optimal = 0;

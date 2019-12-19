@@ -28,7 +28,8 @@ class ilp_model {
         std::shared_ptr<mutable_graph> graph,
         const std::vector<NodeID>& presets,
         size_t num_terminals,
-        size_t terminals_current) {
+        size_t terminals_current,
+        EdgeWeight deleted) {
         try {
             timer ilp_timer;
             LOG1 << "starting ilp on graph with " << graph->n() << " vertices "
@@ -122,6 +123,7 @@ class ilp_model {
                  << " n=" << graph->n()
                  << " m=" << graph->m()
                  << " wgt=" << wgt
+                 << " total=" << wgt + deleted
                  << " original_terminals=" << num_terminals
                  << " current_terminals=" << terminals_current;
             return std::make_pair(result, wgt);

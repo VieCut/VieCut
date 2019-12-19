@@ -63,9 +63,6 @@ class kernelization_criteria {
                 }
             }
 
-            union_find uf_mf = mf.nonTerminalFlow(problem);
-            contractIfImproved(&uf_mf, problem, "flow", &active_n);
-
             equal_neighborhood en;
             union_find uf_en = en.findEqualNeighborhoods(problem, active_c);
             contractIfImproved(&uf_en, problem, "equal_nbrhd", &active_n);
@@ -75,6 +72,9 @@ class kernelization_criteria {
 
             auto uf_tri = triangleDetection(problem, active_c);
             contractIfImproved(&uf_tri, problem, "triangle", &active_n);
+
+            union_find uf_mf = mf.nonTerminalFlow(problem);
+            contractIfImproved(&uf_mf, problem, "flow", &active_n);
 
             if (first_run) {
                 // maximal_clique mq;

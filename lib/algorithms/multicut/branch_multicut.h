@@ -208,7 +208,7 @@ class branch_multicut {
         nonBranchingContraction(problem);
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
-        bool branchOnCurrentInstance = problem->graph->n() > 3000;
+        bool branchOnCurrentInstance = problem->graph->m() > 300000;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;
@@ -526,7 +526,8 @@ class branch_multicut {
 
         auto [result, wgt] = ilp_model::computeIlp(problem->graph, presets,
                                                    original_terminals.size(),
-                                                   problem->terminals.size());
+                                                   problem->terminals.size(),
+                                                   problem->deleted_weight);
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (problem->upper_bound < global_upper_bound) {

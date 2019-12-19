@@ -63,13 +63,20 @@ class maximum_flow {
     union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem) {
         union_find uf(problem->graph->n());
         std::unordered_set<NodeID> previous;
-        for (size_t i = 0; i < 5; ++i) {
+
+        for (const auto& t : problem->terminals) {
+            previous.insert(t.position);
+        }
+
+        for (size_t i = 0; i < configuration::getConfig()->random_flows; ++i) {
             NodeID r = random_functions::nextInt(0, problem->graph->n() - 1);
             EdgeWeight max = problem->graph->getMaxDegree();
             size_t num_tries = 0;
-            while ((max >= (problem->graph->getWeightedNodeDegree(r)
-                            + num_tries++))
-                   || uf.Find(r) != r || previous.count(r) > 0) {
+            while (((max >= (problem->graph->getWeightedNodeDegree(r)
+                             + num_tries++))
+                    || uf.Find(r) != r
+                    || previous.count(r) > 0)
+                   && num_tries < max) {
                 r = random_functions::nextInt(0, problem->graph->n() - 1);
             }
 
@@ -92,7 +99,7 @@ class maximum_flow {
                 LOG1 << sourceSet.size() << " from vertex "
                      << r << " with degree "
                      << problem->graph->getWeightedNodeDegree(r) << " (max: "
-                     << problem->graph->getMaxDegree() << ")";
+                     << problem->graph->getMaxDegree() << ") ";
         }
         return uf;
     }

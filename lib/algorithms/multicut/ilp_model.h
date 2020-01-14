@@ -68,7 +68,6 @@ class ilp_model {
                 for (size_t i = 0; i < threads; ++i) {
                     CPU_SET(i, &all_cores);
                 }
-                model.set(GRB_DoubleParam_Heuristics, 0.2);
 
                 sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
             }

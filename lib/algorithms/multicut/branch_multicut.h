@@ -165,11 +165,11 @@ class branch_multicut {
         if (problem->lower_bound >= global_upper_bound)
             return;
 
-        uint64_t heapsize;
+        uint64_t heapsize = 0;
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 
-        uint64_t max_size = 200UL * 1024UL * 1024UL * 1024UL;
+        uint64_t max_size = 50UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
             LOG1 << "RESULT Memoryout";
             exit(1);
@@ -208,7 +208,7 @@ class branch_multicut {
         nonBranchingContraction(problem);
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
-        bool branchOnCurrentInstance = problem->graph->m() > 300000;
+        bool branchOnCurrentInstance = problem->graph->m() > 100000;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;

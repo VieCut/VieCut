@@ -123,27 +123,22 @@ class maximum_flow {
                 uf.Union(s, r);
             }
 
-            // if (sourceSet.size() > 1)
-            LOG1 << "big " << sourceSet.size() << " from vertex "
-                 << r << " with degree "
-                 << problem->graph->getWeightedNodeDegree(r) << " (max: "
-                 << problem->graph->getMaxDegree() << ") ";
+            if (sourceSet.size() > 1)
+                LOG0 << "big " << sourceSet.size() << " from vertex "
+                     << r << " with degree "
+                     << problem->graph->getWeightedNodeDegree(r) << " (max: "
+                     << problem->graph->getMaxDegree() << ") ";
         }
 
         auto hdv = highDistanceVertices(problem);
-        size_t runs = 0;
         size_t num_flows = configuration::getConfig()->high_distance_flows;
         double hd_factor = configuration::getConfig()->high_distance_factor;
         for (size_t i = 0; i < num_flows; ++i) {
             NodeID last = problem->graph->n() - 1;
             NodeID idx = random_functions::nextInt(last * hd_factor, last);
             NodeID r = hdv[idx];
-            if (uf.Find(r) != r) {
+            if (r > last || uf.Find(r) != r) {
                 continue;
-            }
-
-            if (++runs > configuration::getConfig()->random_flows) {
-                break;
             }
 
             previous.insert(r);
@@ -160,14 +155,12 @@ class maximum_flow {
             for (const auto& s : sourceSet) {
                 uf.Union(s, r);
             }
-
             if (sourceSet.size() > 1)
-                LOG1 << "hdv " << sourceSet.size() << " from vertex "
+                LOG0 << "hdv " << sourceSet.size() << " from vertex "
                      << r << " with degree "
                      << problem->graph->getWeightedNodeDegree(r) << " (max: "
                      << problem->graph->getMaxDegree() << ") ";
         }
-
         return uf;
     }
 

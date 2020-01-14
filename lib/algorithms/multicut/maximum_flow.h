@@ -12,6 +12,7 @@
 
 #include <future>
 #include <memory>
+#include <queue>
 #include <unordered_set>
 #include <vector>
 
@@ -60,6 +61,33 @@ class maximum_flow {
         problem->upper_bound = flow + problem->deleted_weight;
     }
 
+    std::vector<NodeID> highDistanceVertices(
+        std::shared_ptr<multicut_problem> problem) {
+        std::queue<NodeID> Q;
+        std::vector<bool> found(problem->graph->n(), false);
+        std::vector<NodeID> order;
+
+        for (const auto& t : problem->terminals) {
+            found[t.position] = true;
+            order.emplace_back(t.position);
+            Q.emplace(t.position);
+        }
+
+        while (!Q.empty()) {
+            NodeID n = Q.front();
+            Q.pop();
+            for (EdgeID e : problem->graph->edges_of(n)) {
+                NodeID t = problem->graph->getEdgeTarget(n, e);
+                if (!found[t]) {
+                    found[t] = true;
+                    Q.emplace(t);
+                    order.emplace_back(t);
+                }
+            }
+        }
+        return order;
+    }
+
     union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem) {
         union_find uf(problem->graph->n());
         std::unordered_set<NodeID> previous;
@@ -95,12 +123,51 @@ class maximum_flow {
                 uf.Union(s, r);
             }
 
+            // if (sourceSet.size() > 1)
+            LOG1 << "big " << sourceSet.size() << " from vertex "
+                 << r << " with degree "
+                 << problem->graph->getWeightedNodeDegree(r) << " (max: "
+                 << problem->graph->getMaxDegree() << ") ";
+        }
+
+        auto hdv = highDistanceVertices(problem);
+        size_t runs = 0;
+        size_t num_flows = configuration::getConfig()->high_distance_flows;
+        double hd_factor = configuration::getConfig()->high_distance_factor;
+        for (size_t i = 0; i < num_flows; ++i) {
+            NodeID last = problem->graph->n() - 1;
+            NodeID idx = random_functions::nextInt(last * hd_factor, last);
+            NodeID r = hdv[idx];
+            if (uf.Find(r) != r) {
+                continue;
+            }
+
+            if (++runs > configuration::getConfig()->random_flows) {
+                break;
+            }
+
+            previous.insert(r);
+            std::vector<NodeID> terms;
+            for (const auto& t : problem->terminals) {
+                terms.emplace_back(t.position);
+            }
+            terms.emplace_back(r);
+            push_relabel pr;
+            size_t num_t = terms.size() - 1;
+            auto sourceSet = pr.solve_max_flow_min_cut(
+                problem->graph, terms, num_t, true).second;
+
+            for (const auto& s : sourceSet) {
+                uf.Union(s, r);
+            }
+
             if (sourceSet.size() > 1)
-                LOG1 << sourceSet.size() << " from vertex "
+                LOG1 << "hdv " << sourceSet.size() << " from vertex "
                      << r << " with degree "
                      << problem->graph->getWeightedNodeDegree(r) << " (max: "
                      << problem->graph->getMaxDegree() << ") ";
         }
+
         return uf;
     }
 

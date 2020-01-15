@@ -518,14 +518,15 @@ class branch_multicut {
     void solve_with_ilp(std::shared_ptr<multicut_problem> problem,
                         size_t thread_id) {
         std::vector<NodeID> presets(problem->graph->n(),
-                                    problem->terminals.size());
+                                    original_terminals.size());
 
         for (size_t i = 0; i < original_terminals.size(); ++i) {
             NodeID map = problem->mapped(original_terminals[i]);
-            presets[problem->graph->getCurrentPosition(map)] = i;
+            NodeID pos = problem->graph->getCurrentPosition(map);
+            presets[pos] = i;
         }
 
-        LOG1 << "start with del " << problem->deleted_weight;
+        LOG1 << "start with deleted " << problem->deleted_weight;
 
         auto [result, wgt] = ilp_model::computeIlp(problem, presets,
                                                    original_terminals.size(),

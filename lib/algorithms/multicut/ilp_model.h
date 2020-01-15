@@ -108,13 +108,14 @@ class ilp_model {
                                         && presets[n] != max_id
                                         && presets[t] != max_id)
                             ? 1.0 : 0.0;
+
                         edges[j].set(GRB_DoubleAttr_Start, start);
                         for (size_t q = 0; q < num_terminals; q++) {
                             GRBLinExpr cons = nodes[n + q * numNodes]
                                               - nodes[t + q * numNodes];
                             // Add constraint: valid partiton
-                            model.addConstr(edges[j] >= cons, "valid part.");
-                            model.addConstr(edges[j] >= -cons, "valid part.");
+                            model.addConstr(edges[j] >= cons, "valid part");
+                            model.addConstr(edges[j] >= -cons, "neg valid prt");
                         }
                         j++;
                     }

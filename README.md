@@ -32,11 +32,11 @@ If you use this code in the context of an academic publication, we ask that you 
   year = {2019}
 }
 
-@article{henzinger2019branch,
+@article{henzinger2020shared,
   title={Shared-Memory Branch-and-Reduce for Multiterminal Cuts},
   author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
-  journal={arXiv preprint arXiv:1908.04141},
-  year={2019}
+  journal={2020 Proceedings of the 22nd Workshop on Algorithm Engineering and Experiments (ALENEX)},
+  year={2020}
 }
 ```
 

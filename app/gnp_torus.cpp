@@ -30,6 +30,7 @@
 #include "tlx/logger.hpp"
 #include "tools/graph_extractor.h"
 #include "tools/macros_assertions.h"
+#include "tools/random_functions.h"
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {

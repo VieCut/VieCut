@@ -24,11 +24,13 @@
 #include "tlx/logger.hpp"
 
 typedef std::mt19937 MersenneTwister;
+static int m_seed;
+static MersenneTwister m_mt;
 
 class random_functions {
  public:
-    random_functions();
-    virtual ~random_functions();
+    random_functions() { }
+    virtual ~random_functions() { }
 
     template <typename sometype>
     static void circular_permutation(std::vector<sometype>* v) {
@@ -182,8 +184,4 @@ class random_functions {
     static int getSeed() {
         return m_seed;
     }
-
- private:
-    static int m_seed;
-    static MersenneTwister m_mt;
 };

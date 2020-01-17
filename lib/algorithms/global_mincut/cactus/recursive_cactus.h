@@ -35,6 +35,7 @@
 #include "data_structure/mutable_graph.h"
 #include "data_structure/priority_queues/node_bucket_pq.h"
 #include "tlx/logger.hpp"
+#include "tools/random_functions.h"
 #include "tools/string.h"
 
 #ifdef PARALLEL

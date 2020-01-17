@@ -167,7 +167,6 @@ class branch_multicut {
 
 #ifdef USE_TCMALLOC
         uint64_t heapsize = 0;
-        LOG1 << "EYOOO!";
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 

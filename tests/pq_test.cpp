@@ -33,6 +33,8 @@ TYPED_TEST(PQTest, EmptyAtStart) {
 
     ASSERT_EQ(priority_queue->size(), 0);
     ASSERT_TRUE(priority_queue->empty());
+
+    delete priority_queue;
 }
 
 TYPED_TEST(PQTest, AddElements) {
@@ -55,6 +57,8 @@ TYPED_TEST(PQTest, AddElements) {
     ASSERT_EQ(priority_queue->size(), 3);
     ASSERT_EQ(priority_queue->maxValue(), 4);
     ASSERT_EQ(priority_queue->maxElement(), 1);
+
+    delete priority_queue;
 }
 
 TYPED_TEST(PQTest, DeleteMax) {
@@ -76,6 +80,8 @@ TYPED_TEST(PQTest, DeleteMax) {
 
     priority_queue->deleteMax();
     ASSERT_TRUE(priority_queue->empty());
+
+    delete priority_queue;
 }
 
 TYPED_TEST(PQTest, ChangeKeys) {
@@ -97,6 +103,8 @@ TYPED_TEST(PQTest, ChangeKeys) {
     ASSERT_EQ(priority_queue->size(), 3);
     ASSERT_EQ(priority_queue->maxValue(), 3);
     ASSERT_EQ(priority_queue->maxElement(), 5);
+
+    delete priority_queue;
 }
 
 TYPED_TEST(PQTest, HeapSortRandom) {
@@ -121,4 +129,6 @@ TYPED_TEST(PQTest, HeapSortRandom) {
     for (size_t i = 0; i + 1 < num_el; ++i) {
         ASSERT_GE(vec[i], vec[i + 1]);
     }
+
+    delete priority_queue;
 }

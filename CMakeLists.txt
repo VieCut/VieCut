@@ -3,12 +3,21 @@ project(vc)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-find_package(Tcmalloc REQUIRED)
-find_package(Profiler)
 find_package(OpenMP REQUIRED)
 
 OPTION(RUN_TESTS "Compile and run tests" ON)
+OPTION(USE_TCMALLOC "Replace builtin malloc with TCMalloc" ON)
+OPTION(USE_PROFILER "Use TCMalloc profiler (requires TCMalloc)" OFF)
 OPTION(USE_GUROBI "Use Gurobi for ILP Solving in multiterminal cut" OFF)
+
+if (USE_TCMALLOC)
+    find_package(Tcmalloc REQUIRED)
+endif()
+
+if (USE_PROFILER)
+    find_package(Tcmalloc REQUIRED)
+    find_package(Profiler REQUIRED)
+endif()
 
 if (USE_GUROBI)
     find_package(Gurobi REQUIRED)
@@ -51,6 +60,8 @@ if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
 endif()
 
 MESSAGE(STATUS "Option: RUN_TESTS " ${RUN_TESTS})
+MESSAGE(STATUS "Option: USE_TCMALLOC " ${USE_TCMALLOC})
+MESSAGE(STATUS "Option: USE_PROFILER " ${USE_PROFILER})
 MESSAGE(STATUS "Option: USE_GUROBI " ${USE_GUROBI})
 
 MESSAGE(STATUS ${GUROBI_INCLUDE_DIR})
@@ -73,7 +84,9 @@ set (CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG")
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
 
 #TCMalloc
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+if (USE_TCMALLOC)
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+endif()
 
 set(SOURCE_FILES
 
@@ -161,6 +174,7 @@ set(SOURCE_FILES
 add_library(viecut ${SOURCE_FILES})
 
 set(EXTLIBS tlx)
+
 if(USE_PROFILER)
 set(LIBS viecut ${EXTLIBS} ${Profiler_LIBRARIES} ${GUROBI_LIBRARIES})
 else()

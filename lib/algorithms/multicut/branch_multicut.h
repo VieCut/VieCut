@@ -165,7 +165,9 @@ class branch_multicut {
         if (problem->lower_bound >= global_upper_bound)
             return;
 
+#ifdef USE_TCMALLOC
         uint64_t heapsize = 0;
+        LOG1 << "EYOOO!";
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 
@@ -174,6 +176,7 @@ class branch_multicut {
             LOG1 << "RESULT Memoryout";
             exit(1);
         }
+#endif
 
         if (total_time.elapsed() > 3600) {
             LOG1 << "RESULT Timeout!";
@@ -208,7 +211,7 @@ class branch_multicut {
         nonBranchingContraction(problem);
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
-        bool branchOnCurrentInstance = problem->graph->m() > 100000;
+        bool branchOnCurrentInstance = problem->graph->m() > 300000;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;

@@ -85,7 +85,7 @@ set (CMAKE_CXX_FLAGS_DEBUG "-g3 -march=native")
 
 #TCMalloc
 if (USE_TCMALLOC)
-    add_compile_definitions(USE_TCMALLOC)
+    add_definitions(USE_TCMALLOC)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 endif()
 

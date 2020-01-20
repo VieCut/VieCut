@@ -27,110 +27,6 @@ class multiterminal_cut {
     static constexpr bool debug = false;
     multiterminal_cut() { }
 
-    std::vector<NodeID> topKTerminals(std::shared_ptr<mutable_graph> G) {
-        auto v = graph_algorithms::top_k_degrees(
-            G, configuration::getConfig()->top_k);
-        std::vector<NodeID> terminals;
-        for (auto vtx : v) {
-            terminals.push_back(vtx);
-        }
-        return terminals;
-    }
-
-    std::vector<NodeID> randomTerminals(std::shared_ptr<mutable_graph> G) {
-        std::vector<NodeID> terminals;
-        for (int i = 0; i < configuration::getConfig()->random_k; ++i) {
-            terminals.emplace_back(random_functions::nextInt(0, G->n() - 1));
-            LOG << "Set random terminal " << terminals.back();
-        }
-        return terminals;
-    }
-
-    std::vector<NodeID> terminalsByID(std::shared_ptr<mutable_graph> G) {
-        std::vector<NodeID> terminals;
-        for (auto term : configuration::getConfig()->term_strings) {
-            try {
-                NodeID terminal = std::stoi(term);
-                if (terminal < G->number_of_nodes()) {
-                    terminals.emplace_back(std::stoi(term));
-                } else {
-                    LOG1 << term << " >= " << G->n();
-                }
-            } catch (...) {
-                LOG1 << term << " is not a valid terminal! Continuing without.";
-            }
-        }
-        return terminals;
-    }
-
-    std::vector<NodeID> presetFileTerminals(std::shared_ptr<mutable_graph> G) {
-        strongly_connected_components cc;
-        auto config = configuration::getConfig();
-        auto [components, num_comp, unused] = cc.strong_components(G);
-        (void)unused;
-        auto v = graph_io::readVector<NodeID>(config->partition_file);
-        std::vector<NodeID> term;
-        std::vector<NodeID> terminals;
-
-        for (int c = 0; c < static_cast<int>(num_comp); ++c) {
-            for (size_t i = 0; i < config->total_terminals; ++i) {
-                std::unordered_set<NodeID> contractSet;
-                for (size_t n = 0; n < G->n(); ++n) {
-                    if (v[n] == i && components[n] == c) {
-                        if (!contractSet.size())
-                            term.emplace_back(n);
-                        contractSet.emplace(G->getCurrentPosition(n));
-                    }
-                }
-                if (contractSet.size() > 1) {
-                    G->contractVertexSet(contractSet);
-                }
-            }
-        }
-
-        for (size_t i = 0; i < term.size(); ++i) {
-            terminals.emplace_back(G->getCurrentPosition(term[i]));
-        }
-
-        config->bfs_size = 1;
-        return terminals;
-    }
-
-    std::vector<NodeID> orderFileTerminals(std::shared_ptr<mutable_graph> G) {
-        auto config = configuration::getConfig();
-        auto v = graph_io::readVector<NodeID>(config->partition_file);
-        auto o = graph_io::readVector<NodeID>(config->partition_file + ".pos");
-        std::vector<NodeID> term;
-        std::vector<NodeID> terminals;
-
-        NodeID terminal_size = 1;
-        if (config->preset_percentage > 0) {
-            NodeID blocksize = G->n() / config->total_terminals;
-            terminal_size = blocksize * config->preset_percentage / 100;
-        }
-
-        for (size_t i = 0; i < config->total_terminals; ++i) {
-            std::unordered_set<NodeID> contractSet;
-            for (size_t n = 0; n < G->n(); ++n) {
-                if (v[n] == i && o[n] <= terminal_size) {
-                    if (term.size() == i) {
-                        term.emplace_back(n);
-                    }
-                    contractSet.emplace(G->getCurrentPosition(n));
-                }
-            }
-
-            if (contractSet.size() > 1) {
-                G->contractVertexSet(contractSet);
-            }
-        }
-
-        for (size_t i = 0; i < config->total_terminals; ++i) {
-            terminals.emplace_back(G->getCurrentPosition(term[i]));
-        }
-        return terminals;
-    }
-
     std::vector<NodeID> setOriginalTerminals(std::shared_ptr<mutable_graph> G) {
         auto config = configuration::getConfig();
         std::vector<NodeID> terminals;
@@ -293,5 +189,109 @@ class multiterminal_cut {
         }
 
         return problems;
+    }
+
+    std::vector<NodeID> topKTerminals(std::shared_ptr<mutable_graph> G) {
+        auto v = graph_algorithms::top_k_degrees(
+            G, configuration::getConfig()->top_k);
+        std::vector<NodeID> terminals;
+        for (auto vtx : v) {
+            terminals.push_back(vtx);
+        }
+        return terminals;
+    }
+
+    std::vector<NodeID> randomTerminals(std::shared_ptr<mutable_graph> G) {
+        std::vector<NodeID> terminals;
+        for (int i = 0; i < configuration::getConfig()->random_k; ++i) {
+            terminals.emplace_back(random_functions::nextInt(0, G->n() - 1));
+            LOG << "Set random terminal " << terminals.back();
+        }
+        return terminals;
+    }
+
+    std::vector<NodeID> terminalsByID(std::shared_ptr<mutable_graph> G) {
+        std::vector<NodeID> terminals;
+        for (auto term : configuration::getConfig()->term_strings) {
+            try {
+                NodeID terminal = std::stoi(term);
+                if (terminal < G->number_of_nodes()) {
+                    terminals.emplace_back(std::stoi(term));
+                } else {
+                    LOG1 << term << " >= " << G->n();
+                }
+            } catch (...) {
+                LOG1 << term << " is not a valid terminal! Continuing without.";
+            }
+        }
+        return terminals;
+    }
+
+    std::vector<NodeID> presetFileTerminals(std::shared_ptr<mutable_graph> G) {
+        strongly_connected_components cc;
+        auto config = configuration::getConfig();
+        auto [components, num_comp, unused] = cc.strong_components(G);
+        (void)unused;
+        auto v = graph_io::readVector<NodeID>(config->partition_file);
+        std::vector<NodeID> term;
+        std::vector<NodeID> terminals;
+
+        for (int c = 0; c < static_cast<int>(num_comp); ++c) {
+            for (size_t i = 0; i < config->total_terminals; ++i) {
+                std::unordered_set<NodeID> contractSet;
+                for (size_t n = 0; n < G->n(); ++n) {
+                    if (v[n] == i && components[n] == c) {
+                        if (!contractSet.size())
+                            term.emplace_back(n);
+                        contractSet.emplace(G->getCurrentPosition(n));
+                    }
+                }
+                if (contractSet.size() > 1) {
+                    G->contractVertexSet(contractSet);
+                }
+            }
+        }
+
+        for (size_t i = 0; i < term.size(); ++i) {
+            terminals.emplace_back(G->getCurrentPosition(term[i]));
+        }
+
+        config->bfs_size = 1;
+        return terminals;
+    }
+
+    std::vector<NodeID> orderFileTerminals(std::shared_ptr<mutable_graph> G) {
+        auto config = configuration::getConfig();
+        auto v = graph_io::readVector<NodeID>(config->partition_file);
+        auto o = graph_io::readVector<NodeID>(config->partition_file + ".pos");
+        std::vector<NodeID> term;
+        std::vector<NodeID> terminals;
+
+        NodeID terminal_size = 1;
+        if (config->preset_percentage > 0) {
+            NodeID blocksize = G->n() / config->total_terminals;
+            terminal_size = blocksize * config->preset_percentage / 100;
+        }
+
+        for (size_t i = 0; i < config->total_terminals; ++i) {
+            std::unordered_set<NodeID> contractSet;
+            for (size_t n = 0; n < G->n(); ++n) {
+                if (v[n] == i && o[n] <= terminal_size) {
+                    if (term.size() == i) {
+                        term.emplace_back(n);
+                    }
+                    contractSet.emplace(G->getCurrentPosition(n));
+                }
+            }
+
+            if (contractSet.size() > 1) {
+                G->contractVertexSet(contractSet);
+            }
+        }
+
+        for (size_t i = 0; i < config->total_terminals; ++i) {
+            terminals.emplace_back(G->getCurrentPosition(term[i]));
+        }
+        return terminals;
     }
 };

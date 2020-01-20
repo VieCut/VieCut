@@ -74,22 +74,23 @@ int main(int argn, char** argv) {
 
     multiterminal_cut mc;
     terminals = mc.setOriginalTerminals(G);
-    config->total_terminals = terminals.size();
+    if (config->total_terminals == 0)
+        config->total_terminals = terminals.size();
 
     if (terminals.size() < 2) {
-        std::cerr << "ERROR: Number of terminals ("
-                  << terminals.size()
+        std::cerr << "ERROR: Number of terminals (" << terminals.size()
                   << ") too small! Exiting..." << std::endl;
         exit(-1);
     }
 
     timer t;
+    LOG1 << G->n();
     FlowType flow = mc.multicut(G, terminals);
     std::cout << "RESULT selection_rule=" << config->edge_selection
               << " pq=" << config->queue_type
               << " graph=" << config->graph_filename
               << " time=" << t.elapsed()
-              << " terminals=" << terminals.size()
+              << " terminals=" << config->total_terminals
               << " cut=" << flow
               << " n=" << G->number_of_nodes()
               << " m=" << G->number_of_edges() / 2

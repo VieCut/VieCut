@@ -235,14 +235,16 @@ class multiterminal_cut {
         auto v = graph_io::readVector<NodeID>(config->partition_file);
         std::vector<NodeID> term;
         std::vector<NodeID> terminals;
+        size_t n_start = G->n();
 
         for (int c = 0; c < static_cast<int>(num_comp); ++c) {
             for (size_t i = 0; i < config->total_terminals; ++i) {
                 std::unordered_set<NodeID> contractSet;
-                for (size_t n = 0; n < G->n(); ++n) {
+                for (size_t n = 0; n < n_start; ++n) {
                     if (v[n] == i && components[n] == c) {
-                        if (!contractSet.size())
+                        if (contractSet.size() == 0) {
                             term.emplace_back(n);
+                        }
                         contractSet.emplace(G->getCurrentPosition(n));
                     }
                 }

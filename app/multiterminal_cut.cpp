@@ -74,6 +74,7 @@ int main(int argn, char** argv) {
 
     multiterminal_cut mc;
     terminals = mc.setOriginalTerminals(G);
+    config->total_terminals = terminals.size();
 
     if (terminals.size() < 2) {
         std::cerr << "ERROR: Number of terminals ("

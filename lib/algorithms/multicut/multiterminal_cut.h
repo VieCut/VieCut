@@ -52,10 +52,10 @@ class multiterminal_cut {
             }
 
             if (s.back() == "pre") {
-                NodeID num_partitions = std::stoi(s[s.size() - 2]);
-                config->total_terminals = num_partitions;
+                config->total_terminals = std::stoi(s[s.size() - 2]);
                 return presetFileTerminals(G);
             } else {
+                config->total_terminals = std::stoi(s.back());
                 return orderFileTerminals(G);
             }
         }
@@ -270,6 +270,7 @@ class multiterminal_cut {
         std::vector<NodeID> terminals;
 
         NodeID terminal_size = 1;
+        NodeID start_n = G->n();
         if (config->preset_percentage > 0) {
             NodeID blocksize = G->n() / config->total_terminals;
             terminal_size = blocksize * config->preset_percentage / 100;
@@ -277,7 +278,7 @@ class multiterminal_cut {
 
         for (size_t i = 0; i < config->total_terminals; ++i) {
             std::unordered_set<NodeID> contractSet;
-            for (size_t n = 0; n < G->n(); ++n) {
+            for (size_t n = 0; n < start_n; ++n) {
                 if (v[n] == i && o[n] <= terminal_size) {
                     if (term.size() == i) {
                         term.emplace_back(n);

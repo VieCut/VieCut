@@ -84,7 +84,6 @@ int main(int argn, char** argv) {
     }
 
     timer t;
-    LOG1 << G->n();
     FlowType flow = mc.multicut(G, terminals);
     std::cout << "RESULT selection_rule=" << config->edge_selection
               << " pq=" << config->queue_type

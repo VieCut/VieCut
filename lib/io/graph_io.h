@@ -40,8 +40,8 @@ class graph_io {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
         std::string line;
         // open file for reading
-        std::ifstream in(file.c_str());
-        if (!in) {
+        std::ifstream instream(file.c_str());
+        if (!instream) {
             std::cerr << "Error opening " << file << std::endl;
             exit(2);
         }
@@ -49,10 +49,10 @@ class graph_io {
         uint64_t nmbNodes;
         uint64_t nmbEdges;
 
-        std::getline(in, line);
+        std::getline(instream, line);
         // skip comments
         while (line[0] == '%') {
-            std::getline(in, line);
+            std::getline(instream, line);
         }
 
         int ew = 0;
@@ -75,7 +75,7 @@ class graph_io {
 
         G->start_construction(nmbNodes, nmbEdges);
 
-        while (std::getline(in, line)) {
+        while (std::getline(instream, line)) {
             if (line[0] == '%') {     // a comment in the file
                 continue;
             }
@@ -111,7 +111,7 @@ class graph_io {
                 G->setEdgeWeight(e, edge_weight);
             }
 
-            if (in.eof()) {
+            if (instream.eof()) {
                 break;
             }
         }

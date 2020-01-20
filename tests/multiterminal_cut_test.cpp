@@ -43,7 +43,6 @@ TEST(MultiterminalCutTest, FourClusters) {
 
         G->finish_construction();
         auto mG = mutable_graph::from_graph_access(G);
-        multiterminal_cut mct;
         std::vector<NodeID> terminals;
         std::random_device rd;
         std::mt19937 eng(rd());
@@ -52,6 +51,8 @@ TEST(MultiterminalCutTest, FourClusters) {
             terminals.emplace_back(i * cluster_size + distribution(eng));
         }
 
+
+        multiterminal_cut mct;
         FlowType f = mct.multicut(mG, terminals);
 
         ASSERT_EQ(f, (FlowType)6);

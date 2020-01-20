@@ -40,7 +40,6 @@
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {
-    MPI_Init(&argn, &argv);
     static constexpr bool debug = false;
     tlx::CmdlineParser cmdl;
     auto config = configuration::getConfig();

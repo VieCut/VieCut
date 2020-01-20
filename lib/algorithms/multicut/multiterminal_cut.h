@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <mpi.h>
+
 #include <memory>
 #include <queue>
 #include <vector>
@@ -27,6 +29,9 @@ class multiterminal_cut {
 
     size_t multicut(std::shared_ptr<mutable_graph> G,
                     std::vector<NodeID> terminals) {
+        if (!MPI::Is_initialized()) {
+            MPI_Init(NULL, NULL);
+        }
         strongly_connected_components cc;
         auto cfg = configuration::getConfig();
         auto problems = splitConnectedComponents(G, terminals);

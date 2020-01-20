@@ -546,8 +546,7 @@ class branch_multicut {
         }
     }
 #else
-    void solve_with_ilp(std::shared_ptr<multicut_problem> problem,
-                        size_t thread_id) {
+    void solve_with_ilp(std::shared_ptr<multicut_problem>, size_t) {
         LOG1 << "Error: Code not compiled with option -DUSE_GUROBI,"
              << " but called ILP solver. Exiting!";
         exit(1);

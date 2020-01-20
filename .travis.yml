@@ -16,6 +16,7 @@ matrix:
             - libgoogle-perftools-dev
             - libomp-dev
             - libopenmpi-dev
+            - openmpi-bin
 
 # gcc 8.x, Debug
     - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && OMP_NUM_THREADS=4"
@@ -27,6 +28,7 @@ matrix:
             - libgoogle-perftools-dev
             - libomp-dev
             - libopenmpi-dev
+            - openmpi-bin
             
 # clang++-6, Debug
     - env: CMAKE_CC="clang-8" CMAKE_CXX="clang++-8" BUILD_TYPE="Debug" MATRIX_EVAL="CC=clang-8 && CXX=clang++-8 && OMP_NUM_THREADS=4"
@@ -38,6 +40,7 @@ matrix:
             - libgoogle-perftools-dev
             - libomp-dev
             - libopenmpi-dev
+            - openmpi-bin
 
 # gcc 7.x, Release
     - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && OMP_NUM_THREADS=4"
@@ -49,6 +52,7 @@ matrix:
             - libgoogle-perftools-dev
             - libomp-dev
             - libopenmpi-dev
+            - openmpi-bin
 
 # gcc 8.x, Release
     - env: CMAKE_CC="gcc-8" CMAKE_CXX="g++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=gcc-8 && CXX=g++-8 && OMP_NUM_THREADS=4"
@@ -60,6 +64,7 @@ matrix:
             - libgoogle-perftools-dev
             - libomp-dev
             - libopenmpi-dev
+            - openmpi-bin
 
 # clang++-6, Release
     - env: CMAKE_CC="clang-8" CMAKE_CXX="clang++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0 && OMP_NUM_THREADS=4"
@@ -71,6 +76,7 @@ matrix:
             - libgoogle-perftools-dev
             - libomp-dev
             - libopenmpi-dev
+            - openmpi-bin
 
 before_install:
     - eval "${MATRIX_EVAL}"

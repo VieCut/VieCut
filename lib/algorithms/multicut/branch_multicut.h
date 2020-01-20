@@ -121,11 +121,15 @@ class branch_multicut {
             if (!problems.empty(thread_id)) {
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
+
+                // Print small graph to file, left in as used in testing
+
                 /*if (problem->graph->n() < 2000) {
                     bestsol_mutex.lock();
                     LOG1 << "Writing...";
-                    std::string gid = "graph100";
-                    graph_io::writeGraphWeighted(problem->graph->to_graph_access(), gid);
+                    std::string gid = "small_graph";
+                    graph_io::writeGraphWeighted(
+                        problem->graph->to_graph_access(), gid);
                     for (auto t : problem->terminals) {
                         LOG1 << t.position;
                     }
@@ -208,9 +212,10 @@ class branch_multicut {
         }
         graph_contraction::setTerminals(problem, original_terminals);
         nonBranchingContraction(problem);
+        bool branchOnCurrentInstance = true;
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
-        bool branchOnCurrentInstance = problem->graph->m() > 300000;
+        branchOnCurrentInstance = problem->graph->m() > 100000;
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;
@@ -218,15 +223,12 @@ class branch_multicut {
             c->m = problem->graph->m();
             c->differences_set = true;
         }
-
+#endif
         if (branchOnCurrentInstance) {
-#endif
-        branchOnEdge(problem, thread_id);
-#ifdef USE_GUROBI
-    } else {
-        solve_with_ilp(problem, thread_id);
-    }
-#endif
+            branchOnEdge(problem, thread_id);
+        } else {
+            solve_with_ilp(problem, thread_id);
+        }
     }
 
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
@@ -542,6 +544,13 @@ class branch_multicut {
             }
             updateBestSolution(problem);
         }
+    }
+#else
+    void solve_with_ilp(std::shared_ptr<multicut_problem> problem,
+                        size_t thread_id) {
+        LOG1 << "Error: Code not compiled with option -DUSE_GUROBI,"
+             << " but called ILP solver. Exiting!";
+        exit(1);
     }
 #endif
 

@@ -20,6 +20,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
+#include <mpi.h>
 #include <omp.h>
 
 #include <cmath>
@@ -39,6 +40,7 @@
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {
+    MPI_Init(&argn, &argv);
     static constexpr bool debug = false;
     tlx::CmdlineParser cmdl;
     auto config = configuration::getConfig();

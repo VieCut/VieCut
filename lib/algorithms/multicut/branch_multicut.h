@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <mpi.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -73,7 +75,10 @@ class branch_multicut {
           branch_invalid(configuration::getConfig()->threads, 0),
           kc(original_terminals),
           mf(original_terminals),
-          log_timer(0) { }
+          log_timer(0) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    }
 
     ~branch_multicut() { }
 
@@ -627,4 +632,8 @@ class branch_multicut {
     maximum_flow mf;
     std::atomic<double> log_timer;
     std::mutex bestsol_mutex;
+
+    // MPI
+    int mpi_size;
+    int mpi_rank;
 };

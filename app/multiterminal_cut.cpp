@@ -39,6 +39,11 @@
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {
+    MPI_Init(&argn, &argv);
+    int mpi_rank, mpi_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
     tlx::CmdlineParser cmdl;
     auto config = configuration::getConfig();
 
@@ -70,11 +75,20 @@ int main(int argn, char** argv) {
     random_functions::setSeed(config->seed);
 
     std::vector<NodeID> terminals;
-    std::shared_ptr<mutable_graph> G = mutable_graph::from_graph_access(
-        graph_io::readGraphWeighted(config->graph_filename));
 
+    std::shared_ptr<mutable_graph> G;
     multiterminal_cut mc;
-    terminals = mc.setOriginalTerminals(G);
+    if (mpi_rank == 0) {
+        G = mutable_graph::from_graph_access(
+            graph_io::readGraphWeighted(config->graph_filename));
+        terminals = mc.setOriginalTerminals(G);
+    }
+
+    size_t termsize = terminals.size();
+    MPI_Bcast(&termsize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+    terminals.resize(termsize);
+    MPI_Bcast(&terminals.front(), termsize, MPI_INT, 0, MPI_COMM_WORLD);
+
     if (config->total_terminals == 0)
         config->total_terminals = terminals.size();
 

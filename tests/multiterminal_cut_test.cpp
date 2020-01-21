@@ -51,7 +51,6 @@ TEST(MultiterminalCutTest, FourClusters) {
             terminals.emplace_back(i * cluster_size + distribution(eng));
         }
 
-
         multiterminal_cut mct;
         FlowType f = mct.multicut(mG, terminals);
 

@@ -29,6 +29,10 @@ class multiterminal_cut {
     static constexpr bool debug = false;
     multiterminal_cut() { }
 
+    ~multiterminal_cut() {
+        MPI_Finalize();
+    }
+
     std::vector<NodeID> setOriginalTerminals(std::shared_ptr<mutable_graph> G) {
         auto config = configuration::getConfig();
         std::vector<NodeID> terminals;

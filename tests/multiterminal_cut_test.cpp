@@ -16,7 +16,18 @@
 #include "gtest/gtest.h"
 #include "io/graph_io.h"
 
-TEST(MultiterminalCutTest, FourClusters) {
+class MultiterminalCutTest : public ::testing::Test {
+ public:
+    static void SetUpTestCase() {
+        MPI_Init(NULL, NULL);
+    }
+
+    static void TearDownTestCase() {
+        MPI_Finalize();
+    }
+};
+
+TEST_F(MultiterminalCutTest, FourClusters) {
     std::vector<size_t> sizes = { 5, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
@@ -58,7 +69,7 @@ TEST(MultiterminalCutTest, FourClusters) {
     }
 }
 
-TEST(MultiterminalCutTest, FourClustersWeighted) {
+TEST_F(MultiterminalCutTest, FourClustersWeighted) {
     std::vector<size_t> sizes = { 20, 50, 100 };
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
@@ -104,7 +115,7 @@ TEST(MultiterminalCutTest, FourClustersWeighted) {
     }
 }
 
-TEST(MultiterminalCutTest, FourClustersMinCutUnequal) {
+TEST_F(MultiterminalCutTest, FourClustersMinCutUnequal) {
     std::vector<size_t> sizes = { 1, 4, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
@@ -155,7 +166,7 @@ TEST(MultiterminalCutTest, FourClustersMinCutUnequal) {
     }
 }
 
-TEST(MultiterminalCutTest, TotallyDisconnected) {
+TEST_F(MultiterminalCutTest, TotallyDisconnected) {
     std::vector<size_t> sizes = { 1, 5, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
@@ -192,7 +203,7 @@ TEST(MultiterminalCutTest, TotallyDisconnected) {
     }
 }
 
-TEST(MultiterminalCutTest, PartiallyDisconnected) {
+TEST_F(MultiterminalCutTest, PartiallyDisconnected) {
     std::vector<size_t> sizes = { 1, 5, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();

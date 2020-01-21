@@ -29,10 +29,6 @@ class multiterminal_cut {
     static constexpr bool debug = false;
     multiterminal_cut() { }
 
-    ~multiterminal_cut() {
-        MPI_Finalize();
-    }
-
     std::vector<NodeID> setOriginalTerminals(std::shared_ptr<mutable_graph> G) {
         auto config = configuration::getConfig();
         std::vector<NodeID> terminals;
@@ -69,9 +65,6 @@ class multiterminal_cut {
 
     size_t multicut(std::shared_ptr<mutable_graph> G,
                     std::vector<NodeID> terminals) {
-        if (!MPI::Is_initialized()) {
-            MPI_Init(NULL, NULL);
-        }
         strongly_connected_components cc;
         auto cfg = configuration::getConfig();
         auto problems = splitConnectedComponents(G, terminals);

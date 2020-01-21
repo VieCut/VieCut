@@ -107,4 +107,5 @@ int main(int argn, char** argv) {
               << " contract_m=" << config->m
               << " processes=" << config->threads
               << " seed=" << config->seed << std::endl;
+    MPI_Finalize();
 }

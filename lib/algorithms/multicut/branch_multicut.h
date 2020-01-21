@@ -78,15 +78,18 @@ class branch_multicut {
           log_timer(0) {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+        mpi_finished.resize(mpi_size, true);
+        mpi_finished[0] = false;
     }
 
     ~branch_multicut() { }
 
     size_t find_multiterminal_cut(std::shared_ptr<multicut_problem> problem) {
         best_solution.resize(original_graph.number_of_nodes());
-        auto cfg = configuration::getConfig();
-        mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
-        problems.addProblem(problem, 0);
+        if (mpi_rank == 0) {
+            mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
+            problems.addProblem(problem, 0);
+        }
         updateBestSolution(problem);
 
         std::vector<std::thread> threads;
@@ -153,6 +156,11 @@ class branch_multicut {
                     for (size_t j = 0; j < num_threads; ++j) {
                         q_cv[j].notify_all();
                     }
+
+                    LOG1 << "IM FINISHED";
+                    // recvProblem();
+                    MPI_Barrier(MPI_COMM_WORLD);
+
                     return;
                 }
 
@@ -636,4 +644,5 @@ class branch_multicut {
     // MPI
     int mpi_size;
     int mpi_rank;
+    std::vector<bool> mpi_finished;
 };

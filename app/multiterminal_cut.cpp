@@ -78,16 +78,9 @@ int main(int argn, char** argv) {
 
     std::shared_ptr<mutable_graph> G;
     multiterminal_cut mc;
-    if (mpi_rank == 0) {
-        G = mutable_graph::from_graph_access(
-            graph_io::readGraphWeighted(config->graph_filename));
-        terminals = mc.setOriginalTerminals(G);
-    }
-
-    size_t termsize = terminals.size();
-    MPI_Bcast(&termsize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-    terminals.resize(termsize);
-    MPI_Bcast(&terminals.front(), termsize, MPI_INT, 0, MPI_COMM_WORLD);
+    G = mutable_graph::from_graph_access(
+        graph_io::readGraphWeighted(config->graph_filename));
+    terminals = mc.setOriginalTerminals(G);
 
     if (config->total_terminals == 0)
         config->total_terminals = terminals.size();

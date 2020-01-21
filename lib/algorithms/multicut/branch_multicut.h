@@ -144,7 +144,12 @@ class branch_multicut {
                     LOG1 << "...done!";
                     exit(1);
                 }*/
-
+                for (size_t i = 0; i < mpi_finished.size(); ++i) {
+                    if (mpi_finished[i]) {
+                        //sendProblem(problem, i);
+                        break;
+                    }
+                }
                 solveProblem(problem, thread_id);
             } else {
                 if (!im_idle) {
@@ -153,13 +158,13 @@ class branch_multicut {
                 }
                 if (idle_threads == num_threads && problems.all_empty()) {
                     is_finished = true;
+                    //recvProblem();
                     for (size_t j = 0; j < num_threads; ++j) {
                         q_cv[j].notify_all();
                     }
 
                     LOG1 << "IM FINISHED";
-                    // recvProblem();
-                    MPI_Barrier(MPI_COMM_WORLD);
+                    //MPI_Barrier(MPI_COMM_WORLD);
 
                     return;
                 }
@@ -175,6 +180,71 @@ class branch_multicut {
                 }
             }
         }
+    }
+
+    void sendProblem(std::shared_ptr<multicut_problem> problem, size_t tgt) {
+        MPI_Send(&problem->lower_bound, 1, MPI_LONG, tgt, 523, MPI_COMM_WORLD);
+        MPI_Send(&problem->upper_bound, 1, MPI_LONG, tgt, 0, MPI_COMM_WORLD);
+        MPI_Send(&problem->deleted_weight, 1, MPI_LONG, tgt, 0, MPI_COMM_WORLD);
+
+        //terminals
+        size_t termsize = problem->terminals.size();
+        MPI_Send(&termsize, 1, MPI_LONG,
+                 tgt, 0, MPI_COMM_WORLD);
+        MPI_Send(&problem->terminals.front(), problem->terminals.size(),
+                 MPI_LONG, tgt, 0, MPI_COMM_WORLD);
+
+        //mappings
+        size_t mapsize = problem->mappings.size();
+        MPI_Send(&mapsize, 1, MPI_LONG, tgt, 0, MPI_COMM_WORLD);
+        for (size_t i = 0; i < problem->mappings.size(); ++i) {
+            size_t mapisize = problem->mappings[i]->size();
+            MPI_Send(&mapisize, 1, MPI_LONG, tgt, 0, MPI_COMM_WORLD);
+            MPI_Send(&problem->mappings[i]->front(), 
+                     problem->mappings[i]->size(),
+                     MPI_LONG, tgt, 0, MPI_COMM_WORLD);
+        }
+
+
+    }
+
+    void recvProblem() {
+        std::vector<NodeID> terminals;
+        FlowType lower_bound;
+        FlowType upper_bound;
+        EdgeWeight deleted_wgt;
+        MPI_Status status;
+        MPI_Recv(&lower_bound, 1, MPI_LONG, MPI_ANY_SOURCE, 
+                 523, MPI_COMM_WORLD, &status);
+        MPI_Recv(&upper_bound, 1, MPI_LONG, status.MPI_SOURCE,
+                 MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+        MPI_Recv(&deleted_wgt, 1, MPI_LONG, status.MPI_SOURCE,
+                 MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+
+        //terminals
+        size_t termsize = 0;
+        MPI_Recv(&termsize, 1, MPI_LONG, status.MPI_SOURCE,
+                 MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+        terminals.resize(termsize);
+        MPI_Recv(&terminals.front(), termsize, MPI_LONG, status.MPI_SOURCE,
+                 MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+
+        size_t mappingsize = 0;
+        MPI_Recv(&mappingsize, 1, MPI_LONG, status.MPI_SOURCE,
+                 MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+        std::vector<std::shared_ptr<std::vector<NodeID> > > mappings;
+        for (size_t i = 0; i < mappingsize; ++i) {
+            auto map = std::make_shared<std::vector<NodeID> >();
+            size_t currmapsize = 0;
+            MPI_Recv(&currmapsize, 1, MPI_LONG, status.MPI_SOURCE,
+                     MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+            map->resize(currmapsize);
+            MPI_Recv(&map->front(), currmapsize, MPI_LONG, status.MPI_SOURCE,
+                     MPI_ANY_TAG, MPI_COMM_WORLD, NULL);
+            mappings.emplace_back(map);
+        }
+
+        LOG1 << "recv " << lower_bound << " " << upper_bound << " " << deleted_wgt;
     }
 
     void solveProblem(std::shared_ptr<multicut_problem> problem,

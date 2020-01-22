@@ -722,25 +722,49 @@ class mutable_graph {
 
     static std::shared_ptr<mutable_graph> deserialize(std::vector<uint64_t> v) {
         std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
-        G->start_construction(v[0]);
+        uint64_t num_nodes = v[0];
+        size_t num_edges = v[1];
+        uint64_t original_nodes = v[3];
+        G->start_construction(num_nodes);
+        G->set_partition_count(v[2]);
+        G->setOriginalNodes(original_nodes);
+        size_t n = 0;
+
+        size_t deserial = 4;
+        while (n < num_nodes) {
+            uint64_t next = v[deserial++];
+            if (next >= num_edges) {
+                if (next == UNDEFINED_EDGE) {
+                    break;
+                }
+                n = next - num_edges;
+                continue;
+            }
+            uint64_t wgt = v[deserial++];
+            G->new_edge(n, next, wgt);
+        }
+
+        for (size_t i = 0; i < num_nodes; ++i) {
+            G->setPartitionIndex(i, v[deserial++]);
+            G->setContainedVertices(i, { });
+        }
+
+        for (size_t i = 0; i < original_nodes; ++i) {
+            NodeID pos = static_cast<NodeID>(v[deserial++]);
+            G->setCurrentPosition(i, pos);
+            G->addContainedVertex(pos, i);
+        }
 
         return G;
     }
 
     std::vector<uint64_t> serialize() {
-        std::vector<uint64_t> serial(4 + 3 * n() + m());
+        std::vector<uint64_t> serial(5 + 2 * n() + m() + original_nodes);
         serial[0] = static_cast<uint64_t>(last_node);
         serial[1] = static_cast<uint64_t>(num_edges);
         serial[2] = static_cast<uint64_t>(partition_count);
         serial[3] = static_cast<uint64_t>(original_nodes);
         size_t next = 4;
-        for (const auto& p : partition_index) {
-            serial[next++] = static_cast<uint64_t>(p);
-        }
-
-        for (const auto& c : current_position) {
-            serial[next++] = static_cast<uint64_t>(c);
-        }
 
         for (NodeID n : nodes()) {
             serial[next++] = static_cast<uint64_t>(num_edges + n);
@@ -750,6 +774,16 @@ class mutable_graph {
                     serial[next++] = static_cast<uint64_t>(w);
                 }
             }
+        }
+
+        serial[next++] = UNDEFINED_EDGE;
+
+        for (const auto& p : partition_index) {
+            serial[next++] = static_cast<uint64_t>(p);
+        }
+
+        for (const auto& c : current_position) {
+            serial[next++] = static_cast<uint64_t>(c);
         }
 
         return serial;

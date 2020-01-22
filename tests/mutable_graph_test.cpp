@@ -346,21 +346,68 @@ TEST(Mutable_Graph_Test, SerializeEmpty) {
     mG.finish_construction();
 
     auto s = mG.serialize();
-    std::vector<uint64_t> eq = { 0, 0, 0, 0 };
+    std::vector<uint64_t> eq = { 0, 0, 0, 0, UNDEFINED_EDGE };
 
     ASSERT_EQ(s, eq);
 }
 
-TEST(Mutable_Graph_Test, SerializeSimpleGraph) {
+TEST(Mutable_Graph_Test, SerializeCircle) {
     mutable_graph G = make_circle();
 
     auto s = G.serialize();
     std::vector<uint64_t> eq = { 3, 6, 0, 3,     // values
-                                 0, 0, 0,        // partition
-                                 0, 1, 2,        // position
                                  6, 1, 1, 2, 1,  // n0
                                  7, 2, 1,        // n1
-                                 8};             // n2
+                                 8,              // n2
+                                 UNDEFINED_EDGE,
+                                 0, 0, 0,        // partition
+                                 0, 1, 2,        // position
+    };
 
     ASSERT_EQ(s, eq);
+}
+
+TEST(Mutable_Graph_Test, DeserializedCircleEqual) {
+    mutable_graph G = make_circle();
+    auto s = G.serialize();
+    auto G2 = mutable_graph::deserialize(s);
+
+    ASSERT_EQ(G.getOriginalNodes(), G2->getOriginalNodes());
+    ASSERT_EQ(G.n(), G2->n());
+    ASSERT_EQ(G.m(), G2->m());
+    for (NodeID n : G.nodes()) {
+        ASSERT_EQ(G.getWeightedNodeDegree(n), G2->getWeightedNodeDegree(n));
+        ASSERT_EQ(G.getPartitionIndex(n), G2->getPartitionIndex(n));
+        for (EdgeID e : G.edges_of(n)) {
+            ASSERT_EQ(G.getEdgeTarget(n, e), G2->getEdgeTarget(n, e));
+            ASSERT_EQ(G.getEdgeWeight(n, e), G2->getEdgeWeight(n, e));
+        }
+    }
+
+    for (NodeID n = 0; n < G.getOriginalNodes(); ++n) {
+        ASSERT_EQ(G.getCurrentPosition(n), G2->getCurrentPosition(n));
+    }
+}
+
+TEST(Mutable_Graph_Test, DeserializedContractedEqual) {
+    mutable_graph G = make_circle();
+    G.contractEdge(0, 0);
+    auto s = G.serialize();
+    auto G2 = mutable_graph::deserialize(s);
+
+    ASSERT_EQ(G.getOriginalNodes(), G2->getOriginalNodes());
+    ASSERT_EQ(G.n(), G2->n());
+    ASSERT_EQ(G.m(), G2->m());
+    for (NodeID n : G.nodes()) {
+        ASSERT_EQ(G.getWeightedNodeDegree(n), G2->getWeightedNodeDegree(n));
+        ASSERT_EQ(G.getPartitionIndex(n), G2->getPartitionIndex(n));
+        for (EdgeID e : G.edges_of(n)) {
+            ASSERT_EQ(G.getEdgeTarget(n, e), G2->getEdgeTarget(n, e));
+            ASSERT_EQ(G.getEdgeWeight(n, e), G2->getEdgeWeight(n, e));
+        }
+    }
+
+    for (NodeID n = 0; n < G.getOriginalNodes(); ++n) {
+        ASSERT_EQ(G.getCurrentPosition(n), G2->getCurrentPosition(n));
+    }
 }

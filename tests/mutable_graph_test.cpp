@@ -355,12 +355,12 @@ TEST(Mutable_Graph_Test, SerializeSimpleGraph) {
     mutable_graph G = make_circle();
 
     auto s = G.serialize();
-    std::vector<uint64_t> eq = { 3, 6, 0, 3,             // values
-                                 0, 0, 0,                // partition
-                                 0, 1, 2,                // position
-                                 6, 1, 1, 0, 2, 1, 0,    // n0
-                                 7, 0, 1, 0, 2, 1, 1,    // n1
-                                 8, 0, 1, 1, 1, 1, 1 };  // n2
+    std::vector<uint64_t> eq = { 3, 6, 0, 3,     // values
+                                 0, 0, 0,        // partition
+                                 0, 1, 2,        // position
+                                 6, 1, 1, 2, 1,  // n0
+                                 7, 2, 1,        // n1
+                                 8};             // n2
 
     ASSERT_EQ(s, eq);
 }

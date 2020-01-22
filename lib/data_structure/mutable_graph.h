@@ -720,6 +720,33 @@ class mutable_graph {
         return G;
     }
 
+    std::vector<uint64_t> serialize() {
+        std::vector<uint64_t> serial(4 + 3 * n() + 3 * m());
+        serial[0] = static_cast<uint64_t>(last_node);
+        serial[1] = static_cast<uint64_t>(num_edges);
+        serial[2] = static_cast<uint64_t>(partition_count);
+        serial[3] = static_cast<uint64_t>(original_nodes);
+        size_t next = 4;
+        for (const auto& p : partition_index) {
+            serial[next++] = static_cast<uint64_t>(p);
+        }
+
+        for (const auto& c : current_position) {
+            serial[next++] = static_cast<uint64_t>(c);
+        }
+
+        for (NodeID n : nodes()) {
+            serial[next++] = static_cast<uint64_t>(num_edges + n);
+            for (const auto& [t, w, r, f] : vertices[n]) {
+                serial[next++] = static_cast<uint64_t>(t);
+                serial[next++] = static_cast<uint64_t>(w);
+                serial[next++] = static_cast<uint64_t>(r);
+            }
+        }
+
+        return serial;
+    }
+
     std::shared_ptr<mutable_graph> simplify() {
         std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
         G->start_construction(number_of_nodes());

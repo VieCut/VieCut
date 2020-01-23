@@ -85,6 +85,7 @@ class maximum_flow {
                 }
             }
         }
+
         return order;
     }
 
@@ -134,10 +135,10 @@ class maximum_flow {
         size_t num_flows = configuration::getConfig()->high_distance_flows;
         double hd_factor = configuration::getConfig()->high_distance_factor;
         for (size_t i = 0; i < num_flows; ++i) {
-            NodeID last = problem->graph->n() - 1;
+            NodeID last = hdv.size() - 1;
             NodeID idx = random_functions::nextInt(last * hd_factor, last);
             NodeID r = hdv[idx];
-            if (r > last || uf.Find(r) != r) {
+            if (uf.Find(r) != r) {
                 continue;
             }
 

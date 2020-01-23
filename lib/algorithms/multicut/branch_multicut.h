@@ -114,9 +114,13 @@ class branch_multicut {
             }
             t.join();
         }
-        FlowType total_weight = flowValue(false, best_solution);
 
-        VIECUT_ASSERT_EQ(total_weight, global_upper_bound);
+        FlowType total_weight = global_upper_bound;
+        if (mpic.bestSolutionIsLocal()) {
+            total_weight = flowValue(false, best_solution);
+            LOG1 << "Best solution local on " << mpi_rank;
+            VIECUT_ASSERT_EQ(total_weight, global_upper_bound);
+        }
 
         return (EdgeWeight)total_weight;
     }
@@ -130,6 +134,9 @@ class branch_multicut {
         bool im_idle = false;
         while (!is_finished) {
             if (!problems.empty(thread_id)) {
+                FlowType update = mpic.getGlobalBestSolution();
+                global_upper_bound = std::min(global_upper_bound, update);
+
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
 
@@ -147,14 +154,19 @@ class branch_multicut {
                     LOG1 << "...done!";
                     exit(1);
                 }*/
+                bool sent = false;
                 for (size_t i = 0; i < mpi_finished.size(); ++i) {
                     if (mpi_finished[i]) {
-                        mpi_communication::sendProblem(problem, i);
+                        mpic.sendProblem(problem, i);
                         mpi_finished[i] = false;
+                        sent = true;
                         break;
                     }
                 }
-                solveProblem(problem, thread_id);
+                if (!sent) {
+                    // forget this problem if it was sent to another worker
+                    solveProblem(problem, thread_id);
+                }
             } else {
                 if (!im_idle) {
                     idle_threads++;
@@ -162,7 +174,7 @@ class branch_multicut {
                 }
                 if (idle_threads == num_threads && problems.all_empty()) {
                     if (!has_received) {
-                        auto p = mpi_communication::recvProblem();
+                        auto p = mpic.recvProblem();
                         problems.addProblem(p, thread_id);
                         has_received = true;
                     } else {
@@ -170,7 +182,6 @@ class branch_multicut {
                         for (size_t j = 0; j < num_threads; ++j) {
                             q_cv[j].notify_all();
                         }
-                        LOG1 << "IM FINISHED";
                         return;
                     }
                 }
@@ -179,7 +190,8 @@ class branch_multicut {
                 q_cv[thread_id].wait_for(
                     lck, 1000ms,
                     [this, thread_id] {
-                        return queueNotEmpty(thread_id); });
+                        return queueNotEmpty(thread_id);
+                    });
 
                 if (im_idle) {
                     idle_threads--;
@@ -285,6 +297,7 @@ class branch_multicut {
             LOGC(testing) << "Improvement after time="
                           << total_time.elapsed() << " upper_bound="
                           << global_upper_bound;
+            mpic.broadcastImprovedSolution(global_upper_bound);
         }
         bestsol_mutex.unlock();
     }
@@ -658,4 +671,5 @@ class branch_multicut {
     int mpi_rank;
     std::vector<bool> mpi_finished;
     bool has_received;
+    mpi_communication mpic;
 };

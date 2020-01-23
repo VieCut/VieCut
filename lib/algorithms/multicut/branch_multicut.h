@@ -118,13 +118,25 @@ class branch_multicut {
         FlowType total_weight = global_upper_bound;
 
         FlowType local_weight = total_weight;
-        MPI_Reduce(&local_weight, &total_weight, 1, MPI_LONG,
-                   MPI_MIN, 0, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_weight, &total_weight, 1, MPI_LONG,
+                   MPI_MIN, MPI_COMM_WORLD);
 
+        size_t local_bcast_id = mpi_size;
         if (mpic.bestSolutionIsLocal() && local_weight == total_weight) {
-            total_weight = flowValue(false, best_solution);
-            VIECUT_ASSERT_EQ(total_weight, global_upper_bound);
+            // find processor which has best solution to broadcast
+            local_bcast_id = mpi_rank;
         }
+
+        size_t global_bcast_id = local_bcast_id;
+        MPI_Allreduce(&local_bcast_id, &global_bcast_id, 1, MPI_LONG,
+                   MPI_MIN, MPI_COMM_WORLD);
+
+        size_t bsize = best_solution.size();
+        MPI_Bcast(&best_solution.front(), bsize, MPI_INT,
+                  global_bcast_id, MPI_COMM_WORLD);
+
+        total_weight = flowValue(false, best_solution);
+        VIECUT_ASSERT_LEQ(total_weight, global_upper_bound);
 
         return (EdgeWeight)total_weight;
     }

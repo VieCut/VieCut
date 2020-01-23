@@ -116,9 +116,13 @@ class branch_multicut {
         }
 
         FlowType total_weight = global_upper_bound;
-        if (mpic.bestSolutionIsLocal()) {
+
+        FlowType local_weight = total_weight;
+        MPI_Reduce(&local_weight, &total_weight, 1, MPI_LONG,
+                   MPI_MIN, 0, MPI_COMM_WORLD);
+
+        if (mpic.bestSolutionIsLocal() && local_weight == total_weight) {
             total_weight = flowValue(false, best_solution);
-            LOG1 << "Best solution local on " << mpi_rank;
             VIECUT_ASSERT_EQ(total_weight, global_upper_bound);
         }
 

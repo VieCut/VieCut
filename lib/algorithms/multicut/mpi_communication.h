@@ -19,7 +19,8 @@
 
 class mpi_communication {
  public:
-    mpi_communication() : bestSolutionLocal(false) {
+    mpi_communication() : bestSolutionLocal(false),
+                          best_solution(UNDEFINED_NODE) {
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         req.resize(mpi_size);
@@ -41,7 +42,6 @@ class mpi_communication {
                 }
             }
         }
-
         return best_solution;
     }
 
@@ -169,9 +169,9 @@ class mpi_communication {
     }
 
  private:
-    FlowType best_solution;
     int mpi_size;
     int mpi_rank;
     std::vector<MPI_Request> req;
     bool bestSolutionLocal;
+    FlowType best_solution;
 };

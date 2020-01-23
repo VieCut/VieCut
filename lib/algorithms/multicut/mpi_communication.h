@@ -110,21 +110,21 @@ class mpi_communication {
         MPI_Recv(&lower_bound, 1, MPI_LONG, MPI_ANY_SOURCE,
                  1010, MPI_COMM_WORLD, &status);
         MPI_Recv(&upper_bound, 1, MPI_LONG, status.MPI_SOURCE,
-                 1020, MPI_COMM_WORLD, NULL);
+                 1020, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(&deleted_wgt, 1, MPI_LONG, status.MPI_SOURCE,
-                 1030, MPI_COMM_WORLD, NULL);
+                 1030, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         // terminals
         size_t termsize = 0;
         MPI_Recv(&termsize, 1, MPI_LONG, status.MPI_SOURCE,
-                 1040, MPI_COMM_WORLD, NULL);
+                 1040, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<NodeID> termids;
         std::vector<NodeID> origids;
         termids.resize(termsize);
         origids.resize(termsize);
         MPI_Recv(&termids.front(), termsize, MPI_INT, status.MPI_SOURCE,
-                 1050, MPI_COMM_WORLD, NULL);
+                 1050, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(&origids.front(), termsize, MPI_INT, status.MPI_SOURCE,
-                 1060, MPI_COMM_WORLD, NULL);
+                 1060, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<terminal> terminals;
         for (size_t i = 0; i < termids.size(); ++i) {
             terminals.emplace_back(termids[i], origids[i], true);
@@ -133,25 +133,25 @@ class mpi_communication {
         // mappings
         size_t mappingsize = 0;
         MPI_Recv(&mappingsize, 1, MPI_LONG, status.MPI_SOURCE,
-                 1070, MPI_COMM_WORLD, NULL);
+                 1070, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<std::shared_ptr<std::vector<NodeID> > > mappings;
         for (size_t i = 0; i < mappingsize; ++i) {
             auto map = std::make_shared<std::vector<NodeID> >();
             size_t currmapsize = 0;
             MPI_Recv(&currmapsize, 1, MPI_LONG, status.MPI_SOURCE,
-                     1080, MPI_COMM_WORLD, NULL);
+                     1080, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             map->resize(currmapsize);
             MPI_Recv(&map->front(), currmapsize, MPI_INT, status.MPI_SOURCE,
-                     1090, MPI_COMM_WORLD, NULL);
+                     1090, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             mappings.emplace_back(map);
         }
 
         size_t serialsize = 0;
         MPI_Recv(&serialsize, 1, MPI_LONG, status.MPI_SOURCE,
-                 1100, MPI_COMM_WORLD, NULL);
+                 1100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<uint64_t> serial(serialsize);
         MPI_Recv(&serial.front(), serialsize, MPI_LONG, status.MPI_SOURCE,
-                 1110, MPI_COMM_WORLD, NULL);
+                 1110, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         auto G = mutable_graph::deserialize(serial);
 
         auto problem = std::make_shared<multicut_problem>();

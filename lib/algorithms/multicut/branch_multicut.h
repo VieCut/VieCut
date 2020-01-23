@@ -130,7 +130,6 @@ class branch_multicut {
         size_t global_bcast_id = local_bcast_id;
         MPI_Allreduce(&local_bcast_id, &global_bcast_id, 1, MPI_LONG,
                    MPI_MIN, MPI_COMM_WORLD);
-
         size_t bsize = best_solution.size();
         MPI_Bcast(&best_solution.front(), bsize, MPI_INT,
                   global_bcast_id, MPI_COMM_WORLD);

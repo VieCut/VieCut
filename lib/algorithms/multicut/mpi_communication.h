@@ -19,7 +19,7 @@
 
 class mpi_communication {
  public:
-    static const bool debug = true;
+    static const bool debug = false;
 
     mpi_communication() : bestSolutionLocal(false),
                           best_solution(UNDEFINED_NODE),
@@ -42,7 +42,8 @@ class mpi_communication {
                 if (best_solution > recv) {
                     best_solution = recv;
                     bestSolutionLocal = false;
-                    LOG1 << "Received better solution " << best_solution;
+                    LOG1 << mpi_rank << " received better solution "
+                         << best_solution << " from " << status.MPI_SOURCE;
                 }
             }
         }
@@ -193,10 +194,9 @@ class mpi_communication {
                 return std::nullopt;
                 break;
             case MessageStatus::emptyAsWell:
-                continue;
+                break;
             case MessageStatus::haveProblem:
-                LOG << mpi_rank << " finally heard answer from " << src;
-                return recvProblem();
+                break;
             default:
                 // this should not happen
                 LOG1 << "Error: Invalid MPI message! Exiting.";
@@ -204,14 +204,19 @@ class mpi_communication {
             }
         }
 
-        empty_workers = 0;
+        if (empty_workers > 0) {
+            empty_workers = 0;
+            MPI_Request front_req;
+            MPI_Isend(&empty_workers, 1, MPI_INT, dest, 3100,
+                      MPI_COMM_WORLD, &front_req);
+        }
 
         LOG << mpi_rank << " heard answer from " << src;
         return std::optional<std::shared_ptr<multicut_problem> >(recvProblem());
     }
 
     std::shared_ptr<multicut_problem> recvProblem() {
-        LOG1 << mpi_rank << " receives problem";
+        LOG << mpi_rank << " receives problem";
         FlowType lower_bound;
         FlowType upper_bound;
         EdgeWeight deleted_wgt;
@@ -222,7 +227,7 @@ class mpi_communication {
                  1020, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(&deleted_wgt, 1, MPI_LONG, status.MPI_SOURCE,
                  1030, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        LOG1 << mpi_rank << " currently receiving from " << status.MPI_SOURCE;
+        LOG << mpi_rank << " currently receiving from " << status.MPI_SOURCE;
 
         // terminals
         size_t termsize = 0;
@@ -260,7 +265,8 @@ class mpi_communication {
         size_t serialsize = 0;
         MPI_Recv(&serialsize, 1, MPI_LONG, status.MPI_SOURCE,
                  1100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        std::vector<uint64_t> serial(serialsize);
+        std::vector<uint64_t> serial;
+        serial.resize(serialsize);
         MPI_Recv(&serial.front(), serialsize, MPI_LONG, status.MPI_SOURCE,
                  1110, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         auto G = mutable_graph::deserialize(serial);
@@ -272,6 +278,7 @@ class mpi_communication {
         problem->lower_bound = lower_bound;
         problem->upper_bound = upper_bound;
         problem->deleted_weight = deleted_wgt;
+        LOG << mpi_rank << " returns new problem";
         return problem;
     }
 

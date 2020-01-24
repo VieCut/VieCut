@@ -729,7 +729,6 @@ class mutable_graph {
         G->set_partition_count(v[2]);
         G->setOriginalNodes(original_nodes);
         size_t n = 0;
-
         size_t deserial = 4;
         while (n < num_nodes) {
             uint64_t next = v[deserial++];
@@ -760,7 +759,7 @@ class mutable_graph {
 
     std::vector<uint64_t> serialize() {
         std::vector<uint64_t> serial(5 + 2 * n() + m() + original_nodes);
-        serial[0] = static_cast<uint64_t>(last_node);
+        serial[0] = static_cast<uint64_t>(vertices.size());
         serial[1] = static_cast<uint64_t>(num_edges);
         serial[2] = static_cast<uint64_t>(partition_count);
         serial[3] = static_cast<uint64_t>(original_nodes);

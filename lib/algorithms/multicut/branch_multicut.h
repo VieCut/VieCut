@@ -148,10 +148,7 @@ class branch_multicut {
                 FlowType update = mpic.getGlobalBestSolution();
                 global_upper_bound = std::min(global_upper_bound, update);
 
-                std::shared_ptr<multicut_problem> problem =
-                    problems.pullProblem(thread_id);
-
-                LOG1 << mpi_rank << " pulls problem, now size " << problems.size();
+                auto problem = problems.pullProblem(thread_id);
 
                 if (problem->lower_bound >= global_upper_bound) {
                     continue;
@@ -174,8 +171,6 @@ class branch_multicut {
                 bool sent = false;
                 if (mpi_size > 1 && thread_id == 0 && !problems.empty(0)) {
                     sent = mpic.checkForReceiver(problem);
-                    LOG1 << mpi_rank << " has problems " << problems.size()
-                         << ", thus sending one: " << sent;
                 }
 
                 if (!sent) {
@@ -189,7 +184,6 @@ class branch_multicut {
                 }
 
                 if (idle_threads == num_threads && problems.all_empty()) {
-                    LOG1 << mpi_rank << " will wait";
                     auto p = mpic.waitForProblem();
                     if (p.has_value()) {
                         problems.addProblem(p.value(), thread_id);

@@ -183,7 +183,6 @@ class branch_multicut {
                     solveProblem(problem, thread_id);
                 }
             } else {
-                LOG1 << mpi_rank << " finished at " << total_time.elapsed();
                 if (!im_idle) {
                     idle_threads++;
                     im_idle = true;

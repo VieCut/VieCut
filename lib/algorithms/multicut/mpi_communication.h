@@ -65,7 +65,7 @@ class mpi_communication {
     }
 
     void sendProblem(std::shared_ptr<multicut_problem> problem, size_t tgt) {
-        LOG << mpi_rank << " sending problem to " << tgt;
+        LOG1 << mpi_rank << " sending problem to " << tgt;
         MPI_Send(&problem->lower_bound, 1, MPI_LONG, tgt, 1010, MPI_COMM_WORLD);
         MPI_Send(&problem->upper_bound, 1, MPI_LONG, tgt, 1020, MPI_COMM_WORLD);
         MPI_Send(&problem->deleted_weight, 1, MPI_LONG,
@@ -111,6 +111,8 @@ class mpi_communication {
         int result;
         MPI_Iprobe(dest, 2000, MPI_COMM_WORLD, &result, MPI_STATUS_IGNORE);
         if (result > 0) {
+            MPI_Recv(&result, 1, MPI_LONG, dest, 2000,
+                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             LOG << mpi_rank << " found probe from " << dest;
             MessageStatus message = haveProblem;
             MPI_Send(&message, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD);

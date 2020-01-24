@@ -170,14 +170,10 @@ class branch_multicut {
                     exit(1);
                 }*/
                 bool sent = false;
-                for (size_t i = 0; i < mpi_finished.size(); ++i) {
-                    if (mpi_finished[i]) {
-                        mpic.sendProblem(problem, i);
-                        mpi_finished[i] = false;
-                        sent = true;
-                        break;
-                    }
+                if (thread_id == 0 && !problems.empty(0)) {
+                    sent = mpic.checkForReceiver(problem);
                 }
+
                 if (!sent) {
                     // forget this problem if it was sent to another worker
                     solveProblem(problem, thread_id);
@@ -189,7 +185,7 @@ class branch_multicut {
                 }
                 if (idle_threads == num_threads && problems.all_empty()) {
                     if (!has_received) {
-                        auto p = mpic.recvProblem();
+                        auto p = mpic.waitForProblem();
                         problems.addProblem(p, thread_id);
                         has_received = true;
                     } else {

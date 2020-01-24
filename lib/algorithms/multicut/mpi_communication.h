@@ -19,6 +19,8 @@
 
 class mpi_communication {
  public:
+    static const bool debug = true;
+
     mpi_communication() : bestSolutionLocal(false),
                           best_solution(UNDEFINED_NODE) {
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -53,14 +55,17 @@ class mpi_communication {
 
         for (int i = 0; i < mpi_size; ++i) {
             if (i != mpi_rank) {
-                LOG1 << "sending " << best_solution;
+                LOG << mpi_rank << "sending " << best_solution << " to " << i;
                 MPI_Isend(&best_solution, 1, MPI_LONG,
                           i, 15123, MPI_COMM_WORLD, &req[i]);
             }
         }
     }
 
+
+
     void sendProblem(std::shared_ptr<multicut_problem> problem, size_t tgt) {
+        LOG << mpi_rank << " send problem to " << tgt;
         MPI_Send(&problem->lower_bound, 1, MPI_LONG, tgt, 1010, MPI_COMM_WORLD);
         MPI_Send(&problem->upper_bound, 1, MPI_LONG, tgt, 1020, MPI_COMM_WORLD);
         MPI_Send(&problem->deleted_weight, 1, MPI_LONG,
@@ -99,10 +104,35 @@ class mpi_communication {
         MPI_Send(&serialsize, 1, MPI_LONG, tgt, 1100, MPI_COMM_WORLD);
         MPI_Send(&serial.front(), serial.size(), MPI_LONG,
                  tgt, 1110, MPI_COMM_WORLD);
-        return;
+    }
+
+    bool checkForReceiver(std::shared_ptr<multicut_problem> problem) {
+        int dest = (mpi_rank == mpi_size - 1) ? 0 : mpi_rank + 1;
+        int result;
+        MPI_Iprobe(dest, 2000, MPI_COMM_WORLD, &result, MPI_STATUS_IGNORE);
+        if (result > 0) {
+            LOG << mpi_rank << " found probe from " << dest;
+            MessageStatus message = haveProblem;
+            MPI_Send(&message, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD);
+            sendProblem(problem, dest);
+            return true;
+        }
+        return false;
+    }
+
+    std::shared_ptr<multicut_problem> waitForProblem() {
+        MessageStatus message = needProblem;
+        int src = (mpi_rank == 0) ? mpi_size - 1 : mpi_rank - 1;
+        LOG << mpi_rank << " waiting for " << src;
+        MPI_Request request;
+        MPI_Isend(&message, 1, MPI_INT, src, 2000, MPI_COMM_WORLD, &request);
+        MPI_Probe(src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        LOG << mpi_rank << " heard answer from " << src;
+        return recvProblem();
     }
 
     std::shared_ptr<multicut_problem> recvProblem() {
+        LOG1 << mpi_rank << " receives problem";
         FlowType lower_bound;
         FlowType upper_bound;
         EdgeWeight deleted_wgt;
@@ -113,6 +143,8 @@ class mpi_communication {
                  1020, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(&deleted_wgt, 1, MPI_LONG, status.MPI_SOURCE,
                  1030, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        LOG1 << mpi_rank << " currently receiving from " << status.MPI_SOURCE;
+
         // terminals
         size_t termsize = 0;
         MPI_Recv(&termsize, 1, MPI_LONG, status.MPI_SOURCE,
@@ -174,4 +206,6 @@ class mpi_communication {
     std::vector<MPI_Request> req;
     bool bestSolutionLocal;
     FlowType best_solution;
+
+    enum MessageStatus { needProblem, haveProblem };
 };

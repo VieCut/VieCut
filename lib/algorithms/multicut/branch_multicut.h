@@ -79,10 +79,6 @@ class branch_multicut {
           log_timer(0) {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-        mpi_finished.resize(mpi_size, true);
-        mpi_finished[0] = false;
-        mpi_finished[mpi_rank] = false;
-        has_received = (mpi_rank == 0);
     }
 
     ~branch_multicut() { }
@@ -119,7 +115,7 @@ class branch_multicut {
 
         FlowType local_weight = total_weight;
         MPI_Allreduce(&local_weight, &total_weight, 1, MPI_LONG,
-                   MPI_MIN, MPI_COMM_WORLD);
+                      MPI_MIN, MPI_COMM_WORLD);
 
         size_t local_bcast_id = mpi_size;
         if (mpic.bestSolutionIsLocal() && local_weight == total_weight) {
@@ -129,7 +125,7 @@ class branch_multicut {
 
         size_t global_bcast_id = local_bcast_id;
         MPI_Allreduce(&local_bcast_id, &global_bcast_id, 1, MPI_LONG,
-                   MPI_MIN, MPI_COMM_WORLD);
+                      MPI_MIN, MPI_COMM_WORLD);
         size_t bsize = best_solution.size();
         MPI_Bcast(&best_solution.front(), bsize, MPI_INT,
                   global_bcast_id, MPI_COMM_WORLD);
@@ -155,6 +151,12 @@ class branch_multicut {
                 std::shared_ptr<multicut_problem> problem =
                     problems.pullProblem(thread_id);
 
+                LOG1 << mpi_rank << " pulls problem, now size " << problems.size();
+
+                if (problem->lower_bound >= global_upper_bound) {
+                    continue;
+                }
+
                 // Print small graph to file, left in as used in testing
 
                 /*if (problem->graph->n() < 2000) {
@@ -170,8 +172,10 @@ class branch_multicut {
                     exit(1);
                 }*/
                 bool sent = false;
-                if (thread_id == 0 && !problems.empty(0)) {
+                if (mpi_size > 1 && thread_id == 0 && !problems.empty(0)) {
                     sent = mpic.checkForReceiver(problem);
+                    LOG1 << mpi_rank << " has problems " << problems.size()
+                         << ", thus sending one: " << sent;
                 }
 
                 if (!sent) {
@@ -179,16 +183,19 @@ class branch_multicut {
                     solveProblem(problem, thread_id);
                 }
             } else {
+                LOG1 << mpi_rank << " finished at " << total_time.elapsed();
                 if (!im_idle) {
                     idle_threads++;
                     im_idle = true;
                 }
+
                 if (idle_threads == num_threads && problems.all_empty()) {
-                    if (!has_received) {
-                        auto p = mpic.waitForProblem();
-                        problems.addProblem(p, thread_id);
-                        has_received = true;
+                    LOG1 << mpi_rank << " will wait";
+                    auto p = mpic.waitForProblem();
+                    if (p.has_value()) {
+                        problems.addProblem(p.value(), thread_id);
                     } else {
+                        LOG1 << mpi_rank << " is finishing";
                         is_finished = true;
                         for (size_t j = 0; j < num_threads; ++j) {
                             q_cv[j].notify_all();
@@ -235,12 +242,13 @@ class branch_multicut {
         }
 
         if (total_time.elapsed() > log_timer) {
-            double logs_per_second = 2.0;
+            double logs_per_second = 1000000000.0;
             double time_added = 1.0 / logs_per_second;
 
             log_timer = time_added + log_timer;
 
-            LOGC(testing) << "After " << total_time.elapsed()
+            LOGC(testing) << "Rank " << mpi_rank << " - "
+                          << "After " << total_time.elapsed()
                           << " - terminals:" << problem->terminals.size()
                           << " vertices:" << problem->graph->n()
                           << " deleted:" << problem->deleted_weight
@@ -680,7 +688,5 @@ class branch_multicut {
     // MPI
     int mpi_size;
     int mpi_rank;
-    std::vector<bool> mpi_finished;
-    bool has_received;
     mpi_communication mpic;
 };

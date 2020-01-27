@@ -16,15 +16,14 @@
 #include <vector>
 
 #include "algorithms/multicut/multicut_problem.h"
+#include "common/definitions.h"
 
 class mpi_communication {
  public:
     static const bool debug = false;
 
     mpi_communication() : bestSolutionLocal(false),
-                          best_solution(UNDEFINED_NODE),
-                          empty_workers(0),
-                          last_sent(0) {
+                          best_solution(UNDEFINED_NODE) {
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         req.resize(mpi_size);
@@ -125,21 +124,18 @@ class mpi_communication {
         return false;
     }
 
-    std::optional<std::shared_ptr<multicut_problem> > waitForProblem() {
+    std::optional<int> waitForProblem(int thread_id) {
         MessageStatus message = needProblem;
-        int src = (mpi_rank == 0) ? mpi_size - 1 : mpi_rank - 1;
+        int src = random_functions::nextInt(0, mpi_size - 1);
+        if (src == thread_id) {
+            src--;
+        }
         int dest = (mpi_rank == mpi_size - 1) ? 0 : mpi_rank + 1;
         LOG << mpi_rank << " waiting for " << src;
         MPI_Request request;
         MPI_Isend(&message, 1, MPI_INT, src, 2000, MPI_COMM_WORLD, &request);
 
-        // check
-        MessageStatus empty = emptyAsWell;
-        MPI_Request empty_req;
-        MPI_Isend(&empty, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD, &empty_req);
-
         LOG << mpi_rank << " PROBING ON 3000";
-
         MPI_Probe(src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MessageStatus re;
         MPI_Recv(&re, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -147,43 +143,11 @@ class mpi_communication {
         LOG << mpi_rank << " received " << re;
 
         if (re == MessageStatus::allEmpty) {
-            MessageStatus final = MessageStatus::allEmpty;
-            MPI_Request fr;
-            MPI_Isend(&final, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD, &fr);
             return std::nullopt;
         }
 
         while (re == MessageStatus::emptyAsWell) {
             LOG << mpi_rank << " knows that " << src << " is empty too";
-
-            int result = 1;
-            int received_empty = 0;
-            while (result > 0) {
-                MPI_Iprobe(src, 3100, MPI_COMM_WORLD,
-                           &result, MPI_STATUS_IGNORE);
-                if (result > 0) {
-                    MPI_Recv(&received_empty, 1, MPI_INT, src, 3100,
-                             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                }
-            }
-            LOG << mpi_rank << " has " << result << " empty workers in front";
-
-            empty_workers = received_empty + 1;
-
-            if (empty_workers != last_sent) {
-                MPI_Request front_req;
-                MPI_Isend(&empty_workers, 1, MPI_INT, dest, 3100,
-                          MPI_COMM_WORLD, &front_req);
-                MPI_Request er;
-                MPI_Isend(&empty, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD, &er);
-            }
-
-            if (empty_workers >= mpi_size) {
-                MessageStatus final = MessageStatus::allEmpty;
-                MPI_Request fr;
-                MPI_Isend(&final, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD, &fr);
-                return std::nullopt;
-            }
 
             MPI_Recv(&re, 1, MPI_INT, src, 3000,
                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -207,42 +171,34 @@ class mpi_communication {
             }
         }
 
-        if (empty_workers > 0) {
-            empty_workers = 0;
-            MPI_Request front_req;
-            MPI_Isend(&empty_workers, 1, MPI_INT, dest, 3100,
-                      MPI_COMM_WORLD, &front_req);
-        }
-
         LOG << mpi_rank << " heard answer from " << src;
-        return std::optional<std::shared_ptr<multicut_problem> >(recvProblem());
+        return std::optional<int>(src);
     }
 
-    std::shared_ptr<multicut_problem> recvProblem() {
+    std::shared_ptr<multicut_problem> recvProblem(int src) {
         LOG << mpi_rank << " receives problem";
         FlowType lower_bound;
         FlowType upper_bound;
         EdgeWeight deleted_wgt;
         MPI_Status status;
-        MPI_Recv(&lower_bound, 1, MPI_LONG, MPI_ANY_SOURCE,
-                 1010, MPI_COMM_WORLD, &status);
-        MPI_Recv(&upper_bound, 1, MPI_LONG, status.MPI_SOURCE,
+        MPI_Recv(&lower_bound, 1, MPI_LONG, src, 1010, MPI_COMM_WORLD, &status);
+        MPI_Recv(&upper_bound, 1, MPI_LONG, src,
                  1020, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(&deleted_wgt, 1, MPI_LONG, status.MPI_SOURCE,
+        MPI_Recv(&deleted_wgt, 1, MPI_LONG, src,
                  1030, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         LOG << mpi_rank << " currently receiving from " << status.MPI_SOURCE;
 
         // terminals
         size_t termsize = 0;
-        MPI_Recv(&termsize, 1, MPI_LONG, status.MPI_SOURCE,
+        MPI_Recv(&termsize, 1, MPI_LONG, src,
                  1040, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<NodeID> termids;
         std::vector<NodeID> origids;
         termids.resize(termsize);
         origids.resize(termsize);
-        MPI_Recv(&termids.front(), termsize, MPI_INT, status.MPI_SOURCE,
+        MPI_Recv(&termids.front(), termsize, MPI_INT, src,
                  1050, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(&origids.front(), termsize, MPI_INT, status.MPI_SOURCE,
+        MPI_Recv(&origids.front(), termsize, MPI_INT, src,
                  1060, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<terminal> terminals;
         for (size_t i = 0; i < termids.size(); ++i) {
@@ -251,26 +207,26 @@ class mpi_communication {
 
         // mappings
         size_t mappingsize = 0;
-        MPI_Recv(&mappingsize, 1, MPI_LONG, status.MPI_SOURCE,
+        MPI_Recv(&mappingsize, 1, MPI_LONG, src,
                  1070, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<std::shared_ptr<std::vector<NodeID> > > mappings;
         for (size_t i = 0; i < mappingsize; ++i) {
             auto map = std::make_shared<std::vector<NodeID> >();
             size_t currmapsize = 0;
-            MPI_Recv(&currmapsize, 1, MPI_LONG, status.MPI_SOURCE,
+            MPI_Recv(&currmapsize, 1, MPI_LONG, src,
                      1080, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             map->resize(currmapsize);
-            MPI_Recv(&map->front(), currmapsize, MPI_INT, status.MPI_SOURCE,
+            MPI_Recv(&map->front(), currmapsize, MPI_INT, src,
                      1090, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             mappings.emplace_back(map);
         }
 
         size_t serialsize = 0;
-        MPI_Recv(&serialsize, 1, MPI_LONG, status.MPI_SOURCE,
+        MPI_Recv(&serialsize, 1, MPI_LONG, src,
                  1100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::vector<uint64_t> serial;
         serial.resize(serialsize);
-        MPI_Recv(&serial.front(), serialsize, MPI_LONG, status.MPI_SOURCE,
+        MPI_Recv(&serial.front(), serialsize, MPI_LONG, src,
                  1110, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         auto G = mutable_graph::deserialize(serial);
 
@@ -295,8 +251,4 @@ class mpi_communication {
     std::vector<MPI_Request> req;
     bool bestSolutionLocal;
     FlowType best_solution;
-    int empty_workers;
-    int last_sent;
-
-    enum MessageStatus { needProblem, haveProblem, emptyAsWell, allEmpty };
 };

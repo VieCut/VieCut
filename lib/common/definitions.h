@@ -57,3 +57,5 @@ typedef enum {
     CYCLE,
     FINISHED
 } DFSVertexStatus;
+
+enum MessageStatus { needProblem, haveProblem, emptyAsWell, allEmpty };

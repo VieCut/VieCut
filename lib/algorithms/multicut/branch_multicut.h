@@ -79,6 +79,9 @@ class branch_multicut {
           log_timer(0) {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+        mpi_num_done = 0;
+        mpi_done.resize(mpi_size, 0);
+        sent_done = false;
     }
 
     ~branch_multicut() { }
@@ -185,11 +188,55 @@ class branch_multicut {
                 }
 
                 if (my_idle_id == num_threads && problems.all_empty()) {
-                    auto p = mpic.waitForProblem();
-                    if (p.has_value()) {
-                        problems.addProblem(p.value(), thread_id);
+                    if (mpi_rank == mpi_size - 1) {
+                        int result = 1;
+                        while (result > 0) {
+                            MPI_Status status;
+                            MPI_Iprobe(MPI_ANY_SOURCE, 4000, MPI_COMM_WORLD,
+                                       &result, &status);
+                            if (result > 0) {
+                                int done;
+                                int source = status.MPI_SOURCE;
+                                MPI_Recv(&done, 1, MPI_INT, source, 4000,
+                                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                                int done_before = mpi_done[source];
+                                mpi_done[source] = done;
+                                mpi_num_done += (done - done_before);
+                            }
+
+                            if (mpi_num_done == mpi_size - 1) {
+                                for (int i = 0; i < mpi_size - 1; ++i) {
+                                    MessageStatus fnl = MessageStatus::allEmpty;
+                                    MPI_Request fr;
+                                    MPI_Isend(&fnl, 1, MPI_INT, i, 3000,
+                                              MPI_COMM_WORLD, &fr);
+                                }
+                            }
+                        }
+                    } else {
+                        if (!sent_done) {
+                            int done = 1;
+                            sent_done = true;
+                            MPI_Request rq;
+                            MPI_Isend(&done, 1, MPI_INT, mpi_size - 1,
+                                      4000, MPI_COMM_WORLD, &rq);
+                        }
+                    }
+
+                    auto src = mpic.waitForProblem(thread_id);
+                    if (src.has_value()) {
+                        if (sent_done) {
+                            int done = 0;
+                            sent_done = false;
+                            MPI_Request rq;
+                            MPI_Isend(&done, 1, MPI_INT, mpi_size - 1,
+                                      4000, MPI_COMM_WORLD, &rq);
+                        }
+                        auto p = mpic.recvProblem(src.value());
+                        problems.addProblem(p, thread_id);
                     } else {
                         is_finished = true;
+
                         for (size_t j = 0; j < num_threads; ++j) {
                             q_cv[j].notify_all();
                         }
@@ -682,4 +729,8 @@ class branch_multicut {
     int mpi_size;
     int mpi_rank;
     mpi_communication mpic;
+    int mpi_num_done;
+    // only used in rank mpi_size - 1
+    std::vector<int> mpi_done;
+    bool sent_done;
 };

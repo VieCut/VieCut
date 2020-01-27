@@ -145,11 +145,11 @@ class branch_multicut {
         bool im_idle = false;
         while (!is_finished) {
             if (!problems.empty(thread_id)) {
-                FlowType update = mpic.getGlobalBestSolution();
-                global_upper_bound = std::min(global_upper_bound, update);
-
+                if (thread_id == 0) {
+                    FlowType update = mpic.getGlobalBestSolution();
+                    global_upper_bound = std::min(global_upper_bound, update);
+                }
                 auto problem = problems.pullProblem(thread_id);
-
                 if (problem->lower_bound >= global_upper_bound) {
                     continue;
                 }
@@ -178,17 +178,17 @@ class branch_multicut {
                     solveProblem(problem, thread_id);
                 }
             } else {
+                uint32_t my_idle_id = 0;
                 if (!im_idle) {
-                    idle_threads++;
+                    my_idle_id = ++idle_threads;
                     im_idle = true;
                 }
 
-                if (idle_threads == num_threads && problems.all_empty()) {
+                if (my_idle_id == num_threads && problems.all_empty()) {
                     auto p = mpic.waitForProblem();
                     if (p.has_value()) {
                         problems.addProblem(p.value(), thread_id);
                     } else {
-                        LOG1 << mpi_rank << " is finishing";
                         is_finished = true;
                         for (size_t j = 0; j < num_threads; ++j) {
                             q_cv[j].notify_all();
@@ -204,7 +204,7 @@ class branch_multicut {
                         return queueNotEmpty(thread_id);
                     });
 
-                if (im_idle) {
+                if (im_idle && !problems.all_empty()) {
                     idle_threads--;
                     im_idle = false;
                 }
@@ -235,7 +235,7 @@ class branch_multicut {
         }
 
         if (total_time.elapsed() > log_timer) {
-            double logs_per_second = 1000000000.0;
+            double logs_per_second = 2.0;
             double time_added = 1.0 / logs_per_second;
 
             log_timer = time_added + log_timer;

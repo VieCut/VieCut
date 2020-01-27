@@ -110,16 +110,18 @@ class mpi_communication {
     bool checkForReceiver(std::shared_ptr<multicut_problem> problem) {
         int dest = (mpi_rank == mpi_size - 1) ? 0 : mpi_rank + 1;
         int result;
+        LOG << mpi_rank << "probing";
         MPI_Iprobe(dest, 2000, MPI_COMM_WORLD, &result, MPI_STATUS_IGNORE);
         if (result > 0) {
+            LOG << mpi_rank << " found probe from " << dest;
             MPI_Recv(&result, 1, MPI_LONG, dest, 2000,
                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            LOG << mpi_rank << " found probe from " << dest;
             MessageStatus message = haveProblem;
             MPI_Send(&message, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD);
             sendProblem(problem, dest);
             return true;
         }
+        LOG << mpi_rank << " no receiver found";
         return false;
     }
 
@@ -142,8 +144,9 @@ class mpi_communication {
         MessageStatus re;
         MPI_Recv(&re, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+        LOG << mpi_rank << " received " << re;
+
         if (re == MessageStatus::allEmpty) {
-            LOG1 << "ALL EMPTY!";
             MessageStatus final = MessageStatus::allEmpty;
             MPI_Request fr;
             MPI_Isend(&final, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD, &fr);

@@ -80,7 +80,22 @@ class per_thread_problem_queue {
     }
     ~per_thread_problem_queue() { }
 
-    problemPointer pullProblem(size_t local_id) {
+    void prepareQueue(size_t local_id, FlowType global_upper_bound) {
+        pop_mutex[local_id].lock();
+        while (pq[local_id].size() > 0) {
+            problemPointer current_problem = pq[local_id].top();
+            if (current_problem->lower_bound >= global_upper_bound) {
+                pq[local_id].pop();
+                sizes[local_id].first -= 1;
+                sizes[local_id].second = true;
+            } else {
+                break;
+            }
+        }
+        pop_mutex[local_id].unlock();
+    }
+
+    problemPointer pullProblem(size_t local_id, bool sending) {
         problemPointer current_problem;
 
         // we (implicitly) add +1 to pq size

@@ -106,7 +106,7 @@ class mpi_communication {
                  tgt, 1110, MPI_COMM_WORLD);
     }
 
-    bool checkForReceiver(std::shared_ptr<multicut_problem> problem) {
+    std::optional<int> checkForReceiver() {
         int result;
         LOG << mpi_rank << "probing";
         MPI_Iprobe(MPI_ANY_SOURCE, 2000, MPI_COMM_WORLD,
@@ -118,11 +118,10 @@ class mpi_communication {
             LOG << mpi_rank << " found probe from " << st.MPI_SOURCE;
             MessageStatus message = haveProblem;
             MPI_Send(&message, 1, MPI_INT, st.MPI_SOURCE, 3000, MPI_COMM_WORLD);
-            sendProblem(problem, st.MPI_SOURCE);
-            return true;
+            return st.MPI_SOURCE;
         }
         LOG << mpi_rank << " no receiver found";
-        return false;
+        return std::nullopt;
     }
 
     std::variant<int, bool> waitForProblem() {
@@ -162,13 +161,7 @@ class mpi_communication {
                               3000, MPI_COMM_WORLD, &rq);
                 }
             }
-
-            // LOG << mpi_rank << " PROBING ON 3000";
             MPI_Iprobe(src, 3000, MPI_COMM_WORLD, &incoming, MPI_STATUS_IGNORE);
-            /*if (!incoming) {
-                LOG << mpi_rank << " sleeping for 1 second!";
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            }*/
         }
         MessageStatus re;
         MPI_Recv(&re, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);

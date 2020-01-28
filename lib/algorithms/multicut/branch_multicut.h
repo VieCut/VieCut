@@ -104,8 +104,8 @@ class branch_multicut {
                 cpu_set_t cpuset;
                 CPU_ZERO(&cpuset);
                 CPU_SET(i, &cpuset);
-                pthread_setaffinity_np(threads[i].native_handle(),
-                                       sizeof(cpu_set_t), &cpuset);
+                pthread_setaffinity_np(
+                    threads[i].native_handle(), sizeof(cpu_set_t), &cpuset);
             }
         }
 
@@ -173,14 +173,11 @@ class branch_multicut {
     void pollWork(size_t thread_id) {
         bool im_idle = false;
         while (!is_finished) {
+            problems.prepareQueue(thread_id, global_upper_bound);
             if (!problems.empty(thread_id)) {
                 if (thread_id == 0) {
                     FlowType update = mpic.getGlobalBestSolution();
                     global_upper_bound = std::min(global_upper_bound, update);
-                }
-                auto problem = problems.pullProblem(thread_id);
-                if (problem->lower_bound >= global_upper_bound) {
-                    continue;
                 }
 
                 // Print small graph to file, left in as used in testing
@@ -197,13 +194,17 @@ class branch_multicut {
                     LOG1 << "...done!";
                     exit(1);
                 }*/
-                bool sent = false;
+                std::optional<int> sending = std::nullopt;
                 if (mpi_size > 1 && thread_id == 0 && !problems.empty(0)) {
-                    sent = mpic.checkForReceiver(problem);
+                    sending = mpic.checkForReceiver();
                 }
 
-                if (!sent) {
+                auto problem = problems.pullProblem(thread_id,
+                                                    sending.has_value());
+                if (sending.has_value()) {
                     // forget this problem if it was sent to another worker
+                    mpic.sendProblem(problem, sending.value());
+                } else {
                     solveProblem(problem, thread_id);
                 }
             } else {

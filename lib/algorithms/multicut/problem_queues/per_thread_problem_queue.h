@@ -30,6 +30,7 @@ class per_thread_problem_queue {
 
     per_thread_problem_queue(size_t threads, std::string pq_type)
         : num_threads(threads),
+          haveSendProblem(false),
           pop_mutex(threads),
           sizes(threads) {
         for (size_t i = 0; i < num_threads; ++i) {

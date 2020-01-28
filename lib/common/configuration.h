@@ -46,6 +46,7 @@ class configuration {
     size_t preset_percentage = 0;
     size_t total_terminals = 0;
     size_t print_cc = 0;
+    bool disable_cpu_affinity = false;
 
     // minimum cut parameters
     bool save_cut = false;

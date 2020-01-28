@@ -100,11 +100,13 @@ class branch_multicut {
         for (size_t i = 0; i < num_threads; ++i) {
             threads.emplace_back(
                 std::thread(&branch_multicut::pollWork, this, i));
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            CPU_SET(i, &cpuset);
-            pthread_setaffinity_np(threads[i].native_handle(),
-                                   sizeof(cpu_set_t), &cpuset);
+            if (!configuration::getConfig()->disable_cpu_affinity) {
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                CPU_SET(i, &cpuset);
+                pthread_setaffinity_np(threads[i].native_handle(),
+                                       sizeof(cpu_set_t), &cpuset);
+            }
         }
 
         for (auto& t : threads) {

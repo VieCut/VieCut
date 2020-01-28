@@ -63,13 +63,15 @@ class ilp_model {
                 model.set(GRB_IntParam_Threads, threads);
                 LOG1 << "Running parallel ILP with "
                      << model.get(GRB_IntParam_Threads) << " threads";
-                cpu_set_t all_cores;
-                CPU_ZERO(&all_cores);
-                for (size_t i = 0; i < threads; ++i) {
-                    CPU_SET(i, &all_cores);
-                }
+                if (!configuration::getConfig()->disable_cpu_affinity) {
+                    cpu_set_t all_cores;
+                    CPU_ZERO(&all_cores);
+                    for (size_t i = 0; i < threads; ++i) {
+                        CPU_SET(i, &all_cores);
+                    }
 
-                sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
+                    sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
+                }
             }
             model.set(GRB_IntParam_PoolSearchMode, 0);
             model.set(GRB_DoubleParam_TimeLimit, 3600.0);
@@ -164,10 +166,12 @@ class ilp_model {
                  << " current_terminals=" << problem->terminals.size();
 
             if (parallel) {
-                cpu_set_t my_id;
-                CPU_ZERO(&my_id);
-                CPU_SET(thread_id, &my_id);
-                sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
+                if (!configuration::getConfig()->disable_cpu_affinity) {
+                    cpu_set_t my_id;
+                    CPU_ZERO(&my_id);
+                    CPU_SET(thread_id, &my_id);
+                    sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
+                }
             }
 
             return std::make_pair(result, wgt);

@@ -192,13 +192,14 @@ class maximum_flow {
             if (problem->terminals[i].invalid_flow) {
                 if (parallel_flows) {
                     maxVolIsoBlock.emplace_back();
-                    cpu_set_t all_cores;
-                    CPU_ZERO(&all_cores);
-                    for (size_t i = 0; i < num_threads; ++i) {
-                        CPU_SET(i, &all_cores);
+                    if (!configuration::getConfig()->disable_cpu_affinity) {
+                        cpu_set_t all_cores;
+                        CPU_ZERO(&all_cores);
+                        for (size_t i = 0; i < num_threads; ++i) {
+                            CPU_SET(i, &all_cores);
+                        }
+                        sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
                     }
-
-                    sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
                     futures.emplace_back(
                         std::async(&push_relabel::callable_max_flow,
                                    &prs[i],
@@ -226,10 +227,12 @@ class maximum_flow {
                 maxVolIsoBlock[i] = t.get();
             }
 
-            cpu_set_t my_id;
-            CPU_ZERO(&my_id);
-            CPU_SET(thread_id, &my_id);
-            sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
+            if (!configuration::getConfig()->disable_cpu_affinity) {
+                cpu_set_t my_id;
+                CPU_ZERO(&my_id);
+                CPU_SET(thread_id, &my_id);
+                sched_setaffinity(0, sizeof(cpu_set_t), &my_id);
+            }
         }
 
         graph_contraction::contractIsolatingBlocks(problem, maxVolIsoBlock);

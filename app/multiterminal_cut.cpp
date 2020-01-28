@@ -68,6 +68,8 @@ int main(int argn, char** argv) {
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
     cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
+    cmdl.add_flag('d', "disable_cpu_affinity", config->disable_cpu_affinity,
+                  "Default CPU affinity (i.e. let the OS decide where each thread runs)");
 
     if (!cmdl.process(argn, argv))
         return -1;

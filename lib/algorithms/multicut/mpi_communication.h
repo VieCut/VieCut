@@ -126,6 +126,10 @@ class mpi_communication {
     }
 
     std::variant<int, bool> waitForProblem() {
+        if (mpi_size == 1) {
+            return true;
+        }
+
         MessageStatus message = needProblem;
         int src = 0;
 

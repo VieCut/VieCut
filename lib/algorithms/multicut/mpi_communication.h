@@ -107,72 +107,85 @@ class mpi_communication {
     }
 
     bool checkForReceiver(std::shared_ptr<multicut_problem> problem) {
-        int dest = (mpi_rank == mpi_size - 1) ? 0 : mpi_rank + 1;
         int result;
         LOG << mpi_rank << "probing";
-        MPI_Iprobe(dest, 2000, MPI_COMM_WORLD, &result, MPI_STATUS_IGNORE);
+        MPI_Iprobe(MPI_ANY_SOURCE, 2000, MPI_COMM_WORLD,
+                   &result, MPI_STATUS_IGNORE);
         if (result > 0) {
-            LOG << mpi_rank << " found probe from " << dest;
-            MPI_Recv(&result, 1, MPI_LONG, dest, 2000,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Status st;
+            MPI_Recv(&result, 1, MPI_LONG, MPI_ANY_SOURCE, 2000,
+                     MPI_COMM_WORLD, &st);
+            LOG << mpi_rank << " found probe from " << st.MPI_SOURCE;
             MessageStatus message = haveProblem;
-            MPI_Send(&message, 1, MPI_INT, dest, 3000, MPI_COMM_WORLD);
-            sendProblem(problem, dest);
+            MPI_Send(&message, 1, MPI_INT, st.MPI_SOURCE, 3000, MPI_COMM_WORLD);
+            sendProblem(problem, st.MPI_SOURCE);
             return true;
         }
         LOG << mpi_rank << " no receiver found";
         return false;
     }
 
-    std::optional<int> waitForProblem(int thread_id) {
+    std::variant<int, bool> waitForProblem() {
         MessageStatus message = needProblem;
-        int src = random_functions::nextInt(0, mpi_size - 1);
-        if (src == thread_id) {
-            src--;
-        }
-        int dest = (mpi_rank == mpi_size - 1) ? 0 : mpi_rank + 1;
+        int src = 0;
+
+        do {
+            src = random_functions::nextInt(0, mpi_size - 1);
+        } while (src == mpi_rank);
+
         LOG << mpi_rank << " waiting for " << src;
         MPI_Request request;
         MPI_Isend(&message, 1, MPI_INT, src, 2000, MPI_COMM_WORLD, &request);
 
-        LOG << mpi_rank << " PROBING ON 3000";
-        MPI_Probe(src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        int incoming = 0;
+
+        while (incoming == 0) {
+            int result = 1;
+            while (result > 0) {
+                int ms;
+                MPI_Status stat;
+                MPI_Iprobe(MPI_ANY_SOURCE, 2000,
+                           MPI_COMM_WORLD, &result, &stat);
+                if (result > 0) {
+                    MPI_Recv(&ms, 1, MPI_LONG, stat.MPI_SOURCE, 2000,
+                             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+                    LOG << mpi_rank << " found probe from "
+                        << stat.MPI_SOURCE << " but is empty";
+                    MessageStatus answer = emptyAsWell;
+                    MPI_Request rq;
+                    MPI_Isend(&answer, 1, MPI_INT, stat.MPI_SOURCE,
+                              3000, MPI_COMM_WORLD, &rq);
+                }
+            }
+
+            // LOG << mpi_rank << " PROBING ON 3000";
+            MPI_Iprobe(src, 3000, MPI_COMM_WORLD, &incoming, MPI_STATUS_IGNORE);
+            /*if (!incoming) {
+                LOG << mpi_rank << " sleeping for 1 second!";
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }*/
+        }
         MessageStatus re;
         MPI_Recv(&re, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         LOG << mpi_rank << " received " << re;
 
         if (re == MessageStatus::allEmpty) {
-            return std::nullopt;
+            return true;
         }
 
-        while (re == MessageStatus::emptyAsWell) {
-            LOG << mpi_rank << " knows that " << src << " is empty too";
+        if (re == MessageStatus::emptyAsWell) {
+            return false;
+        }
 
-            MPI_Recv(&re, 1, MPI_INT, src, 3000,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-            MessageStatus final = MessageStatus::allEmpty;
-            switch (re) {
-            case MessageStatus::allEmpty:
-                MPI_Request fr;
-                MPI_Isend(&final, 1, MPI_INT, dest,
-                          3000, MPI_COMM_WORLD, &fr);
-                return std::nullopt;
-                break;
-            case MessageStatus::emptyAsWell:
-                break;
-            case MessageStatus::haveProblem:
-                break;
-            default:
-                // this should not happen
-                LOG1 << "Error: Invalid MPI message! Exiting.";
-                exit(-1);
-            }
+        if (re == MessageStatus::needProblem) {
+            LOG1 << "Error: Invalid MPI message!";
+            exit(1);
         }
 
         LOG << mpi_rank << " heard answer from " << src;
-        return std::optional<int>(src);
+        return src;
     }
 
     std::shared_ptr<multicut_problem> recvProblem(int src) {

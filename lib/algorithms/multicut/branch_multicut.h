@@ -114,6 +114,29 @@ class branch_multicut {
             t.join();
         }
 
+        MPI_Request all_done;
+        MPI_Ibarrier(MPI_COMM_WORLD, &all_done);
+
+        int finished = 0;
+        while (finished == 0) {
+            MPI_Test(&all_done, &finished, MPI_STATUS_IGNORE);
+            int ms;
+            MPI_Status status;
+
+            MPI_Iprobe(MPI_ANY_SOURCE, 2000, MPI_COMM_WORLD, &ms, &status);
+
+            if (ms > 0) {
+                int re;
+                MPI_Recv(&re, 1, MPI_LONG, status.MPI_SOURCE, 2000,
+                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+                MessageStatus answer = allEmpty;
+                MPI_Request rq;
+                MPI_Isend(&answer, 1, MPI_INT, status.MPI_SOURCE,
+                          3000, MPI_COMM_WORLD, &rq);
+            }
+        }
+
         FlowType total_weight = global_upper_bound;
 
         FlowType local_weight = total_weight;
@@ -141,7 +164,8 @@ class branch_multicut {
 
  private:
     bool queueNotEmpty(size_t thread_id) {
-        return !problems.empty(thread_id) || is_finished;
+        return !problems.empty(thread_id) || is_finished
+               || (idle_threads == num_threads);
     }
 
     void pollWork(size_t thread_id) {
@@ -181,66 +205,77 @@ class branch_multicut {
                     solveProblem(problem, thread_id);
                 }
             } else {
-                uint32_t my_idle_id = 0;
                 if (!im_idle) {
-                    my_idle_id = ++idle_threads;
+                    ++idle_threads;
                     im_idle = true;
                 }
 
-                if (my_idle_id == num_threads && problems.all_empty()) {
-                    if (mpi_rank == mpi_size - 1) {
-                        int result = 1;
-                        while (result > 0) {
-                            MPI_Status status;
-                            MPI_Iprobe(MPI_ANY_SOURCE, 4000, MPI_COMM_WORLD,
-                                       &result, &status);
-                            if (result > 0) {
-                                int done;
-                                int source = status.MPI_SOURCE;
-                                MPI_Recv(&done, 1, MPI_INT, source, 4000,
-                                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                                int done_before = mpi_done[source];
-                                mpi_done[source] = done;
-                                mpi_num_done += (done - done_before);
+                if (idle_threads == num_threads && problems.all_empty()) {
+                    if (mpi_mutex.try_lock()) {
+                        auto src = mpic.waitForProblem();
+                        if (std::holds_alternative<int>(src)) {
+                            if (sent_done) {
+                                int done = 0;
+                                sent_done = false;
+                                MPI_Request rq;
+                                MPI_Isend(&done, 1, MPI_INT, mpi_size - 1,
+                                          4000, MPI_COMM_WORLD, &rq);
+                            }
+                            auto p = mpic.recvProblem(std::get<int>(src));
+                            problems.addProblem(p, thread_id);
+                        } else {
+                            if (std::get<bool>(src)) {
+                                is_finished = true;
+                                for (size_t j = 0; j < num_threads; ++j) {
+                                    q_cv[j].notify_all();
+                                }
+                                return;
                             }
 
-                            if (mpi_num_done == mpi_size - 1) {
-                                for (int i = 0; i < mpi_size - 1; ++i) {
-                                    MessageStatus fnl = MessageStatus::allEmpty;
-                                    MPI_Request fr;
-                                    MPI_Isend(&fnl, 1, MPI_INT, i, 3000,
-                                              MPI_COMM_WORLD, &fr);
+                            if (mpi_rank == mpi_size - 1) {
+                                int result = 1;
+                                while (result > 0) {
+                                    MPI_Status stat;
+                                    MPI_Iprobe(MPI_ANY_SOURCE, 4000,
+                                               MPI_COMM_WORLD, &result, &stat);
+                                    if (result > 0) {
+                                        int done;
+                                        int source = stat.MPI_SOURCE;
+                                        MPI_Recv(&done, 1, MPI_INT, source,
+                                                 4000, MPI_COMM_WORLD,
+                                                 MPI_STATUS_IGNORE);
+                                        int done_before = mpi_done[source];
+                                        mpi_done[source] = done;
+                                        mpi_num_done += (done - done_before);
+                                    }
+
+                                    if (mpi_num_done == mpi_size - 1) {
+                                        for (int i = 0; i < mpi_size - 1; ++i) {
+                                            MessageStatus fnl =
+                                                MessageStatus::allEmpty;
+                                            MPI_Request fr;
+                                            MPI_Isend(&fnl, 1, MPI_INT, i, 3000,
+                                                      MPI_COMM_WORLD, &fr);
+                                            is_finished = true;
+                                            for (size_t j = 0; j < num_threads;
+                                                 ++j) {
+                                                q_cv[j].notify_all();
+                                            }
+                                            return;
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (!sent_done) {
+                                    int done = 1;
+                                    sent_done = true;
+                                    MPI_Request rq;
+                                    MPI_Isend(&done, 1, MPI_INT, mpi_size - 1,
+                                              4000, MPI_COMM_WORLD, &rq);
                                 }
                             }
                         }
-                    } else {
-                        if (!sent_done) {
-                            int done = 1;
-                            sent_done = true;
-                            MPI_Request rq;
-                            MPI_Isend(&done, 1, MPI_INT, mpi_size - 1,
-                                      4000, MPI_COMM_WORLD, &rq);
-                        }
-                    }
-
-                    auto src = mpic.waitForProblem(thread_id);
-                    if (src.has_value()) {
-                        if (sent_done) {
-                            int done = 0;
-                            sent_done = false;
-                            MPI_Request rq;
-                            MPI_Isend(&done, 1, MPI_INT, mpi_size - 1,
-                                      4000, MPI_COMM_WORLD, &rq);
-                        }
-                        auto p = mpic.recvProblem(src.value());
-                        problems.addProblem(p, thread_id);
-                    } else {
-                        is_finished = true;
-
-                        for (size_t j = 0; j < num_threads; ++j) {
-                            q_cv[j].notify_all();
-                        }
-                        return;
+                        mpi_mutex.unlock();
                     }
                 }
 
@@ -251,7 +286,7 @@ class branch_multicut {
                         return queueNotEmpty(thread_id);
                     });
 
-                if (im_idle && !problems.all_empty()) {
+                if (im_idle) {
                     idle_threads--;
                     im_idle = false;
                 }
@@ -733,4 +768,5 @@ class branch_multicut {
     // only used in rank mpi_size - 1
     std::vector<int> mpi_done;
     bool sent_done;
+    std::mutex mpi_mutex;
 };

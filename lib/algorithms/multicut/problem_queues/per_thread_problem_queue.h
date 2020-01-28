@@ -96,7 +96,7 @@ class per_thread_problem_queue {
     }
 
     problemPointer pullProblem(size_t local_id, bool sending) {
-        problemPointer current_problem;
+        problemPointer currentProblem;
 
         // we (implicitly) add +1 to pq size
         // (as comparison function adds +1 when running is true)
@@ -104,13 +104,19 @@ class per_thread_problem_queue {
         // that don't currently run a job
         // we remove this +1 when adding a finished problem to the pq afterwards
         pop_mutex[local_id].lock();
-        current_problem = pq[local_id].top();
-        pq[local_id].pop();
+        if ((sending && haveSendProblem) || pq[local_id].size() == 0) {
+            currentProblem = sendProblem;
+            sendProblem = NULL;
+            haveSendProblem = false;
+        } else {
+            currentProblem = pq[local_id].top();
+            pq[local_id].pop();
+        }
         sizes[local_id].first -= 1;
         sizes[local_id].second = true;
         pop_mutex[local_id].unlock();
 
-        return current_problem;
+        return currentProblem;
     }
 
     size_t addProblem(problemPointer p, size_t local_id) {
@@ -134,7 +140,22 @@ class per_thread_problem_queue {
 
         pop_mutex[min_index].lock();
         sizes[min_index].first += 1;
-        pq[min_index].push(p);
+
+        if (local_id > 0) {
+            pq[min_index].push(p);
+        } else {
+            if (!haveSendProblem) {
+                sendProblem = p;
+                haveSendProblem = true;
+            } else {
+                if (sendProblem->lower_bound > p->lower_bound) {
+                    pq[min_index].push(sendProblem);
+                    sendProblem = p;
+                } else {
+                    pq[min_index].push(p);
+                }
+            }
+        }
         pop_mutex[min_index].unlock();
         return min_index;
     }
@@ -219,6 +240,9 @@ class per_thread_problem_queue {
                                     std::function<
                                         bool(const problemPointer&,
                                              const problemPointer&)> > > pq;
+
+    problemPointer sendProblem;
+    bool haveSendProblem;
 
     std::vector<std::mutex> pop_mutex;
     std::vector<std::pair<std::atomic<size_t>, bool> > sizes;

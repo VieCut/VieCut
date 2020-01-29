@@ -31,12 +31,15 @@
 #include "algorithms/multicut/multicut_problem.h"
 #include "algorithms/multicut/multiterminal_cut.h"
 #include "data_structure/graph_access.h"
-#include "gperftools/malloc_extension.h"
 #include "io/graph_io.h"
 #include "tlx/cmdline_parser.hpp"
 #include "tools/random_functions.h"
 #include "tools/string.h"
 #include "tools/timer.h"
+
+#ifdef USE_TCMALLOC
+#include "gperftools/malloc_extension.h"
+#endif
 
 int main(int argn, char** argv) {
     MPI_Init(&argn, &argv);

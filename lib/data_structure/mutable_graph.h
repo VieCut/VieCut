@@ -768,6 +768,11 @@ class mutable_graph {
         for (NodeID n : nodes()) {
             serial[next++] = static_cast<uint64_t>(num_edges + n);
             for (const auto& [t, w, r, f] : vertices[n]) {
+                // I am deeply sorry for this ugly code, but structured bindings
+                // seem to not work in combination with maybe_unused to suppress
+                // unintended unused warnings.
+                (void) r;
+                (void) f;
                 if (t > n) {
                     serial[next++] = static_cast<uint64_t>(t);
                     serial[next++] = static_cast<uint64_t>(w);

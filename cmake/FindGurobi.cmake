@@ -21,7 +21,7 @@ find_library( GUROBI_LIBRARY
 
 
 find_library( GUROBI_CXX_LIBRARY 
-              NAMES gurobi_c++
+              NAMES gurobi_g++5.2
               PATHS "$ENV{GUROBI_HOME}/lib" 
               )
 

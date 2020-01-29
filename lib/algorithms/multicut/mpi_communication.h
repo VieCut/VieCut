@@ -76,6 +76,7 @@ class mpi_communication {
         std::vector<NodeID> termpos;
         std::vector<NodeID> origid;
         for (const auto& [t, o, b] : problem->terminals) {
+            (void) b;
             termpos.emplace_back(t);
             origid.emplace_back(o);
         }

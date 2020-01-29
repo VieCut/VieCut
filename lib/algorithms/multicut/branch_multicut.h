@@ -42,13 +42,16 @@
 #include "coarsening/contract_graph.h"
 #include "common/configuration.h"
 #include "data_structure/union_find.h"
-#include "gperftools/malloc_extension.h"
 #include "io/graph_io.h"
 #include "tools/timer.h"
 #include "tools/vector.h"
 
 #ifdef USE_GUROBI
 #include "algorithms/multicut/ilp_model.h"
+#endif
+
+#ifdef USE_TCMALLOC
+#include "gperftools/malloc_extension.h"
 #endif
 
 using namespace std::chrono_literals;

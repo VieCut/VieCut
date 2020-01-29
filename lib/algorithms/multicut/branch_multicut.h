@@ -195,7 +195,8 @@ class branch_multicut {
                     exit(1);
                 }*/
                 std::optional<int> sending = std::nullopt;
-                if (mpi_size > 1 && thread_id == 0 && !problems.empty(0)) {
+                if (mpi_size > 1 && thread_id == 0
+                    && problems.subqueue_size(0) > 1) {
                     sending = mpic.checkForReceiver();
                 }
 
@@ -251,21 +252,21 @@ class branch_multicut {
                                         mpi_done[source] = done;
                                         mpi_num_done += (done - done_before);
                                     }
+                                }
 
-                                    if (mpi_num_done == mpi_size - 1) {
-                                        for (int i = 0; i < mpi_size - 1; ++i) {
-                                            MessageStatus fnl =
-                                                MessageStatus::allEmpty;
-                                            MPI_Request fr;
-                                            MPI_Isend(&fnl, 1, MPI_INT, i, 3000,
-                                                      MPI_COMM_WORLD, &fr);
-                                            is_finished = true;
-                                            for (size_t j = 0; j < num_threads;
-                                                 ++j) {
-                                                q_cv[j].notify_all();
-                                            }
-                                            return;
+                                if (mpi_num_done == mpi_size - 1) {
+                                    for (int i = 0; i < mpi_size - 1; ++i) {
+                                        MessageStatus fnl =
+                                            MessageStatus::allEmpty;
+                                        MPI_Request fr;
+                                        MPI_Isend(&fnl, 1, MPI_INT, i, 3000,
+                                                    MPI_COMM_WORLD, &fr);
+                                        is_finished = true;
+                                        for (size_t j = 0; j < num_threads;
+                                                ++j) {
+                                            q_cv[j].notify_all();
                                         }
+                                        return;
                                     }
                                 }
                             } else {

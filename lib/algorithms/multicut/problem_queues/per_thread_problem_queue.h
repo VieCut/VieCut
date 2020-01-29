@@ -178,6 +178,10 @@ class per_thread_problem_queue {
             }).first;
     }
 
+    size_t subqueue_size(size_t i) {
+        return sizes[i].first;
+    }
+
  private:
     constexpr static auto small_graph =
         [](const problemPointer& p1, const problemPointer& p2) {

@@ -263,10 +263,10 @@ class branch_multicut {
                                             MessageStatus::allEmpty;
                                         MPI_Request fr;
                                         MPI_Isend(&fnl, 1, MPI_INT, i, 3000,
-                                                    MPI_COMM_WORLD, &fr);
+                                                  MPI_COMM_WORLD, &fr);
                                         is_finished = true;
                                         for (size_t j = 0; j < num_threads;
-                                                ++j) {
+                                             ++j) {
                                             q_cv[j].notify_all();
                                         }
                                         return;
@@ -671,10 +671,10 @@ class branch_multicut {
 
         LOG1 << "start with deleted " << problem->deleted_weight;
 
-        auto [result, wgt] = ilp_model::computeIlp(problem, presets,
-                                                   original_terminals.size(),
-                                                   problems.size() == 0,
-                                                   thread_id);
+        auto [result, wgt] = ilp.computeIlp(problem, presets,
+                                            original_terminals.size(),
+                                            problems.size() == 0,
+                                            thread_id);
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (problem->upper_bound < global_upper_bound) {
@@ -766,6 +766,10 @@ class branch_multicut {
     maximum_flow mf;
     std::atomic<double> log_timer;
     std::mutex bestsol_mutex;
+
+#ifdef USE_GUROBI
+    ilp_model ilp;
+#endif
 
     // MPI
     int mpi_size;

@@ -22,9 +22,7 @@
 
 class ilp_model {
  public:
-    inline static GRBEnv env;
-
-    static std::pair<std::vector<NodeID>, EdgeWeight> computeIlp(
+    std::pair<std::vector<NodeID>, EdgeWeight> computeIlp(
         std::shared_ptr<multicut_problem> problem,
         const std::vector<NodeID>& presets,
         size_t num_terminals,
@@ -180,4 +178,7 @@ class ilp_model {
             exit(1);
         }
     }
+
+ private:
+    GRBEnv env;
 };

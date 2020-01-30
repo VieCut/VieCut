@@ -82,22 +82,34 @@ int main(int argn, char** argv) {
     std::vector<NodeID> terminals;
 
     std::shared_ptr<mutable_graph> G;
-    multiterminal_cut mc;
-    G = mutable_graph::from_graph_access(
-        graph_io::readGraphWeighted(config->graph_filename));
-    terminals = mc.setOriginalTerminals(G);
+    FlowType flow;
+    timer t;
+    try {
+        multiterminal_cut mc;
+        G = mutable_graph::from_graph_access(
+            graph_io::readGraphWeighted(config->graph_filename));
+        terminals = mc.setOriginalTerminals(G);
 
-    if (config->total_terminals == 0)
-        config->total_terminals = terminals.size();
+        if (config->total_terminals == 0)
+            config->total_terminals = terminals.size();
 
-    if (terminals.size() < 2) {
-        std::cerr << "ERROR: Number of terminals (" << terminals.size()
-                  << ") too small! Exiting..." << std::endl;
-        exit(-1);
+        if (terminals.size() < 2) {
+            std::cerr << "ERROR: Number of terminals (" << terminals.size()
+                      << ") too small! Exiting..." << std::endl;
+            exit(-1);
+        }
+
+        t.restart();
+        flow = mc.multicut(G, terminals);
+
+#ifdef USE_GUROBI
+    } catch (GRBException e) {
+        LOG1 << e.getMessage();
+#endif
+    } catch (const std::exception& e) {
+        LOG1 << e.what();
     }
 
-    timer t;
-    FlowType flow = mc.multicut(G, terminals);
     std::cout << "RESULT selection_rule=" << config->edge_selection
               << " pq=" << config->queue_type
               << " graph=" << config->graph_filename

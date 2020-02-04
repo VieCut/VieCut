@@ -93,6 +93,21 @@ class maximum_flow {
         union_find uf(problem->graph->n());
         std::unordered_set<NodeID> previous;
 
+        std::vector<std::future<std::vector<NodeID> > > futures;
+        std::vector<push_relabel> prs(
+            configuration::getConfig()->random_flows +
+            configuration::getConfig()->high_distance_flows);
+        size_t pr_id = 0;
+
+        if (!configuration::getConfig()->disable_cpu_affinity) {
+            cpu_set_t all_cores;
+            CPU_ZERO(&all_cores);
+            for (size_t i = 0; i < num_threads; ++i) {
+                CPU_SET(i, &all_cores);
+            }
+            sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
+        }
+
         for (const auto& t : problem->terminals) {
             previous.insert(t.position);
         }
@@ -115,20 +130,12 @@ class maximum_flow {
                 terms.emplace_back(t.position);
             }
             terms.emplace_back(r);
-            push_relabel pr;
             size_t num_t = terms.size() - 1;
-            auto sourceSet = pr.solve_max_flow_min_cut(
-                problem->graph, terms, num_t, true).second;
 
-            for (const auto& s : sourceSet) {
-                uf.Union(s, r);
-            }
-
-            if (sourceSet.size() > 1)
-                LOG0 << "big " << sourceSet.size() << " from vertex "
-                     << r << " with degree "
-                     << problem->graph->getWeightedNodeDegree(r) << " (max: "
-                     << problem->graph->getMaxDegree() << ") ";
+            futures.emplace_back(
+                std::async(&push_relabel::callable_max_flow,
+                           &prs[pr_id],
+                           problem->graph, terms, num_t, true));
         }
 
         auto hdv = highDistanceVertices(problem);
@@ -150,18 +157,22 @@ class maximum_flow {
             terms.emplace_back(r);
             push_relabel pr;
             size_t num_t = terms.size() - 1;
-            auto sourceSet = pr.solve_max_flow_min_cut(
-                problem->graph, terms, num_t, true).second;
 
-            for (const auto& s : sourceSet) {
-                uf.Union(s, r);
-            }
-            if (sourceSet.size() > 1)
-                LOG0 << "hdv " << sourceSet.size() << " from vertex "
-                     << r << " with degree "
-                     << problem->graph->getWeightedNodeDegree(r) << " (max: "
-                     << problem->graph->getMaxDegree() << ") ";
+            futures.emplace_back(
+                std::async(&push_relabel::callable_max_flow,
+                           &prs[pr_id],
+                           problem->graph, terms, num_t, true));
         }
+
+        for (size_t i = 0; i < futures.size(); ++i) {
+            auto& t = futures[i];
+            const auto& vec = t.get();
+            NodeID head = vec[0];
+            for (const auto& n : vec) {
+                uf.Union(n, head);
+            }
+        }
+
         return uf;
     }
 

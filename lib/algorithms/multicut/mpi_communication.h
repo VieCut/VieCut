@@ -12,7 +12,9 @@
 
 #include <mpi.h>
 
+#include <chrono>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "algorithms/multicut/multicut_problem.h"
@@ -163,6 +165,10 @@ class mpi_communication {
                 }
             }
             MPI_Iprobe(src, 3000, MPI_COMM_WORLD, &incoming, MPI_STATUS_IGNORE);
+
+            if (!incoming) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
         }
         MessageStatus re;
         MPI_Recv(&re, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);

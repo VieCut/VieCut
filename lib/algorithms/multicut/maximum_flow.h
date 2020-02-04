@@ -134,7 +134,7 @@ class maximum_flow {
 
             futures.emplace_back(
                 std::async(&push_relabel::callable_max_flow,
-                           &prs[pr_id],
+                           &prs[pr_id++],
                            problem->graph, terms, num_t, true));
         }
 
@@ -160,7 +160,7 @@ class maximum_flow {
 
             futures.emplace_back(
                 std::async(&push_relabel::callable_max_flow,
-                           &prs[pr_id],
+                           &prs[pr_id++],
                            problem->graph, terms, num_t, true));
         }
 

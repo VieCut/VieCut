@@ -128,11 +128,11 @@ class branch_multicut {
             int ms;
             MPI_Status status;
 
-            MPI_Iprobe(MPI_ANY_SOURCE, 2000, MPI_COMM_WORLD, &ms, &status);
+            MPI_Iprobe(MPI_ANY_SOURCE, 3000, MPI_COMM_WORLD, &ms, &status);
 
             if (ms > 0) {
                 int re;
-                MPI_Recv(&re, 1, MPI_LONG, status.MPI_SOURCE, 2000,
+                MPI_Recv(&re, 1, MPI_LONG, status.MPI_SOURCE, 3000,
                          MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
                 MessageStatus answer = allEmpty;

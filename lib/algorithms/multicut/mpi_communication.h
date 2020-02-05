@@ -111,19 +111,19 @@ class mpi_communication {
 
     std::optional<int> checkForReceiver() {
         int result;
-        LOG << mpi_rank << "probing";
-        MPI_Iprobe(MPI_ANY_SOURCE, 2000, MPI_COMM_WORLD,
+        LOG0 << mpi_rank << "probing";
+        MPI_Iprobe(MPI_ANY_SOURCE, 3000, MPI_COMM_WORLD,
                    &result, MPI_STATUS_IGNORE);
         if (result > 0) {
             MPI_Status st;
-            MPI_Recv(&result, 1, MPI_LONG, MPI_ANY_SOURCE, 2000,
+            MPI_Recv(&result, 1, MPI_LONG, MPI_ANY_SOURCE, 3000,
                      MPI_COMM_WORLD, &st);
             LOG << mpi_rank << " found probe from " << st.MPI_SOURCE;
             MessageStatus message = haveProblem;
             MPI_Send(&message, 1, MPI_INT, st.MPI_SOURCE, 3000, MPI_COMM_WORLD);
             return st.MPI_SOURCE;
         }
-        LOG << mpi_rank << " no receiver found";
+        LOG0 << mpi_rank << " no receiver found";
         return std::nullopt;
     }
 
@@ -141,55 +141,45 @@ class mpi_communication {
 
         LOG << mpi_rank << " waiting for " << src;
         MPI_Request request;
-        MPI_Isend(&message, 1, MPI_INT, src, 2000, MPI_COMM_WORLD, &request);
+        MPI_Isend(&message, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, &request);
 
-        int incoming = 0;
+        while (true) {
+            int ms;
+            MPI_Status stat;
 
-        while (incoming == 0) {
-            int result = 1;
-            while (result > 0) {
-                int ms;
-                MPI_Status stat;
-                MPI_Iprobe(MPI_ANY_SOURCE, 2000,
-                           MPI_COMM_WORLD, &result, &stat);
-                if (result > 0) {
-                    MPI_Recv(&ms, 1, MPI_LONG, stat.MPI_SOURCE, 2000,
-                             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&ms, 1, MPI_LONG, MPI_ANY_SOURCE, 3000,
+                     MPI_COMM_WORLD, &stat);
 
-                    LOG << mpi_rank << " found probe from "
-                        << stat.MPI_SOURCE << " but is empty";
-                    MessageStatus answer = emptyAsWell;
-                    MPI_Request rq;
-                    MPI_Isend(&answer, 1, MPI_INT, stat.MPI_SOURCE,
-                              3000, MPI_COMM_WORLD, &rq);
+            if (ms == MessageStatus::allEmpty) {
+                return true;
+            }
+
+            if (ms == MessageStatus::emptyAsWell) {
+                if (stat.MPI_SOURCE != src) {
+                    LOG1 << mpi_rank << "WRONG SENDER "
+                         << stat.MPI_SOURCE << "EMPTY AS WELL !";
+                    exit(1);
                 }
+                return false;
             }
-            MPI_Iprobe(src, 3000, MPI_COMM_WORLD, &incoming, MPI_STATUS_IGNORE);
 
-            if (!incoming) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if (ms == MessageStatus::needProblem) {
+                MessageStatus answer = emptyAsWell;
+                MPI_Request rq;
+                MPI_Isend(&answer, 1, MPI_INT, stat.MPI_SOURCE,
+                          3000, MPI_COMM_WORLD, &rq);
+            }
+
+            if (ms == MessageStatus::haveProblem && stat.MPI_SOURCE == src) {
+                if (stat.MPI_SOURCE != src) {
+                    LOG1 << mpi_rank << "WRONG SENDER "
+                         << stat.MPI_SOURCE << "HAS PROBLEM !";
+                    exit(1);
+                }
+                LOG << mpi_rank << " heard answer from " << src;
+                return src;
             }
         }
-        MessageStatus re;
-        MPI_Recv(&re, 1, MPI_INT, src, 3000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-        LOG << mpi_rank << " received " << re;
-
-        if (re == MessageStatus::allEmpty) {
-            return true;
-        }
-
-        if (re == MessageStatus::emptyAsWell) {
-            return false;
-        }
-
-        if (re == MessageStatus::needProblem) {
-            LOG1 << "Error: Invalid MPI message!";
-            exit(1);
-        }
-
-        LOG << mpi_rank << " heard answer from " << src;
-        return src;
     }
 
     std::shared_ptr<multicut_problem> recvProblem(int src) {

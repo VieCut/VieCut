@@ -198,8 +198,8 @@ class branch_multicut {
                     exit(1);
                 }*/
                 std::optional<int> sending = std::nullopt;
-                if (mpi_size > 1 && thread_id == 0
-                    && problems.subqueue_size(0) > 1) {
+                if (mpi_size > 1 && thread_id == 0 &&
+                    (problems.size() > 1 || (idle_threads + 1 < num_threads))) {
                     sending = mpic.checkForReceiver();
                 }
 
@@ -324,7 +324,7 @@ class branch_multicut {
         }
 
         if (total_time.elapsed() > log_timer) {
-            double logs_per_second = 2.0;
+            double logs_per_second = 0.2;
             double time_added = 1.0 / logs_per_second;
 
             log_timer = time_added + log_timer;

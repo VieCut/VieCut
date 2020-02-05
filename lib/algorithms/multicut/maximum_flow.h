@@ -89,7 +89,8 @@ class maximum_flow {
         return order;
     }
 
-    union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem) {
+    union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem,
+                               bool parallel) {
         union_find uf(problem->graph->n());
         std::unordered_set<NodeID> previous;
 
@@ -132,10 +133,19 @@ class maximum_flow {
             terms.emplace_back(r);
             size_t num_t = terms.size() - 1;
 
-            futures.emplace_back(
-                std::async(&push_relabel::callable_max_flow,
-                           &prs[pr_id++],
-                           problem->graph, terms, num_t, true));
+            if (parallel) {
+                futures.emplace_back(
+                    std::async(&push_relabel::callable_max_flow,
+                               &prs[pr_id++],
+                               problem->graph, terms, num_t, true));
+            } else {
+                auto sourceSet = prs[pr_id++].solve_max_flow_min_cut(
+                    problem->graph, terms, num_t, true).second;
+
+                for (const auto& s : sourceSet) {
+                    uf.Union(s, r);
+                }
+            }
         }
 
         auto hdv = highDistanceVertices(problem);
@@ -158,10 +168,19 @@ class maximum_flow {
             push_relabel pr;
             size_t num_t = terms.size() - 1;
 
-            futures.emplace_back(
-                std::async(&push_relabel::callable_max_flow,
-                           &prs[pr_id++],
-                           problem->graph, terms, num_t, true));
+            if (parallel) {
+                futures.emplace_back(
+                    std::async(&push_relabel::callable_max_flow,
+                               &prs[pr_id++],
+                               problem->graph, terms, num_t, true));
+            } else {
+                auto sourceSet = prs[pr_id++].solve_max_flow_min_cut(
+                    problem->graph, terms, num_t, true).second;
+
+                for (const auto& s : sourceSet) {
+                    uf.Union(s, r);
+                }
+            }
         }
 
         for (size_t i = 0; i < futures.size(); ++i) {

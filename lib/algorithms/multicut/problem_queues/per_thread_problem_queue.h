@@ -96,7 +96,7 @@ class per_thread_problem_queue {
         pop_mutex[local_id].unlock();
     }
 
-    problemPointer pullProblem(size_t local_id, bool sending) {
+    std::optional<problemPointer> pullProblem(size_t local_id, bool sending) {
         problemPointer currentProblem;
 
         // we (implicitly) add +1 to pq size
@@ -106,15 +106,21 @@ class per_thread_problem_queue {
         // we remove this +1 when adding a finished problem to the pq afterwards
         pop_mutex[local_id].lock();
         if ((sending && haveSendProblem) || pq[local_id].size() == 0) {
-            currentProblem = sendProblem;
-            sendProblem = NULL;
-            haveSendProblem = false;
+            if (haveSendProblem && send_problem_mutex.try_lock()) {
+                currentProblem = sendProblem;
+                sendProblem = NULL;
+                haveSendProblem = false;
+                send_problem_mutex.unlock();
+            } else {
+                pop_mutex[local_id].unlock();
+                return std::nullopt;
+            }
         } else {
             currentProblem = pq[local_id].top();
             pq[local_id].pop();
+            sizes[local_id].first -= 1;
+            sizes[local_id].second = true;
         }
-        sizes[local_id].first -= 1;
-        sizes[local_id].second = true;
         pop_mutex[local_id].unlock();
 
         return currentProblem;
@@ -140,23 +146,27 @@ class per_thread_problem_queue {
         }
 
         pop_mutex[min_index].lock();
-        sizes[min_index].first += 1;
 
-        if (local_id > 0) {
-            pq[min_index].push(p);
-        } else {
-            if (!haveSendProblem) {
+        if (!haveSendProblem) {
+            if (send_problem_mutex.try_lock()) {
                 sendProblem = p;
                 haveSendProblem = true;
-            } else {
-                if (sendProblem->lower_bound > p->lower_bound) {
-                    pq[min_index].push(sendProblem);
-                    sendProblem = p;
-                } else {
-                    pq[min_index].push(p);
-                }
+                pop_mutex[min_index].unlock();
+                send_problem_mutex.unlock();
+                return local_id;
             }
         }
+
+        sizes[min_index].first += 1;
+        if (sendProblem->lower_bound > p->lower_bound
+            && send_problem_mutex.try_lock()) {
+            pq[min_index].push(sendProblem);
+            sendProblem = p;
+            send_problem_mutex.unlock();
+        } else {
+            pq[min_index].push(p);
+        }
+
         pop_mutex[min_index].unlock();
         return min_index;
     }
@@ -170,12 +180,18 @@ class per_thread_problem_queue {
     }
 
     size_t size() {
-        return std::accumulate(
+        size_t sum_queue = std::accumulate(
             sizes.begin(), sizes.end(),
             std::make_pair(0, true),
             [](const auto& e1, const auto& e2) {
                 return std::make_pair(e1.first + e2.first, true);
             }).first;
+        size_t sendProblemSize = haveSendProblem ? 1 : 0;
+        return sum_queue + sendProblemSize;
+    }
+
+    bool haveASendProblem() {
+        return haveSendProblem;
     }
 
     size_t subqueue_size(size_t i) {
@@ -250,5 +266,6 @@ class per_thread_problem_queue {
     bool haveSendProblem;
 
     std::vector<std::mutex> pop_mutex;
+    std::mutex send_problem_mutex;
     std::vector<std::pair<std::atomic<size_t>, bool> > sizes;
 };

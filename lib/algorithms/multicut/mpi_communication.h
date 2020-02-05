@@ -96,9 +96,9 @@ class mpi_communication {
         for (size_t i = 0; i < problem->mappings.size(); ++i) {
             size_t mapisize = problem->mappings[i]->size();
             MPI_Send(&mapisize, 1, MPI_LONG, tgt, 1080, MPI_COMM_WORLD);
+
             MPI_Send(&problem->mappings[i]->front(),
-                     problem->mappings[i]->size(),
-                     MPI_INT, tgt, 1090, MPI_COMM_WORLD);
+                     mapisize, MPI_INT, tgt, 1090, MPI_COMM_WORLD);
         }
 
         // graph

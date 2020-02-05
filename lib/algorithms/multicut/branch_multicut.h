@@ -177,7 +177,7 @@ class branch_multicut {
         bool im_idle = false;
         while (!is_finished) {
             problems.prepareQueue(thread_id, global_upper_bound);
-            if (!problems.empty(thread_id)) {
+            if (!problems.empty(thread_id) || problems.haveASendProblem()) {
                 if (thread_id == 0) {
                     FlowType update = mpic.getGlobalBestSolution();
                     global_upper_bound = std::min(global_upper_bound, update);
@@ -198,18 +198,21 @@ class branch_multicut {
                     exit(1);
                 }*/
                 std::optional<int> sending = std::nullopt;
-                if (mpi_size > 1 && thread_id == 0 &&
-                    (problems.size() > 1 || (idle_threads + 1 < num_threads))) {
+                if (mpi_size > 1 && thread_id == 0 && problems.size() > 1) {
                     sending = mpic.checkForReceiver();
                 }
 
                 auto problem = problems.pullProblem(thread_id,
                                                     sending.has_value());
+                if (!problem.has_value()) {
+                    continue;
+                }
+
                 if (sending.has_value()) {
                     // forget this problem if it was sent to another worker
-                    mpic.sendProblem(problem, sending.value());
+                    mpic.sendProblem(problem.value(), sending.value());
                 } else {
-                    solveProblem(problem, thread_id);
+                    solveProblem(problem.value(), thread_id);
                 }
             } else {
                 if (!im_idle) {
@@ -651,7 +654,8 @@ class branch_multicut {
     }
 
     void nonBranchingContraction(std::shared_ptr<multicut_problem> problem) {
-        auto pe = kc.kernelization(problem, global_upper_bound);
+        auto pe = kc.kernelization(problem, global_upper_bound,
+                                   problems.size() == 0);
         if (pe.has_value()) {
             problem->priority_edge = *pe;
         }

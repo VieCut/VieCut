@@ -45,7 +45,7 @@ class kernelization_criteria {
     // if we find a bridge that separates terminal set, return it to branch on
     std::optional<std::pair<NodeID, EdgeID> > kernelization(
         std::shared_ptr<multicut_problem> problem,
-        size_t global_upper_bound) {
+        size_t global_upper_bound, bool parallel) {
         NodeID num_vtcs = problem->graph->n();
         std::vector<bool> active_c(problem->graph->getOriginalNodes(), true);
         std::vector<bool> active_n(problem->graph->getOriginalNodes(), false);
@@ -73,7 +73,7 @@ class kernelization_criteria {
             auto uf_tri = triangleDetection(problem, active_c);
             contractIfImproved(&uf_tri, problem, "triangle", &active_n);
 
-            union_find uf_mf = mf.nonTerminalFlow(problem);
+            union_find uf_mf = mf.nonTerminalFlow(problem, parallel);
             contractIfImproved(&uf_mf, problem, "flow", &active_n);
 
             if (first_run) {

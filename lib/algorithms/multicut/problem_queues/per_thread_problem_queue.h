@@ -158,7 +158,8 @@ class per_thread_problem_queue {
         }
 
         sizes[min_index].first += 1;
-        if (sendProblem->lower_bound > p->lower_bound
+
+        if (haveSendProblem && sendProblem->lower_bound > p->lower_bound
             && send_problem_mutex.try_lock()) {
             pq[min_index].push(sendProblem);
             sendProblem = p;

@@ -67,46 +67,73 @@ class mpi_communication {
     }
 
     void sendProblem(std::shared_ptr<multicut_problem> problem, size_t tgt) {
-        LOG1 << mpi_rank << " sending problem to " << tgt;
-        MPI_Send(&problem->lower_bound, 1, MPI_LONG, tgt, 1010, MPI_COMM_WORLD);
-        MPI_Send(&problem->upper_bound, 1, MPI_LONG, tgt, 1020, MPI_COMM_WORLD);
-        MPI_Send(&problem->deleted_weight, 1, MPI_LONG,
-                 tgt, 1030, MPI_COMM_WORLD);
+        std::vector<uint64_t> data;
+        data.emplace_back(problem->lower_bound);
+        data.emplace_back(problem->upper_bound);
+        data.emplace_back(problem->deleted_weight);
+        data.emplace_back(problem->terminals.size());
 
-        // terminals
-        size_t termsize = problem->terminals.size();
-        std::vector<NodeID> termpos;
-        std::vector<NodeID> origid;
         for (const auto& [t, o, b] : problem->terminals) {
             (void)b;
-            termpos.emplace_back(t);
-            origid.emplace_back(o);
+            data.emplace_back(t);
+            data.emplace_back(o);
         }
 
-        MPI_Send(&termsize, 1, MPI_LONG,
-                 tgt, 1040, MPI_COMM_WORLD);
-        MPI_Send(&termpos.front(), termpos.size(),
-                 MPI_INT, tgt, 1050, MPI_COMM_WORLD);
-        MPI_Send(&origid.front(), origid.size(),
-                 MPI_INT, tgt, 1060, MPI_COMM_WORLD);
-
-        // mappings
-        size_t mapsize = problem->mappings.size();
-        MPI_Send(&mapsize, 1, MPI_LONG, tgt, 1070, MPI_COMM_WORLD);
+        data.emplace_back(problem->mappings.size());
         for (size_t i = 0; i < problem->mappings.size(); ++i) {
-            size_t mapisize = problem->mappings[i]->size();
-            MPI_Send(&mapisize, 1, MPI_LONG, tgt, 1080, MPI_COMM_WORLD);
-
-            MPI_Send(&problem->mappings[i]->front(),
-                     mapisize, MPI_INT, tgt, 1090, MPI_COMM_WORLD);
+            data.emplace_back(problem->mappings[i]->size());
+            data.insert(data.end(), problem->mappings[i]->begin(),
+                        problem->mappings[i]->end());
         }
 
-        // graph
         auto serial = problem->graph->serialize();
-        size_t serialsize = serial.size();
-        MPI_Send(&serialsize, 1, MPI_LONG, tgt, 1100, MPI_COMM_WORLD);
-        MPI_Send(&serial.front(), serial.size(), MPI_LONG,
-                 tgt, 1110, MPI_COMM_WORLD);
+        data.emplace_back(serial.size());
+        data.insert(data.end(), serial.begin(), serial.end());
+
+        size_t datasize = data.size();
+        MPI_Send(&datasize, 1, MPI_LONG, tgt, 1010, MPI_COMM_WORLD);
+        MPI_Send(&data.front(), datasize, MPI_LONG, tgt, 1020, MPI_COMM_WORLD);
+    }
+
+    std::shared_ptr<multicut_problem> recvProblem(size_t src) {
+        size_t datasize = 0;
+        MPI_Recv(&datasize, 1, MPI_LONG, src, 1010,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        std::vector<uint64_t> data(datasize);
+        MPI_Recv(&data.front(), datasize, MPI_LONG, src, 1020,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        auto problem = std::make_shared<multicut_problem>();
+        problem->lower_bound = data[0];
+        problem->upper_bound = data[1];
+        problem->deleted_weight = data[2];
+        size_t num_terminals = data[3];
+        size_t next_index = 4;
+        for (size_t i = 0; i < num_terminals; ++i) {
+            NodeID t = data[next_index++];
+            NodeID o = data[next_index++];
+            problem->terminals.emplace_back(t, o, true);
+        }
+
+        size_t num_mappings = data[next_index++];
+        for (size_t i = 0; i < num_mappings; ++i) {
+            size_t map_size_i = data[next_index++];
+            problem->mappings.emplace_back(
+                std::make_shared<std::vector<NodeID> >());
+            problem->mappings[i]->insert(problem->mappings[i]->end(),
+                                         &data[next_index],
+                                         &data[next_index + map_size_i]);
+            next_index += map_size_i;
+        }
+
+        size_t serialsize = data[next_index++];
+        std::vector<uint64_t> serial;
+        serial.insert(serial.end(), &data[next_index],
+                      &data[next_index + serialsize]);
+
+        problem->graph = mutable_graph::deserialize(serial);
+        LOG << mpi_rank << " returns new problem";
+        return problem;
     }
 
     std::optional<int> checkForReceiver() {
@@ -180,72 +207,6 @@ class mpi_communication {
                 return src;
             }
         }
-    }
-
-    std::shared_ptr<multicut_problem> recvProblem(int src) {
-        LOG << mpi_rank << " receives problem";
-        FlowType lower_bound;
-        FlowType upper_bound;
-        EdgeWeight deleted_wgt;
-        MPI_Status status;
-        MPI_Recv(&lower_bound, 1, MPI_LONG, src, 1010, MPI_COMM_WORLD, &status);
-        MPI_Recv(&upper_bound, 1, MPI_LONG, src,
-                 1020, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(&deleted_wgt, 1, MPI_LONG, src,
-                 1030, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        LOG << mpi_rank << " currently receiving from " << status.MPI_SOURCE;
-
-        // terminals
-        size_t termsize = 0;
-        MPI_Recv(&termsize, 1, MPI_LONG, src,
-                 1040, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        std::vector<NodeID> termids;
-        std::vector<NodeID> origids;
-        termids.resize(termsize);
-        origids.resize(termsize);
-        MPI_Recv(&termids.front(), termsize, MPI_INT, src,
-                 1050, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(&origids.front(), termsize, MPI_INT, src,
-                 1060, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        std::vector<terminal> terminals;
-        for (size_t i = 0; i < termids.size(); ++i) {
-            terminals.emplace_back(termids[i], origids[i], true);
-        }
-
-        // mappings
-        size_t mappingsize = 0;
-        MPI_Recv(&mappingsize, 1, MPI_LONG, src,
-                 1070, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        std::vector<std::shared_ptr<std::vector<NodeID> > > mappings;
-        for (size_t i = 0; i < mappingsize; ++i) {
-            auto map = std::make_shared<std::vector<NodeID> >();
-            size_t currmapsize = 0;
-            MPI_Recv(&currmapsize, 1, MPI_LONG, src,
-                     1080, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            map->resize(currmapsize);
-            MPI_Recv(&map->front(), currmapsize, MPI_INT, src,
-                     1090, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            mappings.emplace_back(map);
-        }
-
-        size_t serialsize = 0;
-        MPI_Recv(&serialsize, 1, MPI_LONG, src,
-                 1100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        std::vector<uint64_t> serial;
-        serial.resize(serialsize);
-        MPI_Recv(&serial.front(), serialsize, MPI_LONG, src,
-                 1110, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        auto G = mutable_graph::deserialize(serial);
-
-        auto problem = std::make_shared<multicut_problem>();
-        problem->graph = G;
-        problem->mappings = mappings;
-        problem->terminals = terminals;
-        problem->lower_bound = lower_bound;
-        problem->upper_bound = upper_bound;
-        problem->deleted_weight = deleted_wgt;
-        LOG << mpi_rank << " returns new problem";
-        return problem;
     }
 
     bool bestSolutionIsLocal() {

@@ -99,7 +99,6 @@ class per_thread_problem_queue {
 
     std::optional<problemPointer> pullProblem(size_t local_id, bool sending) {
         problemPointer currentProblem;
-
         // we (implicitly) add +1 to pq size
         // (as comparison function adds +1 when running is true)
         // when a thread has a running job, as we want to prefer workers
@@ -107,16 +106,19 @@ class per_thread_problem_queue {
         // we remove this +1 when adding a finished problem to the pq afterwards
         pop_mutex[local_id].lock();
         if ((sending && haveSendProblem) || pq[local_id].size() == 0) {
-            if (haveSendProblem && send_problem_mutex.try_lock()) {
+            send_problem_mutex.lock();
+            if (haveSendProblem) {
+                bool hadSendProblem = haveSendProblem;
                 sendProblemWeight = UNDEFINED_FLOW;
                 haveSendProblem = false;
                 currentProblem = sendProblem;
-                sendProblem = NULL;
-                send_problem_mutex.unlock();
+                sendProblem = nullptr;
             } else {
+                send_problem_mutex.unlock();
                 pop_mutex[local_id].unlock();
                 return std::nullopt;
             }
+            send_problem_mutex.unlock();
         } else {
             currentProblem = pq[local_id].top();
             pq[local_id].pop();
@@ -124,6 +126,11 @@ class per_thread_problem_queue {
             sizes[local_id].second = true;
         }
         pop_mutex[local_id].unlock();
+
+        if (currentProblem == nullptr) {
+            LOG1 << "Error: Trying to return null problem!";
+            exit(1);
+        }
 
         return currentProblem;
     }
@@ -150,28 +157,35 @@ class per_thread_problem_queue {
         pop_mutex[min_index].lock();
 
         if (!haveSendProblem) {
-            if (send_problem_mutex.try_lock()) {
-                sendProblem = p;
-                sendProblemWeight = sendProblem->lower_bound;
-                haveSendProblem = true;
-                pop_mutex[min_index].unlock();
-                send_problem_mutex.unlock();
-                return local_id;
-            }
+            send_problem_mutex.lock();
+
+            sendProblem = p;
+            sendProblemWeight = sendProblem->lower_bound;
+            haveSendProblem = true;
+            pop_mutex[min_index].unlock();
+            send_problem_mutex.unlock();
+            return local_id;
         }
 
         sizes[min_index].first += 1;
 
-        if (haveSendProblem && sendProblemWeight > p->lower_bound
-            && send_problem_mutex.try_lock()) {
-            pq[min_index].push(sendProblem);
-            sendProblem = p;
-            sendProblemWeight = sendProblem->lower_bound;
+        bool movedProblem = false;
+        if (sendProblemWeight > p->lower_bound) {
+            send_problem_mutex.lock();
+            if (haveSendProblem) {
+                std::shared_ptr<multicut_problem> mcp = sendProblem;
+                pq[min_index].push(mcp);
+                sendProblem = p;
+                sendProblemWeight = sendProblem->lower_bound;
+                movedProblem = true;
+                send_problem_mutex.unlock();
+            }
             send_problem_mutex.unlock();
-        } else {
-            pq[min_index].push(p);
         }
 
+        if (!movedProblem) {
+            pq[min_index].push(p);
+        }
         pop_mutex[min_index].unlock();
         return min_index;
     }

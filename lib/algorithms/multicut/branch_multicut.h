@@ -307,10 +307,10 @@ class branch_multicut {
     void solveProblem(std::shared_ptr<multicut_problem> problem,
                       size_t thread_id) {
         if (problem == NULL) {
-            LOG1 << "PROBLEM IS NULL!_!_!_!_!__!_!";
+            LOG1 << "ERROR: Problem is NULL. This should not happen!";
             exit(1);
         }
-                        
+
         if (problem->lower_bound >= global_upper_bound)
             return;
 

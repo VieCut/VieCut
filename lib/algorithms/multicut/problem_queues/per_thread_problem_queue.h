@@ -31,7 +31,7 @@ class per_thread_problem_queue {
     per_thread_problem_queue(size_t threads, std::string pq_type)
         : num_threads(threads),
           haveSendProblem(false),
-          sendProblemWeight(UNDEFINED_EDGE),
+          sendProblemWeight(UNDEFINED_FLOW),
           pop_mutex(threads),
           sizes(threads) {
         for (size_t i = 0; i < num_threads; ++i) {
@@ -108,7 +108,7 @@ class per_thread_problem_queue {
         pop_mutex[local_id].lock();
         if ((sending && haveSendProblem) || pq[local_id].size() == 0) {
             if (haveSendProblem && send_problem_mutex.try_lock()) {
-                sendProblemWeight = UNDEFINED_EDGE;
+                sendProblemWeight = UNDEFINED_FLOW;
                 haveSendProblem = false;
                 currentProblem = sendProblem;
                 sendProblem = NULL;
@@ -161,7 +161,6 @@ class per_thread_problem_queue {
         }
 
         sizes[min_index].first += 1;
-
 
         if (haveSendProblem && sendProblemWeight > p->lower_bound
             && send_problem_mutex.try_lock()) {
@@ -270,7 +269,7 @@ class per_thread_problem_queue {
 
     problemPointer sendProblem;
     bool haveSendProblem;
-    EdgeWeight sendProblemWeight;
+    FlowType sendProblemWeight;
 
     std::vector<std::mutex> pop_mutex;
     std::mutex send_problem_mutex;

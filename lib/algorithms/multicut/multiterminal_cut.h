@@ -44,8 +44,9 @@ class multiterminal_cut {
             if (config->preset_percentage > 0) {
                 NodeID blocksize = G->n() / terminals.size();
                 config->bfs_size =
-                    std::max(static_cast<size_t>(blocksize
-                        * config->preset_percentage / 100),
+                    std::max(
+                        static_cast<size_t>(
+                            blocksize * config->preset_percentage / 100),
                         static_cast<size_t>(1));
             }
             return terminals;
@@ -281,8 +282,8 @@ class multiterminal_cut {
             NodeID blocksize = G->n() / config->total_terminals;
             terminal_size =
                 std::max(static_cast<size_t>(blocksize
-                        * config->preset_percentage / 100),
-                        static_cast<size_t>(1));
+                                             * config->preset_percentage / 100),
+                         static_cast<size_t>(1));
         }
 
         for (size_t i = 0; i < config->total_terminals; ++i) {

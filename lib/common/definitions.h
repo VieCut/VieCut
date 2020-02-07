@@ -48,6 +48,7 @@ const NodeID UNDEFINED_NODE = std::numeric_limits<NodeID>::max();
 const NodeID UNASSIGNED = std::numeric_limits<NodeID>::max();
 const NodeID ASSIGNED = std::numeric_limits<NodeID>::max() - 1;
 const Count UNDEFINED_COUNT = std::numeric_limits<Count>::max();
+const FlowType UNDEFINED_FLOW = std::numeric_limits<FlowType>::max();
 const int NOTINQUEUE = std::numeric_limits<int>::max();
 const int ROOT = 0;
 

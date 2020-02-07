@@ -151,7 +151,7 @@ class maximum_flow {
         auto hdv = highDistanceVertices(problem);
         size_t num_flows = configuration::getConfig()->high_distance_flows;
         double hd_factor = configuration::getConfig()->high_distance_factor;
-        for (size_t i = 0; i < num_flows; ++i) {
+        for (size_t i = 0; i < num_flows && hdv.size() > 0; ++i) {
             NodeID last = hdv.size() - 1;
             NodeID idx = random_functions::nextInt(last * hd_factor, last);
             NodeID r = hdv[idx];

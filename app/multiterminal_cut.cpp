@@ -62,7 +62,7 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('s', "seed", config->seed, "random seed");
     cmdl.add_size_t('b', "bfs_size", config->bfs_size,
                     "use bfs to find and start on terminal block");
-    cmdl.add_size_t('n', "preset_percentage", config->preset_percentage,
+    cmdl.add_double('n', "preset_percentage", config->preset_percentage,
                     "percentag of vertices that are preset");
     cmdl.add_string('e', "edge_selection", config->edge_selection,
                     "edge selection rule");

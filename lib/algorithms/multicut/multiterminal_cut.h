@@ -13,6 +13,7 @@
 
 #include <mpi.h>
 
+#include <algorithm>
 #include <memory>
 #include <queue>
 #include <unordered_set>
@@ -42,7 +43,10 @@ class multiterminal_cut {
 
             if (config->preset_percentage > 0) {
                 NodeID blocksize = G->n() / terminals.size();
-                config->bfs_size = blocksize * config->preset_percentage / 100;
+                config->bfs_size =
+                    std::max(static_cast<size_t>(blocksize
+                        * config->preset_percentage / 100),
+                        static_cast<size_t>(1));
             }
             return terminals;
         } else {
@@ -275,7 +279,10 @@ class multiterminal_cut {
         NodeID start_n = G->n();
         if (config->preset_percentage > 0) {
             NodeID blocksize = G->n() / config->total_terminals;
-            terminal_size = blocksize * config->preset_percentage / 100;
+            terminal_size =
+                std::max(static_cast<size_t>(blocksize
+                        * config->preset_percentage / 100),
+                        static_cast<size_t>(1));
         }
 
         for (size_t i = 0; i < config->total_terminals; ++i) {

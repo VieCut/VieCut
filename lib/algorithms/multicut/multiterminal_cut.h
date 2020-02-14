@@ -69,27 +69,42 @@ class multiterminal_cut {
     }
 
     size_t multicut(std::shared_ptr<mutable_graph> G,
-                    std::vector<NodeID> terminals) {
+                    std::vector<NodeID> terminals,
+                    std::shared_ptr<mutable_graph> orig_graph) {
         strongly_connected_components cc;
         auto cfg = configuration::getConfig();
         auto problems = splitConnectedComponents(G, terminals);
-        FlowType flow_sum = 0;
-        for (auto& problem : problems) {
-            if (debug) {
-                graph_algorithms::checkGraphValidity(problem.graph);
+        if (problems.size() > 1) {
+            FlowType flow_sum = 0;
+            for (auto& problem : problems) {
+                if (debug) {
+                    graph_algorithms::checkGraphValidity(problem.graph);
+                }
+
+                std::vector<NodeID> terminals;
+                for (size_t i = 0; i < problem.terminals.size(); ++i) {
+                    terminals.emplace_back(problem.terminals[i].position);
+                }
+
+                branch_multicut bmc(problem.graph, terminals);
+                auto p_pointer = std::make_shared<multicut_problem>(problem);
+                addSurroundingAreaToTerminals(p_pointer, terminals);
+                flow_sum += bmc.find_multiterminal_cut(p_pointer);
             }
 
-            std::vector<NodeID> terminals;
-            for (size_t i = 0; i < problem.terminals.size(); ++i) {
-                terminals.emplace_back(problem.terminals[i].position);
+            return flow_sum;
+        } else {
+            std::vector<NodeID> terms_node;
+            std::vector<terminal> t;
+            for (size_t i = 0; i < terminals.size(); ++i) {
+                t.emplace_back(G->containedVertices(terminals[i])[0], i, true);
+                terms_node.emplace_back(G->containedVertices(terminals[i])[0]);
             }
 
-            branch_multicut bmc(problem.graph, terminals);
-            auto problem_pointer = std::make_shared<multicut_problem>(problem);
-            addSurroundingAreaToTerminals(problem_pointer, terminals);
-            flow_sum += bmc.find_multiterminal_cut(problem_pointer);
+            branch_multicut bmc(orig_graph, terms_node);
+            auto problem_pointer = std::make_shared<multicut_problem>(G, t);
+            return bmc.find_multiterminal_cut(problem_pointer);
         }
-        return flow_sum;
     }
 
  private:
@@ -255,6 +270,7 @@ class multiterminal_cut {
                         contractSet.emplace(G->getCurrentPosition(n));
                     }
                 }
+
                 if (contractSet.size() > 1) {
                     G->contractVertexSet(contractSet);
                 }

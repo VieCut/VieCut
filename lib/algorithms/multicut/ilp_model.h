@@ -101,12 +101,14 @@ class ilp_model {
                 for (EdgeID e : graph->edges_of(n)) {
                     NodeID t = graph->getEdgeTarget(n, e);
                     if (n > graph->getEdgeTarget(n, e)) {
+                        bool terminalIncident = (presets[n] < num_terminals ||
+                                                 presets[t] < num_terminals);
+
                         edges[j] = model.addVar(
                             0.0, 1.0, graph->getEdgeWeight(n, e), GRB_BINARY);
                         // there is no edge between terminals, we mark edges
                         // that are incident to non-maximal weight terminal
-                        double start = ((presets[n] < num_terminals
-                                         || presets[t] < num_terminals)
+                        double start = (terminalIncident
                                         && presets[n] != max_id
                                         && presets[t] != max_id)
                             ? 1.0 : 0.0;

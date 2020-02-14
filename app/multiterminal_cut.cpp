@@ -91,6 +91,7 @@ int main(int argn, char** argv) {
         multiterminal_cut mc;
         G = mutable_graph::from_graph_access(
             graph_io::readGraphWeighted(config->graph_filename));
+        auto orig_graph = std::make_shared<mutable_graph>(*G);
         terminals = mc.setOriginalTerminals(G);
 
         if (config->total_terminals == 0)
@@ -103,7 +104,7 @@ int main(int argn, char** argv) {
         }
 
         t.restart();
-        flow = mc.multicut(G, terminals);
+        flow = mc.multicut(G, terminals, orig_graph);
 
 #ifdef USE_GUROBI
     } catch (GRBException e) {
@@ -112,7 +113,6 @@ int main(int argn, char** argv) {
     } catch (const std::exception& e) {
         LOG1 << e.what();
     }
-
     std::cout << "RESULT selection_rule=" << config->edge_selection
               << " pq=" << config->queue_type
               << " graph=" << config->graph_filename

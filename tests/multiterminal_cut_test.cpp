@@ -54,6 +54,7 @@ TEST_F(MultiterminalCutTest, FourClusters) {
 
         G->finish_construction();
         auto mG = mutable_graph::from_graph_access(G);
+        auto orig = std::make_shared<mutable_graph>(*mG);
         std::vector<NodeID> terminals;
         std::random_device rd;
         std::mt19937 eng(rd());
@@ -63,7 +64,7 @@ TEST_F(MultiterminalCutTest, FourClusters) {
         }
 
         multiterminal_cut mct;
-        FlowType f = mct.multicut(mG, terminals);
+        FlowType f = mct.multicut(mG, terminals, orig);
 
         ASSERT_EQ(f, (FlowType)6);
     }
@@ -97,6 +98,7 @@ TEST_F(MultiterminalCutTest, FourClustersWeighted) {
 
         G->finish_construction();
         auto mG = mutable_graph::from_graph_access(G);
+        auto orig = std::make_shared<mutable_graph>(*mG);
 
         multiterminal_cut mct;
 
@@ -109,7 +111,7 @@ TEST_F(MultiterminalCutTest, FourClustersWeighted) {
             terminals.emplace_back(i * cluster_size + distribution(eng));
         }
 
-        FlowType f = mct.multicut(mG, terminals);
+        FlowType f = mct.multicut(mG, terminals, orig);
 
         ASSERT_EQ(f, (FlowType)18);
     }
@@ -148,6 +150,7 @@ TEST_F(MultiterminalCutTest, FourClustersMinCutUnequal) {
 
         G->finish_construction();
         auto mG = mutable_graph::from_graph_access(G);
+        auto orig = std::make_shared<mutable_graph>(*mG);
 
         multiterminal_cut mct;
 
@@ -160,7 +163,7 @@ TEST_F(MultiterminalCutTest, FourClustersMinCutUnequal) {
             terminals.emplace_back((2 * i) * cluster_size + distribution(eng));
         }
 
-        FlowType f = mct.multicut(mG, terminals);
+        FlowType f = mct.multicut(mG, terminals, orig);
 
         ASSERT_EQ(f, (FlowType)8);
     }
@@ -187,6 +190,7 @@ TEST_F(MultiterminalCutTest, TotallyDisconnected) {
 
         G->finish_construction();
         auto mG = mutable_graph::from_graph_access(G);
+        auto orig = std::make_shared<mutable_graph>(*mG);
 
         std::vector<NodeID> terminals;
         std::random_device rd;
@@ -197,7 +201,7 @@ TEST_F(MultiterminalCutTest, TotallyDisconnected) {
         }
         multiterminal_cut mct;
 
-        FlowType f = mct.multicut(mG, terminals);
+        FlowType f = mct.multicut(mG, terminals, orig);
 
         ASSERT_EQ(f, (FlowType)0);
     }
@@ -230,6 +234,7 @@ TEST_F(MultiterminalCutTest, PartiallyDisconnected) {
 
         G->finish_construction();
         auto mG = mutable_graph::from_graph_access(G);
+        auto orig = std::make_shared<mutable_graph>(*mG);
 
         std::vector<NodeID> terminals;
         std::random_device rd;
@@ -240,7 +245,7 @@ TEST_F(MultiterminalCutTest, PartiallyDisconnected) {
         }
         multiterminal_cut mct;
 
-        FlowType f = mct.multicut(mG, terminals);
+        FlowType f = mct.multicut(mG, terminals, orig);
 
         ASSERT_EQ(f, (FlowType)2);
     }

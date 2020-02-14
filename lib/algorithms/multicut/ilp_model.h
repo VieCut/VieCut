@@ -36,8 +36,6 @@ class ilp_model {
             LOG1 << "starting ilp on graph with " << graph->n() << " vertices "
                  << "and " << graph->m() << " edges!";
             GRBModel model = GRBModel(ilp_model::env);
-            NodeID numNodes = graph->number_of_nodes();
-            NodeID numEdges = graph->number_of_edges() / 2;
 
             NodeID max_weight = 0;
             NodeID max_id = 0;
@@ -49,8 +47,12 @@ class ilp_model {
                 }
             }
 
-            std::vector<GRBVar> nodes(numNodes * num_terminals);
-            std::vector<GRBVar> edges(numEdges);
+            std::vector<std::vector<GRBVar> > nodes(num_terminals);
+            std::vector<GRBVar> edges(graph->m());
+
+            for (auto& v : nodes) {
+                v.resize(graph->n());
+            }
 
             model.set(GRB_IntParam_Threads, 1);
             model.set(GRB_StringAttr_ModelName, "Partition");
@@ -78,18 +80,15 @@ class ilp_model {
             // Set decision variables for nodes
             for (size_t q = 0; q < num_terminals; q++) {
                 GRBLinExpr nodeTot = 0;
-                for (NodeID i = 0; i < numNodes; i++) {
+                for (NodeID i = 0; i < graph->n(); i++) {
                     if (presets[i] < num_terminals) {
                         bool isCurrent = (presets[i] == q);
                         double f = isCurrent ? 1.0 : 0.0;
-                        nodes[i + q * numNodes] =
-                            model.addVar(f, f, 0, GRB_BINARY);
-                        nodes[i + q * numNodes].set(GRB_DoubleAttr_Start, f);
+                        nodes[q][i] = model.addVar(f, f, 0, GRB_BINARY);
+                        nodes[q][i].set(GRB_DoubleAttr_Start, f);
                     } else {
-                        nodes[i + q * numNodes] =
-                            model.addVar(0.0, 1.0, 0, GRB_BINARY);
-                        nodes[i + q * numNodes].set(GRB_DoubleAttr_Start,
-                                                    (max_id == q));
+                        nodes[q][i] = model.addVar(0.0, 1.0, 0, GRB_BINARY);
+                        nodes[q][i].set(GRB_DoubleAttr_Start, (max_id == q));
                     }
                 }
             }
@@ -99,24 +98,21 @@ class ilp_model {
             GRBLinExpr edgeTot = 0;
             for (NodeID n : graph->nodes()) {
                 for (EdgeID e : graph->edges_of(n)) {
-                    NodeID t = graph->getEdgeTarget(n, e);
-                    if (n > graph->getEdgeTarget(n, e)) {
+                    auto [t, w] = graph->getEdge(n, e);
+                    if (n > t) {
                         bool terminalIncident = (presets[n] < num_terminals ||
                                                  presets[t] < num_terminals);
 
-                        edges[j] = model.addVar(
-                            0.0, 1.0, graph->getEdgeWeight(n, e), GRB_BINARY);
+                        edges[j] = model.addVar(0.0, 1.0, w, GRB_BINARY);
                         // there is no edge between terminals, we mark edges
                         // that are incident to non-maximal weight terminal
-                        double start = (terminalIncident
-                                        && presets[n] != max_id
-                                        && presets[t] != max_id)
-                            ? 1.0 : 0.0;
+                        double start =
+                            (terminalIncident && presets[n] != max_id
+                             && presets[t] != max_id) ? 1.0 : 0.0;
 
                         edges[j].set(GRB_DoubleAttr_Start, start);
                         for (size_t q = 0; q < num_terminals; q++) {
-                            GRBLinExpr cons = nodes[n + q * numNodes]
-                                              - nodes[t + q * numNodes];
+                            GRBLinExpr cons = nodes[q][n] - nodes[q][t];
                             // Add constraint: valid partiton
                             model.addConstr(edges[j] >= cons, "valid part");
                             model.addConstr(edges[j] >= -cons, "neg valid prt");
@@ -127,10 +123,10 @@ class ilp_model {
             }
 
             // Add constraint: sum of all decision variables for 1 node is 1
-            for (size_t i = 0; i < numNodes; i++) {
+            for (size_t i = 0; i < graph->n(); i++) {
                 GRBLinExpr sumCons = 0;
                 for (size_t q = 0; q < num_terminals; q++) {
-                    sumCons += nodes[i + q * numNodes];
+                    sumCons += nodes[q][i];
                 }
                 model.addConstr(sumCons == 1);
             }
@@ -139,14 +135,14 @@ class ilp_model {
             // Optimize model
             model.optimize();
 
-            std::vector<NodeID> result(numNodes);
+            std::vector<NodeID> result(graph->n());
             // if solution is found
             if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL ||
                 model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
                 // set partition
                 for (PartitionID q = 0; q < num_terminals; q++) {
-                    for (size_t i = 0; i < numNodes; i++) {
-                        auto v = nodes[i + q * numNodes].get(GRB_DoubleAttr_X);
+                    for (size_t i = 0; i < graph->n(); i++) {
+                        auto v = nodes[q][i].get(GRB_DoubleAttr_X);
                         if (v == 1) {
                             result[i] = q;
                         }

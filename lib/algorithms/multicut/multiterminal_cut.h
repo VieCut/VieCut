@@ -91,7 +91,6 @@ class multiterminal_cut {
                 addSurroundingAreaToTerminals(p_pointer, terminals);
                 flow_sum += bmc.find_multiterminal_cut(p_pointer);
             }
-
             return flow_sum;
         } else {
             std::vector<NodeID> terms_node;
@@ -103,6 +102,7 @@ class multiterminal_cut {
 
             branch_multicut bmc(orig_graph, terms_node);
             auto problem_pointer = std::make_shared<multicut_problem>(G, t);
+            addSurroundingAreaToTerminals(problem_pointer, terminals);
             return bmc.find_multiterminal_cut(problem_pointer);
         }
     }

@@ -108,7 +108,6 @@ class per_thread_problem_queue {
         if ((sending && haveSendProblem) || pq[local_id].size() == 0) {
             send_problem_mutex.lock();
             if (haveSendProblem) {
-                bool hadSendProblem = haveSendProblem;
                 sendProblemWeight = UNDEFINED_FLOW;
                 haveSendProblem = false;
                 currentProblem = sendProblem;

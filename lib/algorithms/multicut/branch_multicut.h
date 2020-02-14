@@ -403,12 +403,34 @@ class branch_multicut {
 
             global_upper_bound = flowValue(false, best_solution);
 
+            // printBoundaries();
+
             LOGC(testing) << "Improvement after time="
                           << total_time.elapsed() << " upper_bound="
                           << global_upper_bound;
             mpic.broadcastImprovedSolution(global_upper_bound);
         }
         bestsol_mutex.unlock();
+    }
+
+    void printBoundaries() {
+        std::vector<NodeID> boundary;
+        for (NodeID n : original_graph.nodes()) {
+            for (EdgeID e : original_graph.edges_of(n)) {
+                NodeID tgt = original_graph.getEdgeTarget(n, e);
+                if (original_graph.getPartitionIndex(n)
+                    != original_graph.getPartitionIndex(tgt)) {
+                    boundary.emplace_back(n);
+                    break;
+                }
+            }
+        }
+
+        graph_io gio;
+        std::string sol_str = "sol_" + std::to_string(print_index);
+        LOG1 << "PRINTING TO " << sol_str;
+        gio.writeVector(boundary, sol_str);
+        print_index++;
     }
 
     FlowType flowValue(bool verbose, const std::vector<NodeID>& sol) {
@@ -789,4 +811,6 @@ class branch_multicut {
     std::vector<int> mpi_done;
     bool sent_done;
     std::mutex mpi_mutex;
+
+    size_t print_index = 0;
 };

@@ -48,7 +48,7 @@ class ilp_model {
             }
 
             std::vector<std::vector<GRBVar> > nodes(num_terminals);
-            std::vector<GRBVar> edges(graph->m());
+            std::vector<GRBVar> edges(graph->m() / 2);
 
             for (auto& v : nodes) {
                 v.resize(graph->n());

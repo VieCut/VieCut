@@ -558,12 +558,23 @@ class branch_multicut {
             }
 
             graph_contraction::deleteTermEdges(new_p, original_terminals);
+            processNewProblem(new_p, thread_id);
+        }
+    }
+
+    void processNewProblem(std::shared_ptr<multicut_problem> new_p,
+                           size_t thread_id) {
+        if (new_p->terminals.size() < 2
+                && new_p->upper_bound < global_upper_bound) {
+                updateBestSolution(new_p);
+            }
+
             if (new_p->terminals.size() == 2) {
                 mf.maximumSTFlow(new_p);
                 if (new_p->upper_bound < global_upper_bound) {
                     updateBestSolution(new_p);
                 }
-            } else if (new_p->terminals.size() > 2) {
+            } else {
                 mf.maximumIsolatingFlow(new_p, thread_id, problems.size() == 0);
                 graph_contraction::deleteTermEdges(new_p, original_terminals);
                 if (new_p->graph->m() == 0) {
@@ -571,7 +582,7 @@ class branch_multicut {
                     if (new_p->upper_bound < global_upper_bound) {
                         updateBestSolution(new_p);
                     }
-                    continue;
+                    return;
                 }
 
                 if (new_p->lower_bound < global_upper_bound) {
@@ -579,15 +590,12 @@ class branch_multicut {
                         updateBestSolution(new_p);
                     }
 
+                   // if (new_p->lower_bound + 99 * new_p->upper_bound < 100 * global_upper_bound) {
                     size_t thr = problems.addProblem(new_p, thread_id);
                     q_cv[thr].notify_all();
-                }
-            } else {
-                if (new_p->upper_bound < global_upper_bound) {
-                    updateBestSolution(new_p);
+                   // }
                 }
             }
-        }
     }
 
     void singleBranch(std::shared_ptr<multicut_problem> problem,
@@ -623,10 +631,7 @@ class branch_multicut {
             del_p->priority_edge = { UNDEFINED_NODE, UNDEFINED_EDGE };
             del_p->lower_bound = problem->lower_bound;
             del_p->upper_bound = problem->upper_bound + max_wgt;
-            if (del_p->lower_bound < global_upper_bound) {
-                size_t thr = problems.addProblem(del_p, thread_id);
-                q_cv[thr].notify_all();
-            }
+            processNewProblem(del_p, thread_id);
         }
         // |-> edge not in multicut
         if (!degreeThreeContraction(problem, b_vtx, b_edge)) {
@@ -640,10 +645,7 @@ class branch_multicut {
         }
 
         graph_contraction::deleteTermEdges(problem, original_terminals);
-        if (problem->lower_bound < global_upper_bound) {
-            size_t thr = problems.addProblem(problem, thread_id);
-            q_cv[thr].notify_all();
-        }
+        processNewProblem(problem, thread_id);
     }
 
     bool degreeThreeContraction(std::shared_ptr<multicut_problem> problem,

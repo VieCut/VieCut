@@ -480,8 +480,10 @@ class branch_multicut {
             return;
         }
 
-        // writeGraph(problem);
+        // multicut_problem::writeGraph(problem);
+        // exit(1);
         if (configuration::getConfig()->multibranch) {
+
             multiBranch(problem, thread_id);
         } else {
             singleBranch(problem, thread_id);

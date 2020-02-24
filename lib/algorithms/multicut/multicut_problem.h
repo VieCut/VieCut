@@ -82,7 +82,7 @@ struct multicut_problem {
         return n_coarse;
     }
 
-    void writeGraph(std::shared_ptr<multicut_problem> problem) {
+    static void writeGraph(std::shared_ptr<multicut_problem> problem) {
         std::shared_ptr<mutable_graph> g = std::make_shared<mutable_graph>();
 
         LOG1 << problem->graph->n() << " nodes and "

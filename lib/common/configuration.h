@@ -60,7 +60,7 @@ class configuration {
     bool find_lowest_conductance = false;
     bool blacklist = true;
     bool set_node_in_cut = false;
-    bool multibranch = false;
+    bool multibranch = true;
     size_t neighborhood_degrees = 50;
     size_t random_flows = 5;
     double high_distance_factor = 0.9;

@@ -13,11 +13,15 @@
 
 #include <limits>
 #include <memory>
+#include <queue>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "data_structure/mutable_graph.h"
+#include "io/graph_io.h"
 
 struct terminal {
     terminal() { }
@@ -76,6 +80,73 @@ struct multicut_problem {
             n_coarse = (*map)[n_coarse];
         }
         return n_coarse;
+    }
+
+    void writeGraph(std::shared_ptr<multicut_problem> problem) {
+        std::shared_ptr<mutable_graph> g = std::make_shared<mutable_graph>();
+
+        LOG1 << problem->graph->n() << " nodes and "
+             << problem->graph->m() << " edges";
+
+        // bfs around all terminals, print all edges between first 3000 nodes
+        std::queue<NodeID> Q;
+        std::unordered_set<NodeID> S;
+        std::unordered_set<NodeID> terms;
+        std::unordered_map<NodeID, NodeID> gMapping;
+
+        for (auto p : problem->terminals) {
+            Q.push(p.position);
+            S.insert(p.position);
+            terms.insert(p.position);
+        }
+
+        while (S.size() < 3000 && !Q.empty()) {
+            NodeID f = Q.front();
+            Q.pop();
+            for (EdgeID e : problem->graph->edges_of(f)) {
+                NodeID tgt = problem->graph->getEdgeTarget(f, e);
+                if (S.count(tgt) == 0) {
+                    S.insert(tgt);
+                    Q.push(tgt);
+                }
+            }
+        }
+
+        g->start_construction(S.size());
+
+        size_t gMapIndex = 0;
+        for (NodeID n : problem->graph->nodes()) {
+            if (S.count(n) > 0) {
+                if (gMapping.count(n) == 0) {
+                    gMapping.emplace(n, gMapIndex);
+                    gMapIndex++;
+                }
+
+                if (terms.count(n) > 0) {
+                    LOG1 << "terminal in " << gMapping[n];
+                }
+
+                for (EdgeID e : problem->graph->edges_of(n)) {
+                    auto [t, w] = problem->graph->getEdge(n, e);
+                    if (t > n && S.count(t) > 0) {
+                        if (gMapping.count(t) == 0) {
+                            gMapping.emplace(t, gMapIndex);
+                            gMapIndex++;
+                        }
+
+                        g->new_edge_order(gMapping[n], gMapping[t], w);
+                    }
+                }
+            }
+        }
+
+        LOG1 << gMapIndex;
+        LOG1 << g->n();
+
+        LOG1 << "Writing...";
+        std::string gid = "small_graph";
+        graph_io::writeGraphWeighted(g->to_graph_access(), gid);
+        LOG1 << "...done!";
     }
 
     std::shared_ptr<mutable_graph>                      graph;

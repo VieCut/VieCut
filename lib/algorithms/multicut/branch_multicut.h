@@ -183,20 +183,6 @@ class branch_multicut {
                     global_upper_bound = std::min(global_upper_bound, update);
                 }
 
-                // Print small graph to file, left in as used in testing
-
-                /*if (problem->graph->n() < 2000) {
-                    bestsol_mutex.lock();
-                    LOG1 << "Writing...";
-                    std::string gid = "small_graph";
-                    graph_io::writeGraphWeighted(
-                        problem->graph->to_graph_access(), gid);
-                    for (auto t : problem->terminals) {
-                        LOG1 << t.position;
-                    }
-                    LOG1 << "...done!";
-                    exit(1);
-                }*/
                 std::optional<int> sending = std::nullopt;
                 if (mpi_size > 1 && thread_id == 0 && problems.size() > 1) {
                     sending = mpic.checkForReceiver();
@@ -326,6 +312,8 @@ class branch_multicut {
         }
 #endif
 
+        // todo: print sol (for all, then import to gephi)
+
         if (total_time.elapsed() > 3600) {
             LOG1 << "RESULT Timeout!";
             exit(1);
@@ -402,7 +390,6 @@ class branch_multicut {
             }
 
             global_upper_bound = flowValue(false, best_solution);
-
             // printBoundaries();
 
             LOGC(testing) << "Improvement after time="
@@ -492,6 +479,7 @@ class branch_multicut {
             return;
         }
 
+        // writeGraph(problem);
         if (configuration::getConfig()->multibranch) {
             multiBranch(problem, thread_id);
         } else {
@@ -565,37 +553,35 @@ class branch_multicut {
     void processNewProblem(std::shared_ptr<multicut_problem> new_p,
                            size_t thread_id) {
         if (new_p->terminals.size() < 2
-                && new_p->upper_bound < global_upper_bound) {
+            && new_p->upper_bound < global_upper_bound) {
+            updateBestSolution(new_p);
+        }
+
+        if (new_p->terminals.size() == 2) {
+            mf.maximumSTFlow(new_p);
+            if (new_p->upper_bound < global_upper_bound) {
                 updateBestSolution(new_p);
             }
-
-            if (new_p->terminals.size() == 2) {
-                mf.maximumSTFlow(new_p);
+        } else {
+            mf.maximumIsolatingFlow(new_p, thread_id, problems.size() == 0);
+            graph_contraction::deleteTermEdges(new_p, original_terminals);
+            if (new_p->graph->m() == 0) {
+                new_p->upper_bound = new_p->deleted_weight;
                 if (new_p->upper_bound < global_upper_bound) {
                     updateBestSolution(new_p);
                 }
-            } else {
-                mf.maximumIsolatingFlow(new_p, thread_id, problems.size() == 0);
-                graph_contraction::deleteTermEdges(new_p, original_terminals);
-                if (new_p->graph->m() == 0) {
-                    new_p->upper_bound = new_p->deleted_weight;
-                    if (new_p->upper_bound < global_upper_bound) {
-                        updateBestSolution(new_p);
-                    }
-                    return;
-                }
-
-                if (new_p->lower_bound < global_upper_bound) {
-                    if (new_p->upper_bound < global_upper_bound) {
-                        updateBestSolution(new_p);
-                    }
-
-                   // if (new_p->lower_bound + 99 * new_p->upper_bound < 100 * global_upper_bound) {
-                    size_t thr = problems.addProblem(new_p, thread_id);
-                    q_cv[thr].notify_all();
-                   // }
-                }
+                return;
             }
+
+            if (new_p->lower_bound < global_upper_bound) {
+                if (new_p->upper_bound < global_upper_bound) {
+                    updateBestSolution(new_p);
+                }
+
+                size_t thr = problems.addProblem(new_p, thread_id);
+                q_cv[thr].notify_all();
+            }
+        }
     }
 
     void singleBranch(std::shared_ptr<multicut_problem> problem,

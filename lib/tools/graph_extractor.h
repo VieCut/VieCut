@@ -64,19 +64,22 @@ class graph_extractor {
         return std::make_pair(extracted_block, reverse_mapping);
     }
 
-    std::pair<std::shared_ptr<mutable_graph>, std::vector<NodeID> >
-    extract_block(std::shared_ptr<mutable_graph> G,
-                  PartitionID block,
-                  const std::vector<int>& components) {
+    std::tuple<std::shared_ptr<mutable_graph>, std::vector<NodeID>,
+               std::vector<NodeID> > extract_block(
+        std::shared_ptr<mutable_graph> G,
+        PartitionID block,
+        const std::vector<int>& components) {
         auto extracted_block = std::make_shared<mutable_graph>();
 
         // build reverse mapping
+        std::vector<NodeID> mapping;
         std::vector<NodeID> reverse_mapping;
         NodeID nodes = 0;
         NodeID dummy_node = G->number_of_nodes() + 1;
         for (NodeID node : G->nodes()) {
             if (components[node] == static_cast<int>(block)) {
                 reverse_mapping.push_back(nodes++);
+                mapping.push_back(node);
             } else {
                 reverse_mapping.push_back(dummy_node);
             }
@@ -100,6 +103,6 @@ class graph_extractor {
         }
 
         extracted_block->finish_construction();
-        return std::make_pair(extracted_block, reverse_mapping);
+        return std::make_tuple(extracted_block, mapping, reverse_mapping);
     }
 };

@@ -23,6 +23,7 @@
 #include "algorithms/multicut/branch_multicut.h"
 #include "data_structure/graph_access.h"
 #include "data_structure/mutable_graph.h"
+#include "io/graph_io.h"
 #include "tlx/string/split.hpp"
 
 class multiterminal_cut {
@@ -71,40 +72,52 @@ class multiterminal_cut {
     size_t multicut(std::shared_ptr<mutable_graph> G,
                     std::vector<NodeID> terminals,
                     std::shared_ptr<mutable_graph> orig_graph) {
-        strongly_connected_components cc;
         auto cfg = configuration::getConfig();
-        auto problems = splitConnectedComponents(G, terminals);
-        if (problems.size() > 1) {
-            FlowType flow_sum = 0;
-            for (auto& problem : problems) {
-                if (debug) {
-                    graph_algorithms::checkGraphValidity(problem.graph);
-                }
+        auto [problems, map, pos, terminalMap] =
+            splitConnectedComponents(G, terminals);
 
-                std::vector<NodeID> terminals;
-                for (size_t i = 0; i < problem.terminals.size(); ++i) {
-                    terminals.emplace_back(problem.terminals[i].position);
-                }
+        std::vector<std::vector<NodeID> > solutions;
+        std::vector<NodeID> globalSolution;
 
-                branch_multicut bmc(problem.graph, terminals);
-                auto p_pointer = std::make_shared<multicut_problem>(problem);
-                addSurroundingAreaToTerminals(p_pointer, terminals);
-                flow_sum += bmc.find_multiterminal_cut(p_pointer);
-            }
-            return flow_sum;
-        } else {
-            std::vector<NodeID> terms_node;
-            std::vector<terminal> t;
-            for (size_t i = 0; i < terminals.size(); ++i) {
-                t.emplace_back(G->containedVertices(terminals[i])[0], i, true);
-                terms_node.emplace_back(G->containedVertices(terminals[i])[0]);
+        FlowType flow_sum = 0;
+        for (auto& problem : problems) {
+            if (debug) {
+                graph_algorithms::checkGraphValidity(problem.graph);
             }
 
-            branch_multicut bmc(orig_graph, terms_node);
-            auto problem_pointer = std::make_shared<multicut_problem>(G, t);
-            addSurroundingAreaToTerminals(problem_pointer, terminals);
-            return bmc.find_multiterminal_cut(problem_pointer);
+            std::vector<NodeID> terminals;
+            for (size_t i = 0; i < problem.terminals.size(); ++i) {
+                terminals.emplace_back(problem.terminals[i].position);
+            }
+
+            branch_multicut bmc(problem.graph, terminals);
+            auto p_pointer = std::make_shared<multicut_problem>(problem);
+            addSurroundingAreaToTerminals(p_pointer, terminals);
+            auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);
+            flow_sum += flow;
+
+            if (cfg->write_solution) {
+                solutions.emplace_back(sol);
+            }
         }
+
+        if (cfg->write_solution) {
+            std::vector<NodeID> blocksize(terminals.size(), 0);
+            for (NodeID i = 0; i < orig_graph->n(); ++i) {
+                NodeID problem = map[i];
+                NodeID localId = pos[i];
+                NodeID sol = solutions[problem][localId];
+                globalSolution.emplace_back(terminalMap[problem][sol]);
+
+                blocksize[globalSolution[i]]++;
+            }
+            LOG1 << globalSolution;
+            LOG1 << blocksize;
+            graph_io gio;
+            gio.writeVector(globalSolution, "solution");
+        }
+
+        return flow_sum;
     }
 
  private:
@@ -158,29 +171,32 @@ class multiterminal_cut {
         }
     }
 
-    static std::vector<multicut_problem> splitConnectedComponents(
-        std::shared_ptr<mutable_graph> G, std::vector<NodeID> all_terminals) {
+    static std::tuple<std::vector<multicut_problem>,
+                      std::vector<NodeID>,
+                      std::vector<NodeID>,
+                      std::vector<std::vector<NodeID> > >
+    splitConnectedComponents(
+        std::shared_ptr<mutable_graph> G,
+        const std::vector<NodeID>& all_terminals) {
         std::vector<multicut_problem> problems;
         std::vector<int> t_comp;
         strongly_connected_components cc;
 
         auto [components, num_comp, unused] = cc.strong_components(G);
         (void)unused;
-        std::vector<std::vector<terminal> > terminals(num_comp);
         std::vector<NodeID> ctr(num_comp, 0);
         std::vector<NodeID> num_terminals(num_comp, 0);
 
-        // space to create all connected components.
-        // we only actually create the components
-        // that contain at least one terminal
-        std::vector<std::shared_ptr<mutable_graph> >
-        component_subgraph(num_comp);
+        std::vector<NodeID> map(G->n(), UNDEFINED_NODE);
+        std::vector<NodeID> problemPos(G->n(), UNDEFINED_NODE);
+        std::vector<std::vector<NodeID> > terminalMap;
 
         for (NodeID t : all_terminals) {
             num_terminals[components[t]]++;
         }
 
         for (NodeID t : all_terminals) {
+            std::vector<terminal> terminals;
             int terminal_component = components[t];
 
             if (num_terminals[terminal_component] == 1)
@@ -189,28 +205,36 @@ class multiterminal_cut {
             if (!vector::contains(t_comp, terminal_component)) {
                 graph_extractor ge;
 
-                auto [G_out, reverse_mapping] =
-                    ge.extract_block(G, terminal_component, components);
+                auto [G_out, mapping, reverse_mapping] = ge.extract_block(
+                    G, terminal_component, components);
+                terminalMap.emplace_back();
 
-                component_subgraph[terminal_component] = G_out;
-
-                for (NodeID i : all_terminals) {
-                    if (components[i] == terminal_component) {
-                        terminals[terminal_component].emplace_back(
-                            reverse_mapping[i], ctr[terminal_component]++);
+                for (size_t i = 0; i < all_terminals.size(); ++i) {
+                    if (components[all_terminals[i]] == terminal_component) {
+                        terminals.emplace_back(
+                            reverse_mapping[all_terminals[i]],
+                            ctr[terminal_component]++);
+                        terminalMap.back().emplace_back(i);
                     }
                 }
+
+                for (size_t i = 0; i < mapping.size(); ++i) {
+                    NodeID problemID = problems.size();
+                    if (map[mapping[i]] != UNDEFINED_NODE) {
+                        LOG1 << "Error: VERTEX IN MULTIPLE CCs";
+                        exit(1);
+                    }
+
+                    map[mapping[i]] = problemID;
+                    problemPos[mapping[i]] = i;
+                }
+
+                problems.emplace_back(G_out, terminals);
             }
             t_comp.emplace_back(terminal_component);
         }
 
-        for (size_t i = 0; i < num_comp; ++i) {
-            if (terminals[i].size() > 1) {
-                problems.emplace_back(component_subgraph[i], terminals[i]);
-            }
-        }
-
-        return problems;
+        return std::make_tuple(problems, map, problemPos, terminalMap);
     }
 
     std::vector<NodeID> topKTerminals(std::shared_ptr<mutable_graph> G) {

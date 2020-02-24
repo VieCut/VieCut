@@ -89,7 +89,8 @@ class branch_multicut {
 
     ~branch_multicut() { }
 
-    size_t find_multiterminal_cut(std::shared_ptr<multicut_problem> problem) {
+    std::pair<std::vector<NodeID>, size_t> find_multiterminal_cut(
+        std::shared_ptr<multicut_problem> problem) {
         best_solution.resize(original_graph.number_of_nodes());
         if (mpi_rank == 0) {
             mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
@@ -164,7 +165,7 @@ class branch_multicut {
         total_weight = flowValue(false, best_solution);
         VIECUT_ASSERT_LEQ(total_weight, global_upper_bound);
 
-        return (EdgeWeight)total_weight;
+        return std::make_pair(best_solution, total_weight);
     }
 
  private:

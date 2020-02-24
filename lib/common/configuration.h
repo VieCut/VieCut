@@ -61,6 +61,7 @@ class configuration {
     bool blacklist = true;
     bool set_node_in_cut = false;
     bool multibranch = true;
+    bool write_solution = true;
     size_t neighborhood_degrees = 50;
     size_t random_flows = 5;
     double high_distance_factor = 0.9;

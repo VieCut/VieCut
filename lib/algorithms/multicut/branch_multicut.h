@@ -349,7 +349,7 @@ class branch_multicut {
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
         branchOnCurrentInstance =
-            problem->graph->m() > 100000 && c->use_ilp;
+            problem->graph->m() > 100000 || (!c->use_ilp);
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;

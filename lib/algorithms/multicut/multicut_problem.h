@@ -88,6 +88,7 @@ struct multicut_problem {
 
         LOG1 << problem->graph->n() << " nodes and "
              << problem->graph->m() << " edges";
+        LOG1 << "currently deleted " << problem->deleted_weight;
 
         // bfs around all terminals, print all edges between first 3000 nodes
         std::queue<NodeID> Q;

@@ -39,6 +39,8 @@ class multiterminal_cut {
                 terminals = topKTerminals(G);
             if (config->random_k > 0)
                 terminals = randomTerminals(G);
+            if (config->distant_terminals > 0)
+                terminals = distantTerminals(G);
             if (terminals.empty())
                 terminals = terminalsByID(G);
 
@@ -252,6 +254,41 @@ class multiterminal_cut {
         for (int i = 0; i < configuration::getConfig()->random_k; ++i) {
             terminals.emplace_back(random_functions::nextInt(0, G->n() - 1));
             LOG << "Set random terminal " << terminals.back();
+        }
+        return terminals;
+    }
+
+    std::vector<NodeID> distantTerminals(std::shared_ptr<mutable_graph> G) {
+        std::vector<NodeID> terminals;
+        size_t r = random_functions::nextInt(0, G->n() - 1);
+        int dt = configuration::getConfig()->distant_terminals;
+        for (int i = 0; i < dt; ++i) {
+            std::queue<NodeID> Q;
+            std::vector<bool> found(G->n(), false);
+
+            Q.push(r);
+            found[r] = true;
+            for (auto t : terminals) {
+                Q.push(t);
+                found[t] = true;
+            }
+
+            while(!Q.empty()) {
+                NodeID t = Q.front();
+                Q.pop();
+                for (EdgeID e : G->edges_of(t)) {
+                    NodeID n = G->getEdgeTarget(t, e);
+                    if (!found[n]) {
+                        Q.push(n);
+                        found[n] = true;
+                    }
+                }
+
+                if (Q.empty()) {
+                    terminals.emplace_back(t);
+                    break;
+                }
+            }
         }
         return terminals;
     }

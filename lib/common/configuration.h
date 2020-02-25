@@ -47,6 +47,14 @@ class configuration {
     size_t total_terminals = 0;
     size_t print_cc = 0;
     bool disable_cpu_affinity = false;
+    double high_distance_factor = 0.9;
+    size_t high_distance_flows = 5;
+    int distant_terminals = 0;
+    std::string first_branch_path = "";
+    bool write_solution = false;
+    size_t neighborhood_degrees = 50;
+    size_t random_flows = 5;
+    bool multibranch = true;
 
     // minimum cut parameters
     bool save_cut = false;
@@ -60,13 +68,6 @@ class configuration {
     bool find_lowest_conductance = false;
     bool blacklist = true;
     bool set_node_in_cut = false;
-    bool multibranch = true;
-    std::string first_branch_path = "";
-    bool write_solution = false;
-    size_t neighborhood_degrees = 50;
-    size_t random_flows = 5;
-    double high_distance_factor = 0.9;
-    size_t high_distance_flows = 5;
 
     // karger-stein:
     size_t optimal = 0;

@@ -57,6 +57,8 @@ int main(int argn, char** argv) {
                     "use bfs to find and start on terminal block");
     cmdl.add_flag('d', "disable_cpu_affinity", config->disable_cpu_affinity,
                   "Default CPU affinity (i.e. let the OS decide where to run)");
+    cmdl.add_int('D', "distant_terminals", config->distant_terminals,
+                "Use terminals with high distance from each other");
     cmdl.add_string('e', "edge_selection", config->edge_selection,
                     "edge selection rule");
     cmdl.add_string('f', "partition_file", config->partition_file,

@@ -140,8 +140,10 @@ struct multicut_problem {
             }
         }
 
-        LOG1 << gMapIndex;
-        LOG1 << g->n();
+        if (gMapIndex < g->n()) {
+            LOG1 << "Warning: Graph has more than 3000 vertices, only printing "
+                 << gMapIndex << " out of " << g->n();
+        }
 
         LOG1 << "Writing...";
         std::string gid = "small_graph";

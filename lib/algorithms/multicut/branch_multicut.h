@@ -313,8 +313,6 @@ class branch_multicut {
         }
 #endif
 
-        // todo: print sol (for all, then import to gephi)
-
         if (total_time.elapsed() > 3600) {
             LOG1 << "RESULT Timeout!";
             exit(1);
@@ -359,6 +357,12 @@ class branch_multicut {
             c->differences_set = true;
         }
 #endif
+
+        if (configuration::getConfig()->first_branch_path != "") {
+            multicut_problem::writeGraph(problem);
+            exit(1);
+        }
+
         if (branchOnCurrentInstance) {
             branchOnEdge(problem, thread_id);
         } else {
@@ -480,10 +484,7 @@ class branch_multicut {
             return;
         }
 
-        // multicut_problem::writeGraph(problem);
-        // exit(1);
         if (configuration::getConfig()->multibranch) {
-
             multiBranch(problem, thread_id);
         } else {
             singleBranch(problem, thread_id);

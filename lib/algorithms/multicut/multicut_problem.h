@@ -82,7 +82,8 @@ struct multicut_problem {
         return n_coarse;
     }
 
-    static void writeGraph(std::shared_ptr<multicut_problem> problem) {
+    static void writeGraph(std::shared_ptr<multicut_problem> problem,
+                           std::string path) {
         std::shared_ptr<mutable_graph> g = std::make_shared<mutable_graph>();
 
         LOG1 << problem->graph->n() << " nodes and "
@@ -146,8 +147,7 @@ struct multicut_problem {
         }
 
         LOG1 << "Writing...";
-        std::string gid = "small_graph";
-        graph_io::writeGraphWeighted(g->to_graph_access(), gid);
+        graph_io::writeGraphWeighted(g->to_graph_access(), path);
         LOG1 << "...done!";
     }
 

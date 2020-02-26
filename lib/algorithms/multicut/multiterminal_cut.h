@@ -273,7 +273,7 @@ class multiterminal_cut {
                 found[t] = true;
             }
 
-            while(!Q.empty()) {
+            while (!Q.empty()) {
                 NodeID t = Q.front();
                 Q.pop();
                 for (EdgeID e : G->edges_of(t)) {

@@ -82,10 +82,28 @@ class find_articulation_points {
                 contracted[n] = true;
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID t = G->getEdgeTarget(n, e);
-                    bool is_parent = (parent[t] == n)
-                                     && (lowest[t] >= discovered[n]);
 
-                    if (is_parent != invert_side) {
+                    bool on_right = false;
+                    while (true) {
+                        if (t == n) {
+                            on_right = true;
+                            break;
+                        }
+
+                        if (parent[t] == n) {
+                            on_right = (lowest[t] >= discovered[n]);
+                            break;
+                        }
+
+                        if (parent[t] == t) {
+                            on_right = false;
+                            break;
+                        }
+
+                        t = parent[t];
+                    }
+
+                    if (on_right != invert_side) {
                         contracted[t] = true;
                         q.push(t);
                         uf.Union(n, t);
@@ -107,15 +125,25 @@ class find_articulation_points {
 
                 for (auto term : terminals) {
                     if (contracted[term.position] && term.position != n) {
-                        // this can only happen if bridge detection detects
-                        // a bridge that is not actually one.
+                        // this can only happen if AP detection detects
+                        // an AP that is not actually one.
                         for (auto term : terminals) {
                             LOG1 << "t " << term.position;
                         }
 
+                        size_t sum = 0;
+
+                        for (auto c : contracted) {
+                            if (c) {
+                                sum++;
+                            }
+                        }
+
                         LOG1 << n;
-                        LOG1 << contracted;
-                        LOG1 << G;
+                        LOG1 << G->n() << ";" << G->m();
+                        LOG1 << "vertices ctr " << sum;
+                        // LOG1 << contracted;
+                        // LOG1 << G;
                         LOG1 << "CONTRACTING TERMINAL! SANITY CHECK FAILED";
                         exit(1);
                     }
@@ -170,6 +198,7 @@ class find_articulation_points {
             step++;
             discovered[n] = step;
             lowest[n] = step;
+
             for (EdgeID e : G->edges_of(n)) {
                 NodeID t = G->getEdgeTarget(n, e);
                 if (!visited[t]) {

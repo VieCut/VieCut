@@ -106,12 +106,17 @@ class multiterminal_cut {
         if (cfg->write_solution) {
             std::vector<NodeID> blocksize(terminals.size(), 0);
             for (NodeID i = 0; i < orig_graph->n(); ++i) {
-                NodeID problem = map[i];
-                NodeID localId = pos[i];
-                NodeID sol = solutions[problem][localId];
-                globalSolution.emplace_back(terminalMap[problem][sol]);
+                if (map[i] == UNDEFINED_NODE) {
+                    globalSolution.emplace_back(0);
+                    blocksize[0]++;
+                } else {
+                    NodeID problem = map[i];
+                    NodeID localId = pos[i];
+                    NodeID sol = solutions[problem][localId];
+                    globalSolution.emplace_back(terminalMap[problem][sol]);
 
-                blocksize[globalSolution[i]]++;
+                    blocksize[globalSolution[i]]++;
+                }
             }
             LOG1 << globalSolution;
             LOG1 << blocksize;
@@ -201,9 +206,6 @@ class multiterminal_cut {
             std::vector<terminal> terminals;
             int terminal_component = components[t];
 
-            if (num_terminals[terminal_component] == 1)
-                continue;
-
             if (!vector::contains(t_comp, terminal_component)) {
                 graph_extractor ge;
 
@@ -231,7 +233,9 @@ class multiterminal_cut {
                     problemPos[mapping[i]] = i;
                 }
 
-                problems.emplace_back(G_out, terminals);
+                if (num_terminals[terminal_component] > 1) {
+                    problems.emplace_back(G_out, terminals);
+                }
             }
             t_comp.emplace_back(terminal_component);
         }

@@ -80,6 +80,7 @@ int main(int argn, char** argv) {
                         "add terminal vertex");
     cmdl.add_flag('w', "write_solution", config->write_solution,
                   "Print best solution");
+    cmdl.add_flag('X', "inexact", config->inexact, "Apply inexact heuristics");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -133,6 +134,7 @@ int main(int argn, char** argv) {
               << " contract_n=" << config->n
               << " contract_m=" << config->m
               << " processes=" << config->threads
+              << " inexact=" << config->inexact
               << " seed=" << config->seed << std::endl;
     MPI_Finalize();
 }

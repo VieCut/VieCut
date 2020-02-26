@@ -370,6 +370,30 @@ class branch_multicut {
             exit(1);
         }
 
+        if (configuration::getConfig()->inexact && first_branch) {
+            //   first_branch = false;
+            NodeID lightest_t = 0;
+            EdgeWeight lightest_weight = UNDEFINED_FLOW;
+
+            for (auto t : problem->terminals) {
+                auto deg = problem->graph->getWeightedNodeDegree(t.position);
+                if (deg < lightest_weight) {
+                    lightest_weight = deg;
+                    lightest_t = t.position;
+                }
+            }
+
+            for (EdgeID e = problem->graph->get_first_invalid_edge(lightest_t);
+                 e-- != 0; ) {
+                EdgeWeight wgt = problem->graph->getEdgeWeight(lightest_t, e);
+                problem->graph->deleteEdge(lightest_t, e);
+                problem->deleted_weight += wgt;
+            }
+
+            size_t thr = problems.addProblem(problem, thread_id);
+            q_cv[thr].notify_all();
+        }
+
         if (branchOnCurrentInstance) {
             branchOnEdge(problem, thread_id);
         } else {
@@ -784,6 +808,7 @@ class branch_multicut {
     std::vector<NodeID> best_solution;
     timer total_time;
     std::pair<NodeID, EdgeID> priority_edge;
+    bool first_branch;
 
     // parallel
     std::vector<std::condition_variable> q_cv;

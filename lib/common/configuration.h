@@ -55,6 +55,7 @@ class configuration {
     size_t neighborhood_degrees = 50;
     size_t random_flows = 5;
     bool multibranch = true;
+    bool inexact;
 
     // minimum cut parameters
     bool save_cut = false;

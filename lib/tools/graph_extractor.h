@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 

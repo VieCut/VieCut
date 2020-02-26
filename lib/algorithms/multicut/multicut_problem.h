@@ -102,7 +102,7 @@ struct multicut_problem {
             terms.insert(p.position);
         }
 
-        while (S.size() < 3000 && !Q.empty()) {
+        while (S.size() < UNDEFINED_NODE && !Q.empty()) {
             NodeID f = Q.front();
             Q.pop();
             for (EdgeID e : problem->graph->edges_of(f)) {
@@ -142,9 +142,9 @@ struct multicut_problem {
             }
         }
 
-        if (gMapIndex < g->n()) {
-            LOG1 << "Warning: Graph has more than 3000 vertices, only printing "
-                 << gMapIndex << " out of " << g->n();
+        if (gMapIndex < problem->graph->n()) {
+            LOG1 << "Warning: Graph has more than 5000 vertices, only printing "
+                 << gMapIndex << " out of " << problem->graph->n();
         }
 
         LOG1 << "Writing...";

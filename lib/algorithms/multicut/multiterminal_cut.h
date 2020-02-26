@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 #include <queue>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -118,8 +119,13 @@ class multiterminal_cut {
                     blocksize[globalSolution[i]]++;
                 }
             }
-            LOG1 << globalSolution;
-            LOG1 << blocksize;
+            LOG1 << "size: " << blocksize;
+            std::vector<EdgeWeight> term_wgts;
+            for (auto t : terminals) {
+                term_wgts.emplace_back(orig_graph->getWeightedNodeDegree(t));
+            }
+            LOG1 << "wgts: " << term_wgts;
+
             graph_io gio;
             gio.writeVector(globalSolution, "solution");
         }

@@ -13,6 +13,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -114,8 +115,17 @@ class ilp_model {
                         for (size_t q = 0; q < num_terminals; q++) {
                             GRBLinExpr cons = nodes[q][n] - nodes[q][t];
                             // Add constraint: valid partiton
-                            model.addConstr(edges[j] >= cons, "valid part");
-                            model.addConstr(edges[j] >= -cons, "neg valid prt");
+                            std::string v =
+                                "valid part on edge " + std::to_string(j)
+                                + " between " + std::to_string(n)
+                                + " and " + std::to_string(t);
+                            std::string nv =
+                                "neg valid part on edge "
+                                + std::to_string(j) + " between "
+                                + std::to_string(n) + " and "
+                                + std::to_string(t);
+                            model.addConstr(edges[j] >= cons, v);
+                            model.addConstr(edges[j] >= -cons, nv);
                         }
                         j++;
                     }

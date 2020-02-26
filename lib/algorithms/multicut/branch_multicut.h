@@ -345,6 +345,11 @@ class branch_multicut {
         }
         graph_contraction::setTerminals(problem, original_terminals);
         nonBranchingContraction(problem);
+        if (problem->deleted_weight >
+            static_cast<EdgeWeight>(global_upper_bound)) {
+            return;
+        }
+
         bool branchOnCurrentInstance = true;
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
@@ -685,6 +690,7 @@ class branch_multicut {
 #ifdef USE_GUROBI
     void solve_with_ilp(std::shared_ptr<multicut_problem> problem,
                         size_t thread_id) {
+        graph_contraction::deleteTermEdges(problem, original_terminals);
         std::vector<NodeID> presets(problem->graph->n(),
                                     original_terminals.size());
 

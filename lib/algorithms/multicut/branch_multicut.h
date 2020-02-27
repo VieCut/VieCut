@@ -65,9 +65,9 @@ class branch_multicut {
 #endif
     static const bool testing = true;
 
-    branch_multicut(std::shared_ptr<mutable_graph> original_graph,
+    branch_multicut(mutable_graph original_graph,
                     std::vector<NodeID> original_terminals)
-        : original_graph(*original_graph),
+        : original_graph(original_graph),
           original_terminals(original_terminals),
           global_upper_bound(std::numeric_limits<FlowType>::max()),
           problems(configuration::getConfig()->threads,

@@ -94,14 +94,15 @@ class multiterminal_cut {
         cfg->num_terminals = num_terminals;
 
         // todo: use orig_graph here so we can actually have correct map
-        auto [problems, map, pos, terminalMap] =
+        auto [problems, originalGraphs, map, pos, terminalMap] =
             splitConnectedComponents(G, terminals);
 
         std::vector<std::vector<NodeID> > solutions;
         std::vector<NodeID> globalSolution;
 
         FlowType flow_sum = 0;
-        for (auto& problem : problems) {
+        for (size_t p = 0; p < problems.size(); ++p) {
+            auto& problem = problems[p];
             if (debug) {
                 graph_algorithms::checkGraphValidity(problem.graph);
             }
@@ -111,7 +112,7 @@ class multiterminal_cut {
                 terminals.emplace_back(problem.terminals[i].position);
             }
 
-            branch_multicut bmc(problem.graph, terminals);
+            branch_multicut bmc(originalGraphs[p], terminals);
             auto p_pointer = std::make_shared<multicut_problem>(problem);
             auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);
             flow_sum += flow;
@@ -196,12 +197,14 @@ class multiterminal_cut {
     }
 
     static std::tuple<std::vector<multicut_problem>,
+                      std::vector<mutable_graph>,
                       std::vector<NodeID>,
                       std::vector<NodeID>,
                       std::vector<std::vector<NodeID> > >
     splitConnectedComponents(std::shared_ptr<mutable_graph> G,
                              const std::vector<NodeID>& terminalMapping) {
         std::vector<multicut_problem> problems;
+        std::vector<mutable_graph> originalGraphs;
         std::vector<int> t_comp;
         strongly_connected_components cc;
 
@@ -232,7 +235,6 @@ class multiterminal_cut {
         std::vector<NodeID> ctr(num_comp, 0);
         std::vector<NodeID> num_terminals(num_comp, 0);
 
-        std::vector<NodeID> map(G->n(), UNDEFINED_NODE);
         std::vector<std::vector<NodeID> > globalTerminalIndex;
 
         for (size_t problem = 0; problem < num_comp; problem++) {
@@ -241,6 +243,8 @@ class multiterminal_cut {
                 graph_extractor ge;
                 auto [G_out, mapping, reverse_mapping] =
                     ge.extract_block(G, problem, components);
+
+                originalGraphs.emplace_back(*G_out);
 
                 std::vector<std::vector<NodeID> > termBlocks(
                     config->num_terminals);
@@ -273,6 +277,7 @@ class multiterminal_cut {
         }
 
         return std::make_tuple(problems,
+                               originalGraphs,
                                nodeProblemMapping,
                                positionInProblem,
                                globalTerminalIndex);

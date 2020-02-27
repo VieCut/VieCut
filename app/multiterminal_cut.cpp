@@ -99,11 +99,7 @@ int main(int argn, char** argv) {
         multiterminal_cut mc;
         G = mutable_graph::from_graph_access(
             graph_io::readGraphWeighted(config->graph_filename));
-        auto orig_graph = std::make_shared<mutable_graph>(*G);
         terminals = mc.setOriginalTerminals(G);
-
-        if (config->total_terminals == 0)
-            config->total_terminals = terminals.size();
 
         if (terminals.size() < 2) {
             std::cerr << "ERROR: Number of terminals (" << terminals.size()
@@ -112,7 +108,7 @@ int main(int argn, char** argv) {
         }
 
         t.restart();
-        flow = mc.multicut(G, terminals, orig_graph);
+        flow = mc.multicut(G, terminals);
 
 #ifdef USE_GUROBI
     } catch (GRBException e) {
@@ -125,7 +121,7 @@ int main(int argn, char** argv) {
               << " pq=" << config->queue_type
               << " graph=" << config->graph_filename
               << " time=" << t.elapsed()
-              << " terminals=" << config->total_terminals
+              << " terminals=" << config->num_terminals
               << " cut=" << flow
               << " n=" << G->number_of_nodes()
               << " m=" << G->number_of_edges() / 2

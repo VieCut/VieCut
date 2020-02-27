@@ -34,8 +34,9 @@ class multiterminal_cut {
 
     std::vector<NodeID> setOriginalTerminals(std::shared_ptr<mutable_graph> G) {
         auto config = configuration::getConfig();
-        std::vector<NodeID> terminals;
+        std::vector<NodeID> terminalMapping;
         if (config->partition_file.empty()) {
+            std::vector<NodeID> terminals;
             if (config->top_k > 0)
                 terminals = topKTerminals(G);
             if (config->random_k > 0)
@@ -45,15 +46,17 @@ class multiterminal_cut {
             if (terminals.empty())
                 terminals = terminalsByID(G);
 
+            config->num_terminals = terminals.size();
+
             if (config->preset_percentage > 0) {
                 NodeID blocksize = G->n() / terminals.size();
-                config->bfs_size =
-                    std::max(
-                        static_cast<size_t>(
-                            blocksize * config->preset_percentage / 100),
-                        static_cast<size_t>(1));
+                size_t desired = blocksize * config->preset_percentage / 100;
+                size_t minimum_size = 1;
+                config->bfs_size = std::max(desired, minimum_size);
             }
-            return terminals;
+
+            terminalMapping = addSurroundingAreaToTerminals(G, terminals);
+            return terminalMapping;
         } else {
             auto s = tlx::split(".", config->partition_file);
             config->bfs_size = 1;
@@ -63,21 +66,33 @@ class multiterminal_cut {
             }
 
             if (s.back() == "pre") {
-                config->total_terminals = std::stoi(s[s.size() - 2]);
+                try {
+                    config->num_terminals = std::stoi(s[s.size() - 2]);
+                } catch (const std::exception&) {
+                    LOG1 << "ERROR: " << s[s.size() - 2]
+                         << " is not a valid number of terminals. Exiting!";
+                    exit(1);
+                }
+
                 return presetFileTerminals(G);
             } else {
-                config->total_terminals = std::stoi(s.back());
+                try {
+                    config->num_terminals = std::stoi(s.back());
+                } catch (const std::exception&) {
+                    LOG1 << "ERROR: " << s.back()
+                         << " is not a valid number of terminals. Exiting!";
+                    exit(1);
+                }
                 return orderFileTerminals(G);
             }
         }
     }
 
     size_t multicut(std::shared_ptr<mutable_graph> G,
-                    std::vector<NodeID> terminals,
-                    std::shared_ptr<mutable_graph> orig_graph) {
+                    std::vector<NodeID> terminals) {
         auto cfg = configuration::getConfig();
 
-        //todo: use orig_graph here so we can actually have correct map
+        // todo: use orig_graph here so we can actually have correct map
         auto [problems, map, pos, terminalMap] =
             splitConnectedComponents(G, terminals);
 
@@ -97,7 +112,6 @@ class multiterminal_cut {
 
             branch_multicut bmc(problem.graph, terminals);
             auto p_pointer = std::make_shared<multicut_problem>(problem);
-            addSurroundingAreaToTerminals(p_pointer, terminals);
             auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);
             flow_sum += flow;
 
@@ -108,7 +122,7 @@ class multiterminal_cut {
 
         if (cfg->write_solution || cfg->inexact) {
             std::vector<NodeID> blocksize(terminals.size(), 0);
-            for (NodeID i = 0; i < orig_graph->n(); ++i) {
+            for (NodeID i = 0; i < G->n(); ++i) {
                 if (map[i] == UNDEFINED_NODE) {
                     globalSolution.emplace_back(0);
                     blocksize[0]++;
@@ -124,7 +138,7 @@ class multiterminal_cut {
             LOG1 << "size: " << blocksize;
             std::vector<EdgeWeight> term_wgts;
             for (auto t : terminals) {
-                term_wgts.emplace_back(orig_graph->getWeightedNodeDegree(t));
+                term_wgts.emplace_back(G->getWeightedNodeDegree(t));
             }
             LOG1 << "wgts: " << term_wgts;
 
@@ -135,9 +149,7 @@ class multiterminal_cut {
 
             if (cfg->inexact) {
                 // local search for better solutions
-                for (NodeID n : orig_graph->nodes()) {
-
-                }
+                for (NodeID n : G->nodes()) { }
             }
         }
 
@@ -145,119 +157,122 @@ class multiterminal_cut {
     }
 
  private:
-    static void addSurroundingAreaToTerminals(
-        std::shared_ptr<multicut_problem> mcp,
+    static std::vector<NodeID> addSurroundingAreaToTerminals(
+        std::shared_ptr<mutable_graph> graph,
         std::vector<NodeID> terminals) {
         auto config = configuration::getConfig();
-        if (config->bfs_size) {
-            std::vector<bool> already_in_block(
-                mcp->graph->number_of_nodes(), false);
-            std::vector<std::vector<NodeID> > blocks;
+        std::vector<NodeID> terminalMapping(graph->n(), UNDEFINED_NODE);
 
-            for (NodeID t : terminals) {
-                already_in_block[t] = true;
-            }
+        for (size_t i = 0; i < terminals.size(); ++i) {
+            terminalMapping[terminals[i]] = i;
+        }
 
-            for (NodeID t : terminals) {
-                blocks.emplace_back();
-                size_t current_block_size = 1;
+        if (config->bfs_size > 1) {
+            for (size_t i = 0; i < terminals.size(); ++i) {
+                NodeID t = terminals[i];
+                size_t curr_blocksize = 1;
                 std::queue<NodeID> bfs_q;
                 bfs_q.emplace(t);
-                blocks.back().emplace_back(t);
+                terminalMapping[t] = i;
 
-                while (!bfs_q.empty()
-                       && current_block_size < config->bfs_size) {
+                while (!bfs_q.empty() && curr_blocksize < config->bfs_size) {
                     NodeID n = bfs_q.front();
                     bfs_q.pop();
-                    for (EdgeID e : mcp->graph->edges_of(n)) {
-                        NodeID tgt = mcp->graph->getEdgeTarget(n, e);
-                        if (!already_in_block[tgt]) {
-                            already_in_block[tgt] = true;
+                    for (EdgeID e : graph->edges_of(n)) {
+                        NodeID tgt = graph->getEdgeTarget(n, e);
+                        if (terminalMapping[tgt] == UNDEFINED_NODE) {
+                            terminalMapping[tgt] = i;
                             bfs_q.push(tgt);
-                            blocks.back().emplace_back(tgt);
-                            if (++current_block_size >= config->bfs_size) {
+                            if (++curr_blocksize >= config->bfs_size) {
                                 break;
                             }
                         }
                     }
                 }
             }
-
-            graph_contraction::contractIsolatingBlocks(mcp, blocks);
-
-            for (NodeID n : mcp->graph->nodes()) {
-                mcp->graph->setPartitionIndex(n, 0);
-            }
-            for (size_t l = 0; l < terminals.size(); ++l) {
-                NodeID v = mcp->graph->getCurrentPosition(terminals[l]);
-                mcp->graph->setPartitionIndex(v, l);
-            }
         }
+        return terminalMapping;
     }
 
     static std::tuple<std::vector<multicut_problem>,
                       std::vector<NodeID>,
                       std::vector<NodeID>,
                       std::vector<std::vector<NodeID> > >
-    splitConnectedComponents(
-        std::shared_ptr<mutable_graph> G,
-        const std::vector<NodeID>& all_terminals) {
+    splitConnectedComponents(std::shared_ptr<mutable_graph> G,
+                             const std::vector<NodeID>& terminalMapping) {
         std::vector<multicut_problem> problems;
         std::vector<int> t_comp;
         strongly_connected_components cc;
 
-        auto [components, num_comp, unused] = cc.strong_components(G);
-        (void)unused;
+        auto config = configuration::getConfig();
+
+        auto [components, num_comp, blocksizes] = cc.strong_components(G);
+
+        std::vector<NodeID> nodeProblemMapping(G->n(), UNDEFINED_NODE);
+        std::vector<NodeID> positionInProblem(G->n(), UNDEFINED_NODE);
+        std::vector<std::vector<bool> > terminalInProblem(num_comp);
+        std::vector<size_t> numTerminalsInProblem(num_comp);
+
+        for (size_t i = 0; i < terminalInProblem.size(); ++i) {
+            terminalInProblem[i].resize(config->num_terminals, false);
+        }
+
+        for (size_t i = 0; i < components.size(); ++i) {
+            size_t c = static_cast<size_t>(components[i]);
+            nodeProblemMapping[i] = c;
+            if (terminalMapping[i] != UNDEFINED_NODE) {
+                if (!terminalInProblem[c][terminalMapping[i]]) {
+                    numTerminalsInProblem[c]++;
+                    terminalInProblem[c][terminalMapping[i]] = true;
+                }
+            }
+        }
+
         std::vector<NodeID> ctr(num_comp, 0);
         std::vector<NodeID> num_terminals(num_comp, 0);
 
         std::vector<NodeID> map(G->n(), UNDEFINED_NODE);
-        std::vector<NodeID> problemPos(G->n(), UNDEFINED_NODE);
-        std::vector<std::vector<NodeID> > terminalMap;
+        std::vector<std::vector<NodeID> > globalTerminalIndex;
 
-        for (NodeID t : all_terminals) {
-            num_terminals[components[t]]++;
-        }
-
-        for (NodeID t : all_terminals) {
-            std::vector<terminal> terminals;
-            int terminal_component = components[t];
-
-            if (!vector::contains(t_comp, terminal_component)) {
+        for (size_t problem = 0; problem < num_comp; problem++) {
+            if (numTerminalsInProblem[problem] >= 1) {
                 graph_extractor ge;
+                auto [G_out, mapping, reverse_mapping] =
+                    ge.extract_block(G, problem, components);
 
-                auto [G_out, mapping, reverse_mapping] = ge.extract_block(
-                    G, terminal_component, components);
-                terminalMap.emplace_back();
-
-                for (size_t i = 0; i < all_terminals.size(); ++i) {
-                    if (components[all_terminals[i]] == terminal_component) {
-                        terminals.emplace_back(
-                            reverse_mapping[all_terminals[i]],
-                            ctr[terminal_component]++);
-                        terminalMap.back().emplace_back(i);
-                    }
-                }
+                std::vector<std::vector<NodeID> > termBlocks(
+                    config->num_terminals);
 
                 for (size_t i = 0; i < mapping.size(); ++i) {
-                    NodeID problemID = problems.size();
-                    if (map[mapping[i]] != UNDEFINED_NODE) {
-                        LOG1 << "Error: VERTEX IN MULTIPLE CCs";
+                    NodeID n = mapping[i];
+                    if (positionInProblem[n] != UNDEFINED_NODE) {
+                        LOG1 << "ERROR: NODE IN MULTIPLE CCs";
                         exit(1);
                     }
-
-                    map[mapping[i]] = problemID;
-                    problemPos[mapping[i]] = i;
+                    positionInProblem[n] = i;
+                    if (terminalMapping[n] != UNDEFINED_NODE) {
+                        termBlocks[terminalMapping[n]].emplace_back(i);
+                    }
                 }
 
-                if (num_terminals[terminal_component] > 1) {
-                    problems.emplace_back(G_out, terminals);
+                std::vector<terminal> problemTerms;
+                for (size_t t = 0; t < termBlocks.size(); ++t) {
+                    if (termBlocks[t].size() > 0) {
+                        problemTerms.emplace_back(t, problemTerms.size());
+                        globalTerminalIndex[problem].emplace_back(t);
+                    }
                 }
+
+                problems.emplace_back(G_out, problemTerms);
+                auto p = std::make_shared<multicut_problem>(problems.back());
+                graph_contraction::contractIsolatingBlocks(p, termBlocks);
             }
-            t_comp.emplace_back(terminal_component);
         }
 
-        return std::make_tuple(problems, map, problemPos, terminalMap);
+        return std::make_tuple(problems,
+                               nodeProblemMapping,
+                               positionInProblem,
+                               globalTerminalIndex);
     }
 
     std::vector<NodeID> topKTerminals(std::shared_ptr<mutable_graph> G) {
@@ -331,78 +346,43 @@ class multiterminal_cut {
         return terminals;
     }
 
-    std::vector<NodeID> presetFileTerminals(std::shared_ptr<mutable_graph> G) {
-        strongly_connected_components cc;
+    std::vector<NodeID> presetFileTerminals(std::shared_ptr<mutable_graph>) {
         auto config = configuration::getConfig();
-        auto [components, num_comp, unused] = cc.strong_components(G);
-        (void)unused;
         auto v = graph_io::readVector<NodeID>(config->partition_file);
-        std::vector<NodeID> term;
-        std::vector<NodeID> terminals;
-        size_t n_start = G->n();
+        std::vector<NodeID> terminalMapping;
 
-        for (int c = 0; c < static_cast<int>(num_comp); ++c) {
-            for (size_t i = 0; i < config->total_terminals; ++i) {
-                std::unordered_set<NodeID> contractSet;
-                for (size_t n = 0; n < n_start; ++n) {
-                    if (v[n] == i && components[n] == c) {
-                        if (contractSet.size() == 0) {
-                            term.emplace_back(n);
-                        }
-                        contractSet.emplace(G->getCurrentPosition(n));
-                    }
-                }
-
-                if (contractSet.size() > 1) {
-                    G->contractVertexSet(contractSet);
-                }
+        for (NodeID n : v) {
+            if (n == config->num_terminals) {
+                terminalMapping.emplace_back(UNDEFINED_NODE);
+            } else {
+                terminalMapping.emplace_back(n);
             }
         }
 
-        for (size_t i = 0; i < term.size(); ++i) {
-            terminals.emplace_back(G->getCurrentPosition(term[i]));
-        }
-
-        config->bfs_size = 1;
-        return terminals;
+        return terminalMapping;
     }
 
     std::vector<NodeID> orderFileTerminals(std::shared_ptr<mutable_graph> G) {
         auto config = configuration::getConfig();
         auto v = graph_io::readVector<NodeID>(config->partition_file);
         auto o = graph_io::readVector<NodeID>(config->partition_file + ".pos");
-        std::vector<NodeID> term;
-        std::vector<NodeID> terminals;
-
+        std::vector<NodeID> terminalMapping(G->n(), UNDEFINED_NODE);
         NodeID terminal_size = 1;
-        NodeID start_n = G->n();
         if (config->preset_percentage > 0) {
-            NodeID blocksize = G->n() / config->total_terminals;
-            terminal_size =
-                std::max(static_cast<size_t>(blocksize
-                                             * config->preset_percentage / 100),
-                         static_cast<size_t>(1));
+            NodeID blocksize = G->n() / config->num_terminals;
+            size_t desired_size = blocksize * config->preset_percentage / 100;
+            size_t minimum_size = 1;
+            terminal_size = std::max(desired_size, minimum_size);
         }
 
-        for (size_t i = 0; i < config->total_terminals; ++i) {
-            std::unordered_set<NodeID> contractSet;
-            for (size_t n = 0; n < start_n; ++n) {
+        for (size_t i = 0; i < config->num_terminals; ++i) {
+            for (size_t n = 0; n < G->n(); ++n) {
                 if (v[n] == i && o[n] <= terminal_size) {
-                    if (term.size() == i) {
-                        term.emplace_back(n);
-                    }
-                    contractSet.emplace(G->getCurrentPosition(n));
+                    terminalMapping[n] = i;
                 }
             }
-
-            if (contractSet.size() > 1) {
-                G->contractVertexSet(contractSet);
-            }
         }
 
-        for (size_t i = 0; i < config->total_terminals; ++i) {
-            terminals.emplace_back(G->getCurrentPosition(term[i]));
-        }
-        return terminals;
+        return terminalMapping;
     }
 };

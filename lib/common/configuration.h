@@ -44,8 +44,8 @@ class configuration {
     size_t bfs_size = 0;
     size_t threads = 1;
     double preset_percentage = 0;
-    size_t total_terminals = 0;
     size_t print_cc = 0;
+    size_t num_terminals;
     bool disable_cpu_affinity = false;
     double high_distance_factor = 0.9;
     size_t high_distance_flows = 5;

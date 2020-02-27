@@ -101,14 +101,14 @@ int main(int argn, char** argv) {
             graph_io::readGraphWeighted(config->graph_filename));
         terminals = mc.setOriginalTerminals(G);
 
-        if (terminals.size() < 2) {
+        if (config->num_terminals < 2) {
             std::cerr << "ERROR: Number of terminals (" << terminals.size()
                       << ") too small! Exiting..." << std::endl;
             exit(-1);
         }
 
         t.restart();
-        flow = mc.multicut(G, terminals);
+        flow = mc.multicut(G, terminals, config->num_terminals);
 
 #ifdef USE_GUROBI
     } catch (GRBException e) {

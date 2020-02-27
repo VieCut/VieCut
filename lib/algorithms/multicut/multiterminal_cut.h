@@ -89,8 +89,9 @@ class multiterminal_cut {
     }
 
     size_t multicut(std::shared_ptr<mutable_graph> G,
-                    std::vector<NodeID> terminals) {
+                    std::vector<NodeID> terminals, NodeID num_terminals) {
         auto cfg = configuration::getConfig();
+        cfg->num_terminals = num_terminals;
 
         // todo: use orig_graph here so we can actually have correct map
         auto [problems, map, pos, terminalMap] =
@@ -236,6 +237,7 @@ class multiterminal_cut {
 
         for (size_t problem = 0; problem < num_comp; problem++) {
             if (numTerminalsInProblem[problem] >= 1) {
+                globalTerminalIndex.emplace_back();
                 graph_extractor ge;
                 auto [G_out, mapping, reverse_mapping] =
                     ge.extract_block(G, problem, components);
@@ -258,7 +260,8 @@ class multiterminal_cut {
                 std::vector<terminal> problemTerms;
                 for (size_t t = 0; t < termBlocks.size(); ++t) {
                     if (termBlocks[t].size() > 0) {
-                        problemTerms.emplace_back(t, problemTerms.size());
+                        problemTerms.emplace_back(termBlocks[t][0],
+                                                  problemTerms.size());
                         globalTerminalIndex[problem].emplace_back(t);
                     }
                 }

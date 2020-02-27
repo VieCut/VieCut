@@ -370,8 +370,7 @@ class branch_multicut {
             exit(1);
         }
 
-        if (configuration::getConfig()->inexact && first_branch) {
-            //   first_branch = false;
+        if (configuration::getConfig()->inexact) {
             NodeID lightest_t = 0;
             EdgeWeight lightest_weight = UNDEFINED_FLOW;
 
@@ -805,7 +804,6 @@ class branch_multicut {
     std::vector<NodeID> best_solution;
     timer total_time;
     std::pair<NodeID, EdgeID> priority_edge;
-    bool first_branch;
 
     // parallel
     std::vector<std::condition_variable> q_cv;

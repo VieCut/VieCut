@@ -94,8 +94,8 @@ class multiterminal_cut {
         cfg->num_terminals = num_terminals;
 
         // todo: use orig_graph here so we can actually have correct map
-        auto [problems, originalGraphs, map, pos, terminalMap] =
-            splitConnectedComponents(G, terminals);
+        auto [problems, originalGraphs, nodeProblemMapping, positionInProblem,
+            globalTerminalIndex] = splitConnectedComponents(G, terminals);
 
         std::vector<std::vector<NodeID> > solutions;
         std::vector<NodeID> globalSolution;
@@ -123,26 +123,21 @@ class multiterminal_cut {
         }
 
         if (cfg->write_solution || cfg->inexact) {
-            std::vector<NodeID> blocksize(terminals.size(), 0);
+            std::vector<NodeID> blocksize(cfg->num_terminals, 0);
             for (NodeID i = 0; i < G->n(); ++i) {
-                if (map[i] == UNDEFINED_NODE) {
+                if (nodeProblemMapping[i] == UNDEFINED_NODE) {
                     globalSolution.emplace_back(0);
                     blocksize[0]++;
                 } else {
-                    NodeID problem = map[i];
-                    NodeID localId = pos[i];
-                    NodeID sol = solutions[problem][localId];
-                    globalSolution.emplace_back(terminalMap[problem][sol]);
+                    NodeID pr = nodeProblemMapping[i];
+                    NodeID localId = positionInProblem[i];
+                    NodeID sol = solutions[pr][localId];
+                    globalSolution.emplace_back(globalTerminalIndex[pr][sol]);
 
                     blocksize[globalSolution[i]]++;
                 }
             }
             LOG1 << "size: " << blocksize;
-            std::vector<EdgeWeight> term_wgts;
-            for (auto t : terminals) {
-                term_wgts.emplace_back(G->getWeightedNodeDegree(t));
-            }
-            LOG1 << "wgts: " << term_wgts;
 
             if (cfg->write_solution) {
                 graph_io gio;
@@ -211,6 +206,7 @@ class multiterminal_cut {
         auto config = configuration::getConfig();
 
         auto [components, num_comp, blocksizes] = cc.strong_components(G);
+        (void)blocksizes;
 
         std::vector<NodeID> nodeProblemMapping(G->n(), UNDEFINED_NODE);
         std::vector<NodeID> positionInProblem(G->n(), UNDEFINED_NODE);

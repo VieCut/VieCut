@@ -389,9 +389,6 @@ class branch_multicut {
                 problem->graph->deleteEdge(lightest_t, e);
                 problem->deleted_weight += wgt;
             }
-
-            size_t thr = problems.addProblem(problem, thread_id);
-            q_cv[thr].notify_all();
         }
 
         if (branchOnCurrentInstance) {

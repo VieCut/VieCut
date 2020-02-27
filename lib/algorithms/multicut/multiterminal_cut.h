@@ -76,6 +76,8 @@ class multiterminal_cut {
                     std::vector<NodeID> terminals,
                     std::shared_ptr<mutable_graph> orig_graph) {
         auto cfg = configuration::getConfig();
+
+        //todo: use orig_graph here so we can actually have correct map
         auto [problems, map, pos, terminalMap] =
             splitConnectedComponents(G, terminals);
 
@@ -99,12 +101,12 @@ class multiterminal_cut {
             auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);
             flow_sum += flow;
 
-            if (cfg->write_solution) {
+            if (cfg->write_solution || cfg->inexact) {
                 solutions.emplace_back(sol);
             }
         }
 
-        if (cfg->write_solution) {
+        if (cfg->write_solution || cfg->inexact) {
             std::vector<NodeID> blocksize(terminals.size(), 0);
             for (NodeID i = 0; i < orig_graph->n(); ++i) {
                 if (map[i] == UNDEFINED_NODE) {
@@ -126,8 +128,17 @@ class multiterminal_cut {
             }
             LOG1 << "wgts: " << term_wgts;
 
-            graph_io gio;
-            gio.writeVector(globalSolution, "solution");
+            if (cfg->write_solution) {
+                graph_io gio;
+                gio.writeVector(globalSolution, "solution");
+            }
+
+            if (cfg->inexact) {
+                // local search for better solutions
+                for (NodeID n : orig_graph->nodes()) {
+
+                }
+            }
         }
 
         return flow_sum;

@@ -18,6 +18,7 @@
 #include <queue>
 #include <tuple>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "algorithms/misc/strongly_connected_components.h"
@@ -95,7 +96,7 @@ class multiterminal_cut {
 
         // todo: use orig_graph here so we can actually have correct map
         auto [problems, originalGraphs, nodeProblemMapping, positionInProblem,
-            globalTerminalIndex] = splitConnectedComponents(G, terminals);
+              globalTerminalIndex] = splitConnectedComponents(G, terminals);
 
         std::vector<std::vector<NodeID> > solutions;
         std::vector<NodeID> globalSolution;
@@ -137,7 +138,6 @@ class multiterminal_cut {
                     blocksize[globalSolution[i]]++;
                 }
             }
-            LOG1 << "size: " << blocksize;
 
             if (cfg->write_solution) {
                 graph_io gio;
@@ -146,8 +146,79 @@ class multiterminal_cut {
 
             if (cfg->inexact) {
                 // local search for better solutions
-                for (NodeID n : G->nodes()) { }
+                bool change_found = true;
+                while (change_found) {
+                    std::vector<NodeID> permute(G->n(), 0);
+                    std::vector<std::pair<NodeID, int64_t> > nextBest(
+                        G->n(), { UNDEFINED_NODE, 0 });
+
+                    random_functions::permutate_vector_local(&permute, true);
+
+                    change_found = false;
+                    for (NodeID v : G->nodes()) {
+                        NodeID n = permute[v];
+                        if (terminals[n] != UNDEFINED_NODE)
+                            continue;
+
+                        std::vector<EdgeWeight> blockwgt(cfg->num_terminals, 0);
+                        NodeID ownBlockID = globalSolution[n];
+                        for (EdgeID e : G->edges_of(n)) {
+                            auto [t, w] = G->getEdge(n, e);
+                            NodeID block = globalSolution[t];
+                            blockwgt[block] += w;
+                        }
+
+                        EdgeWeight ownBlockWgt = blockwgt[ownBlockID];
+                        NodeID maxBlockID = 0;
+                        EdgeWeight maxBlockWgt = 0;
+                        for (size_t i = 0; i < blockwgt.size(); ++i) {
+                            if (i != ownBlockID) {
+                                if (blockwgt[i] > maxBlockWgt) {
+                                    maxBlockID = i;
+                                    maxBlockWgt = blockwgt[i];
+                                }
+                            }
+                        }
+
+                        int64_t gain = static_cast<int64_t>(maxBlockWgt)
+                                       - static_cast<int64_t>(ownBlockWgt);
+
+                        for (EdgeID e : G->edges_of(n)) {
+                            auto [t, w] = G->getEdge(n, e);
+                            auto [nbrBlockID, nbrGain] = nextBest[t];
+                            int64_t movegain = nbrGain + gain + 2 * w;
+                            if (globalSolution[t] == globalSolution[n] &&
+                                nbrBlockID == maxBlockID && movegain >= 0) {
+                                blocksize[maxBlockID] += 2;
+                                blocksize[globalSolution[n]] -= 2;
+                                globalSolution[n] = maxBlockID;
+                                globalSolution[t] = maxBlockID;
+                                flow_sum -= movegain;
+                                if (movegain > 0) {
+                                    change_found = true;
+                                    LOG1 << "DBLMOVE " << n << " and " << t
+                                         << " with gain " << movegain;
+                                }
+                            }
+                        }
+
+                        if (gain >= 0) {
+                            globalSolution[n] = maxBlockID;
+                            flow_sum -= gain;
+                            blocksize[maxBlockID] += 1;
+                            blocksize[ownBlockID] -= 1;
+                            if (gain > 0) {
+                                LOG1 << n << " has gain " << gain;
+                                change_found = true;
+                            }
+                        } else {
+                            nextBest[n] = std::make_pair(maxBlockID, gain);
+                        }
+                    }
+                }
             }
+
+            LOG1 << "size: " << blocksize;
         }
 
         return flow_sum;
@@ -239,6 +310,7 @@ class multiterminal_cut {
                 graph_extractor ge;
                 auto [G_out, mapping, reverse_mapping] =
                     ge.extract_block(G, problem, components);
+                (void)reverse_mapping;
 
                 originalGraphs.emplace_back(*G_out);
 

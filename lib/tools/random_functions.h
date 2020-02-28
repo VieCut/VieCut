@@ -128,7 +128,7 @@ class random_functions {
         }
 
         if (vec.size() < 10) {
-            permutate_vector_good_small(vec);
+            permutate_vector_good_small(v);
             return;
         }
         unsigned int size = vec.size();

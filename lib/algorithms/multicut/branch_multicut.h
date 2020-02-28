@@ -319,7 +319,7 @@ class branch_multicut {
         }
 
         if (total_time.elapsed() > log_timer) {
-            double logs_per_second = 0.2;
+            double logs_per_second = 2;
             double time_added = 1.0 / logs_per_second;
 
             log_timer = time_added + log_timer;

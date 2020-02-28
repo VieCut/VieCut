@@ -134,7 +134,6 @@ class multiterminal_cut {
                     NodeID localId = positionInProblem[i];
                     NodeID sol = solutions[pr][localId];
                     globalSolution.emplace_back(globalTerminalIndex[pr][sol]);
-
                     blocksize[globalSolution[i]]++;
                 }
             }
@@ -149,6 +148,7 @@ class multiterminal_cut {
                 bool change_found = true;
                 while (change_found) {
                     std::vector<NodeID> permute(G->n(), 0);
+                    std::vector<bool> inBoundary(G->n(), true);
                     std::vector<std::pair<NodeID, int64_t> > nextBest(
                         G->n(), { UNDEFINED_NODE, 0 });
 
@@ -158,6 +158,8 @@ class multiterminal_cut {
                     for (NodeID v : G->nodes()) {
                         NodeID n = permute[v];
                         if (terminals[n] != UNDEFINED_NODE)
+                            continue;
+                        if (!inBoundary[n])
                             continue;
 
                         std::vector<EdgeWeight> blockwgt(cfg->num_terminals, 0);
@@ -180,6 +182,10 @@ class multiterminal_cut {
                             }
                         }
 
+                        if (maxBlockWgt) {
+                            inBoundary[n] = false;
+                        }
+
                         int64_t gain = static_cast<int64_t>(maxBlockWgt)
                                        - static_cast<int64_t>(ownBlockWgt);
 
@@ -199,6 +205,21 @@ class multiterminal_cut {
                                     LOG1 << "DBLMOVE " << n << " and " << t
                                          << " with gain " << movegain;
                                 }
+
+                                for (EdgeID e : G->edges_of(n)) {
+                                    NodeID b = G->getEdgeTarget(n, e);
+                                    nextBest[b] =
+                                        std::make_pair(UNDEFINED_NODE, 0);
+                                    inBoundary[b] = true;
+                                }
+                                nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
+                                for (EdgeID e : G->edges_of(t)) {
+                                    NodeID b = G->getEdgeTarget(t, e);
+                                    nextBest[b] =
+                                        std::make_pair(UNDEFINED_NODE, 0);
+                                    inBoundary[b] = true;
+                                }
+
                             }
                         }
 
@@ -210,6 +231,11 @@ class multiterminal_cut {
                             if (gain > 0) {
                                 LOG1 << n << " has gain " << gain;
                                 change_found = true;
+                            }
+                            for (EdgeID e : G->edges_of(n)) {
+                                NodeID t = G->getEdgeTarget(n, e);
+                                nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
+                                inBoundary[t] = true;
                             }
                         } else {
                             nextBest[n] = std::make_pair(maxBlockID, gain);
@@ -290,7 +316,6 @@ class multiterminal_cut {
 
         for (size_t i = 0; i < components.size(); ++i) {
             size_t c = static_cast<size_t>(components[i]);
-            nodeProblemMapping[i] = c;
             if (terminalMapping[i] != UNDEFINED_NODE) {
                 if (!terminalInProblem[c][terminalMapping[i]]) {
                     numTerminalsInProblem[c]++;
@@ -319,6 +344,7 @@ class multiterminal_cut {
 
                 for (size_t i = 0; i < mapping.size(); ++i) {
                     NodeID n = mapping[i];
+                    nodeProblemMapping[n] = problem;
                     if (positionInProblem[n] != UNDEFINED_NODE) {
                         LOG1 << "ERROR: NODE IN MULTIPLE CCs";
                         exit(1);

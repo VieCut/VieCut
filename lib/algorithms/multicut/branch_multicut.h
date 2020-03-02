@@ -354,7 +354,7 @@ class branch_multicut {
 #ifdef USE_GUROBI
         auto c = configuration::getConfig();
         branchOnCurrentInstance =
-            problem->graph->m() > 100000 || (!c->use_ilp);
+            problem->graph->m() > 50000 || (!c->use_ilp);
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;
@@ -373,12 +373,19 @@ class branch_multicut {
         if (configuration::getConfig()->inexact) {
             NodeID lightest_t = 0;
             EdgeWeight lightest_weight = UNDEFINED_FLOW;
+            NodeID heaviest_t = 0;
+            EdgeWeight heaviest_weight = 0;
+            std::vector<EdgeWeight> terminalWeights;
 
             for (auto t : problem->terminals) {
                 auto deg = problem->graph->getWeightedNodeDegree(t.position);
                 if (deg < lightest_weight) {
                     lightest_weight = deg;
                     lightest_t = t.position;
+                }
+                if (deg > heaviest_weight) {
+                    heaviest_weight = deg;
+                    heaviest_t = t.position;
                 }
             }
 
@@ -388,6 +395,44 @@ class branch_multicut {
                 problem->graph->deleteEdge(lightest_t, e);
                 problem->deleted_weight += wgt;
             }
+
+            std::unordered_set<NodeID> contractSet;
+            contractSet.insert(heaviest_t);
+
+            std::unordered_set<NodeID> isOtherTerminal;
+            for (auto t : problem->terminals) {
+                if (t.position != heaviest_t) {
+                    isOtherTerminal.insert(t.position);
+                }
+            }
+
+            for (EdgeID e : problem->graph->edges_of(heaviest_t)) {
+                NodeID nbr = problem->graph->getEdgeTarget(heaviest_t, e);
+                bool otherTerminalNbr = false;
+                for (EdgeID nbr_e : problem->graph->edges_of(nbr)) {
+                    NodeID o = problem->graph->getEdgeTarget(nbr, nbr_e);
+                    if (isOtherTerminal.count(o) > 0) {
+                        otherTerminalNbr = true;
+                        break;
+                    }
+                    bool otherTerminalNbrO = false;
+                    for (EdgeID o_e : problem->graph->edges_of(o)) {
+                        NodeID o2 = problem->graph->getEdgeTarget(o, o_e);
+                        if (isOtherTerminal.count(o2) > 0) {
+                            otherTerminalNbrO = true;
+                            break;
+                        }
+                    }
+                    if (!otherTerminalNbrO) {
+                        contractSet.insert(o);
+                    }
+                }
+
+                if (!otherTerminalNbr) {
+                    contractSet.insert(nbr);
+                }
+            }
+            problem->graph->contractVertexSet(contractSet);
         }
 
         if (branchOnCurrentInstance) {

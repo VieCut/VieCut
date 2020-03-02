@@ -219,7 +219,6 @@ class multiterminal_cut {
                                         std::make_pair(UNDEFINED_NODE, 0);
                                     inBoundary[b] = true;
                                 }
-
                             }
                         }
 

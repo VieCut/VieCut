@@ -96,7 +96,8 @@ class multiterminal_cut {
 
         // todo: use orig_graph here so we can actually have correct map
         auto [problems, originalGraphs, nodeProblemMapping, positionInProblem,
-              globalTerminalIndex] = splitConnectedComponents(G, terminals);
+              globalTerminalIndex, fixedVertex] = splitConnectedComponents(
+            G, terminals);
 
         std::vector<std::vector<NodeID> > solutions;
         std::vector<NodeID> globalSolution;
@@ -113,7 +114,7 @@ class multiterminal_cut {
                 terminals.emplace_back(problem.terminals[i].position);
             }
 
-            branch_multicut bmc(originalGraphs[p], terminals);
+            branch_multicut bmc(originalGraphs[p], terminals, fixedVertex[p]);
             auto p_pointer = std::make_shared<multicut_problem>(problem);
             auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);
             flow_sum += flow;
@@ -291,11 +292,13 @@ class multiterminal_cut {
                       std::vector<mutable_graph>,
                       std::vector<NodeID>,
                       std::vector<NodeID>,
-                      std::vector<std::vector<NodeID> > >
+                      std::vector<std::vector<NodeID> >,
+                      std::vector<std::vector<bool> > >
     splitConnectedComponents(std::shared_ptr<mutable_graph> G,
                              const std::vector<NodeID>& terminalMapping) {
         std::vector<multicut_problem> problems;
         std::vector<mutable_graph> originalGraphs;
+        std::vector<std::vector<bool> > fixedVertex;
         std::vector<int> t_comp;
         strongly_connected_components cc;
 
@@ -337,6 +340,7 @@ class multiterminal_cut {
                 (void)reverse_mapping;
 
                 originalGraphs.emplace_back(*G_out);
+                fixedVertex.emplace_back(G_out->n(), false);
 
                 std::vector<std::vector<NodeID> > termBlocks(
                     config->num_terminals);
@@ -351,6 +355,7 @@ class multiterminal_cut {
                     positionInProblem[n] = i;
                     if (terminalMapping[n] != UNDEFINED_NODE) {
                         termBlocks[terminalMapping[n]].emplace_back(i);
+                        fixedVertex.back()[i] = true;
                     }
                 }
 
@@ -373,7 +378,8 @@ class multiterminal_cut {
                                originalGraphs,
                                nodeProblemMapping,
                                positionInProblem,
-                               globalTerminalIndex);
+                               globalTerminalIndex,
+                               fixedVertex);
     }
 
     std::vector<NodeID> topKTerminals(std::shared_ptr<mutable_graph> G) {

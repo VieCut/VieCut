@@ -66,9 +66,11 @@ class branch_multicut {
     static const bool testing = true;
 
     branch_multicut(mutable_graph original_graph,
-                    std::vector<NodeID> original_terminals)
+                    std::vector<NodeID> original_terminals,
+                    std::vector<bool> fixed_vertex)
         : original_graph(original_graph),
           original_terminals(original_terminals),
+          fixed_vertex(fixed_vertex),
           global_upper_bound(std::numeric_limits<FlowType>::max()),
           problems(configuration::getConfig()->threads,
                    configuration::getConfig()->queue_type),
@@ -400,39 +402,32 @@ class branch_multicut {
             }
 
             std::unordered_set<NodeID> contractSet;
-            contractSet.insert(heaviest_t);
 
             std::unordered_set<NodeID> isOtherTerminal;
+            std::queue<std::pair<NodeID, size_t> > nodeAndDistance;
+            nodeAndDistance.emplace(heaviest_t, 0);
             for (auto t : problem->terminals) {
                 if (t.position != heaviest_t) {
                     isOtherTerminal.insert(t.position);
                 }
             }
 
-            for (EdgeID e : problem->graph->edges_of(heaviest_t)) {
-                NodeID nbr = problem->graph->getEdgeTarget(heaviest_t, e);
-                bool otherTerminalNbr = false;
-                for (EdgeID nbr_e : problem->graph->edges_of(nbr)) {
-                    NodeID o = problem->graph->getEdgeTarget(nbr, nbr_e);
-                    if (isOtherTerminal.count(o) > 0) {
-                        otherTerminalNbr = true;
+            while (!nodeAndDistance.empty()) {
+                auto [n, d] = nodeAndDistance.front();
+                nodeAndDistance.pop();
+                bool neighboringOtherTerminal = false;
+                for (EdgeID e : problem->graph->edges_of(n)) {
+                    NodeID nbr = problem->graph->getEdgeTarget(n, e);
+                    if (isOtherTerminal.count(nbr) > 0) {
+                        neighboringOtherTerminal = true;
                         break;
                     }
-                    bool otherTerminalNbrO = false;
-                    for (EdgeID o_e : problem->graph->edges_of(o)) {
-                        NodeID o2 = problem->graph->getEdgeTarget(o, o_e);
-                        if (isOtherTerminal.count(o2) > 0) {
-                            otherTerminalNbrO = true;
-                            break;
-                        }
-                    }
-                    if (!otherTerminalNbrO) {
-                        contractSet.insert(o);
+                    if (d + 1 < c->contractionDepthAroundTerminal) {
+                        nodeAndDistance.emplace(nbr, d + 1);
                     }
                 }
-
-                if (!otherTerminalNbr) {
-                    contractSet.insert(nbr);
+                if (!neighboringOtherTerminal) {
+                    contractSet.insert(n);
                 }
             }
             problem->graph->contractVertexSet(contractSet);
@@ -448,11 +443,14 @@ class branch_multicut {
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
         bestsol_mutex.lock();
         if (problem->upper_bound < global_upper_bound) {
+            auto cfg = configuration::getConfig();
             global_upper_bound = problem->upper_bound;
+            std::vector<size_t> blocksize(original_terminals.size(), 0);
             for (NodeID n = 0; n < best_solution.size(); ++n) {
                 NodeID n_coarse = problem->mapped(n);
                 auto t = problem->graph->getCurrentPosition(n_coarse);
                 best_solution[n] = problem->graph->getPartitionIndex(t);
+                blocksize[best_solution[n]]++;
             }
 
             if (debug) {
@@ -468,9 +466,102 @@ class branch_multicut {
                     }
                 }
             }
+            std::unordered_set<NodeID> origtermset;
+            for (NodeID t : original_terminals) {
+                origtermset.insert(t);
+            }
 
             global_upper_bound = flowValue(false, best_solution);
+            LOGC(testing) << "before local search: " << global_upper_bound;
             // printBoundaries();
+            bool change_found = true;
+            while (change_found) {
+                std::vector<NodeID> permute(original_graph.n(), 0);
+                std::vector<bool> inBoundary(original_graph.n(), true);
+                std::vector<std::pair<NodeID, int64_t> > nextBest(
+                    original_graph.n(), { UNDEFINED_NODE, 0 });
+
+                random_functions::permutate_vector_local(&permute, true);
+
+                change_found = false;
+                for (NodeID v : original_graph.nodes()) {
+                    NodeID n = permute[v];
+                    if (fixed_vertex[n] || !inBoundary[n])
+                        continue;
+
+                    std::vector<EdgeWeight> blockwgt(cfg->num_terminals, 0);
+                    NodeID ownBlockID = best_solution[n];
+                    for (EdgeID e : original_graph.edges_of(n)) {
+                        auto [t, w] = original_graph.getEdge(n, e);
+                        NodeID block = best_solution[t];
+                        blockwgt[block] += w;
+                    }
+
+                    EdgeWeight ownBlockWgt = blockwgt[ownBlockID];
+                    NodeID maxBlockID = 0;
+                    EdgeWeight maxBlockWgt = 0;
+                    for (size_t i = 0; i < blockwgt.size(); ++i) {
+                        if (i != ownBlockID) {
+                            if (blockwgt[i] > maxBlockWgt) {
+                                maxBlockID = i;
+                                maxBlockWgt = blockwgt[i];
+                            }
+                        }
+                    }
+
+                    if (maxBlockWgt) {
+                        inBoundary[n] = false;
+                    }
+
+                    int64_t gain = static_cast<int64_t>(maxBlockWgt)
+                                   - static_cast<int64_t>(ownBlockWgt);
+
+                    for (EdgeID e : original_graph.edges_of(n)) {
+                        auto [t, w] = original_graph.getEdge(n, e);
+                        auto [nbrBlockID, nbrGain] = nextBest[t];
+                        int64_t movegain = nbrGain + gain + 2 * w;
+                        if (best_solution[t] == best_solution[n] &&
+                            nbrBlockID == maxBlockID && movegain >= 0) {
+                            blocksize[maxBlockID] += 2;
+                            blocksize[best_solution[n]] -= 2;
+                            best_solution[n] = maxBlockID;
+                            best_solution[t] = maxBlockID;
+                            global_upper_bound -= movegain;
+                            if (movegain > 0) {
+                                change_found = true;
+                                LOG0 << "DBLMOVE " << n << " and " << t
+                                     << " with gain " << movegain;
+                            }
+
+                            for (EdgeID e : original_graph.edges_of(n)) {
+                                NodeID b = original_graph.getEdgeTarget(n, e);
+                                nextBest[b] = std::make_pair(UNDEFINED_NODE, 0);
+                                inBoundary[b] = true;
+                            }
+                            nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
+                            for (EdgeID e : original_graph.edges_of(t)) {
+                                NodeID b = original_graph.getEdgeTarget(t, e);
+                                nextBest[b] = std::make_pair(UNDEFINED_NODE, 0);
+                                inBoundary[b] = true;
+                            }
+                        }
+                    }
+
+                    if (gain >= 0) {
+                        best_solution[n] = maxBlockID;
+                        global_upper_bound -= gain;
+                        blocksize[maxBlockID] += 1;
+                        blocksize[ownBlockID] -= 1;
+                        for (EdgeID e : original_graph.edges_of(n)) {
+                            NodeID t = original_graph.getEdgeTarget(n, e);
+                            nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
+                            inBoundary[t] = true;
+                        }
+                    } else {
+                        nextBest[n] = std::make_pair(maxBlockID, gain);
+                    }
+                }
+            }
 
             LOGC(testing) << "Improvement after time="
                           << total_time.elapsed() << " upper_bound="
@@ -847,6 +938,7 @@ class branch_multicut {
 
     mutable_graph original_graph;
     std::vector<NodeID> original_terminals;
+    std::vector<bool> fixed_vertex;
     FlowType global_upper_bound;
     per_thread_problem_queue problems;
     std::vector<NodeID> best_solution;

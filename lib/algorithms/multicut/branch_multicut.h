@@ -351,8 +351,8 @@ class branch_multicut {
         }
 
         bool branchOnCurrentInstance = true;
-#ifdef USE_GUROBI
         auto c = configuration::getConfig();
+#ifdef USE_GUROBI
         branchOnCurrentInstance =
             problem->graph->m() > 50000 || (!c->use_ilp);
         if (!c->differences_set) {
@@ -364,36 +364,39 @@ class branch_multicut {
         }
 #endif
 
-        auto path = configuration::getConfig()->first_branch_path;
+        auto path = c->first_branch_path;
         if (path != "") {
             multicut_problem::writeGraph(problem, path);
             exit(1);
         }
 
-        if (configuration::getConfig()->inexact) {
-            NodeID lightest_t = 0;
-            EdgeWeight lightest_weight = UNDEFINED_FLOW;
+        if (c->inexact) {
             NodeID heaviest_t = 0;
             EdgeWeight heaviest_weight = 0;
-            std::vector<EdgeWeight> terminalWeights;
+            for (size_t i = 0; i < c->removeTerminalsBeforeBranch; ++i) {
+                NodeID lightest_t = 0;
+                EdgeWeight lightest_weight = UNDEFINED_FLOW;
 
-            for (auto t : problem->terminals) {
-                auto deg = problem->graph->getWeightedNodeDegree(t.position);
-                if (deg < lightest_weight) {
-                    lightest_weight = deg;
-                    lightest_t = t.position;
+                for (auto t : problem->terminals) {
+                    NodeID pos = t.position;
+                    auto deg = problem->graph->getWeightedNodeDegree(pos);
+                    if (deg < lightest_weight && deg > 0) {
+                        lightest_weight = deg;
+                        lightest_t = t.position;
+                    }
+                    if (deg > heaviest_weight) {
+                        heaviest_weight = deg;
+                        heaviest_t = t.position;
+                    }
                 }
-                if (deg > heaviest_weight) {
-                    heaviest_weight = deg;
-                    heaviest_t = t.position;
-                }
-            }
 
-            for (EdgeID e = problem->graph->get_first_invalid_edge(lightest_t);
-                 e-- != 0; ) {
-                EdgeWeight wgt = problem->graph->getEdgeWeight(lightest_t, e);
-                problem->graph->deleteEdge(lightest_t, e);
-                problem->deleted_weight += wgt;
+                EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
+                for (EdgeID e = e1; e-- != 0; ) {
+                    auto wgt = problem->graph->getEdgeWeight(lightest_t, e);
+                    problem->graph->deleteEdge(lightest_t, e);
+                    problem->deleted_weight += wgt;
+                }
+                graph_contraction::setTerminals(problem, original_terminals);
             }
 
             std::unordered_set<NodeID> contractSet;

@@ -54,7 +54,7 @@ class configuration {
     bool write_solution = false;
     size_t neighborhood_degrees = 50;
     size_t random_flows = 5;
-    size_t removeTerminalsBeforeBranch = 2;
+    double removeTerminalsBeforeBranch = 0.1;
     size_t contractionDepthAroundTerminal = 2;
     bool multibranch = true;
     bool inexact = false;

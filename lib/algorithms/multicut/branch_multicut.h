@@ -375,7 +375,10 @@ class branch_multicut {
         if (c->inexact) {
             NodeID heaviest_t = 0;
             EdgeWeight heaviest_weight = 0;
-            for (size_t i = 0; i < c->removeTerminalsBeforeBranch; ++i) {
+            size_t lowestTerminals =
+                std::ceil(static_cast<double>(problem->terminals.size()) *
+                          c->removeTerminalsBeforeBranch);
+            for (size_t i = 0; i < lowestTerminals; ++i) {
                 NodeID lightest_t = 0;
                 EdgeWeight lightest_weight = UNDEFINED_FLOW;
 

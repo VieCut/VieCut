@@ -55,6 +55,9 @@ int main(int argn, char** argv) {
 
     cmdl.add_size_t('b', "bfs_size", config->bfs_size,
                     "use bfs to find and start on terminal block");
+    cmdl.add_size_t('c', "contraction_depth_around_terminals",
+                    config->contractionDepthAroundTerminal,
+                    "Contract vertices close to heaviest terminal [only -X]");
     cmdl.add_flag('d', "disable_cpu_affinity", config->disable_cpu_affinity,
                   "Default CPU affinity (i.e. let the OS decide where to run)");
     cmdl.add_int('D', "distant_terminals", config->distant_terminals,
@@ -64,6 +67,9 @@ int main(int argn, char** argv) {
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
     cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
+    cmdl.add_double('l', "removeTerminalsBeforeBranch",
+                    config->removeTerminalsBeforeBranch,
+                    "Remove low degree terminals before branch [only -X]");
     cmdl.add_int('k', "top_k", config->top_k,
                  "multiterminal cut between top k vertices (invalidates t)");
     cmdl.add_double('n', "preset_percentage", config->preset_percentage,

@@ -519,12 +519,14 @@ class branch_multicut {
                     int64_t gain = static_cast<int64_t>(maxBlockWgt)
                                    - static_cast<int64_t>(ownBlockWgt);
 
+                    bool notDoublemoved = true;
                     for (EdgeID e : original_graph.edges_of(n)) {
                         auto [t, w] = original_graph.getEdge(n, e);
                         auto [nbrBlockID, nbrGain] = nextBest[t];
                         int64_t movegain = nbrGain + gain + 2 * w;
                         if (best_solution[t] == best_solution[n] &&
-                            nbrBlockID == maxBlockID && movegain >= 0) {
+                            nbrBlockID == maxBlockID && movegain > 0
+                            && movegain > gain) {
                             blocksize[maxBlockID] += 2;
                             blocksize[best_solution[n]] -= 2;
                             best_solution[n] = maxBlockID;
@@ -532,9 +534,8 @@ class branch_multicut {
                             global_upper_bound -= movegain;
                             if (movegain > 0) {
                                 change_found = true;
-                                LOG0 << "DBLMOVE " << n << " and " << t
-                                     << " with gain " << movegain;
                             }
+                            notDoublemoved = false;
 
                             for (EdgeID e : original_graph.edges_of(n)) {
                                 NodeID b = original_graph.getEdgeTarget(n, e);
@@ -548,6 +549,10 @@ class branch_multicut {
                                 inBoundary[b] = true;
                             }
                         }
+                    }
+
+                    if (!notDoublemoved) {
+                        continue;
                     }
 
                     if (gain >= 0) {

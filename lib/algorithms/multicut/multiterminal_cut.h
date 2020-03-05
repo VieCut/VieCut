@@ -124,7 +124,7 @@ class multiterminal_cut {
             }
         }
 
-        if (cfg->write_solution || cfg->inexact) {
+        if (cfg->write_solution) {
             std::vector<NodeID> blocksize(cfg->num_terminals, 0);
             for (NodeID i = 0; i < G->n(); ++i) {
                 if (nodeProblemMapping[i] == UNDEFINED_NODE) {
@@ -139,111 +139,8 @@ class multiterminal_cut {
                 }
             }
 
-            if (cfg->write_solution) {
-                graph_io gio;
-                gio.writeVector(globalSolution, "solution");
-            }
-
-            if (cfg->inexact) {
-                // local search for better solutions
-                bool change_found = true;
-                while (change_found) {
-                    std::vector<NodeID> permute(G->n(), 0);
-                    std::vector<bool> inBoundary(G->n(), true);
-                    std::vector<std::pair<NodeID, int64_t> > nextBest(
-                        G->n(), { UNDEFINED_NODE, 0 });
-
-                    random_functions::permutate_vector_local(&permute, true);
-
-                    change_found = false;
-                    for (NodeID v : G->nodes()) {
-                        NodeID n = permute[v];
-                        if (terminals[n] != UNDEFINED_NODE)
-                            continue;
-                        if (!inBoundary[n])
-                            continue;
-
-                        std::vector<EdgeWeight> blockwgt(cfg->num_terminals, 0);
-                        NodeID ownBlockID = globalSolution[n];
-                        for (EdgeID e : G->edges_of(n)) {
-                            auto [t, w] = G->getEdge(n, e);
-                            NodeID block = globalSolution[t];
-                            blockwgt[block] += w;
-                        }
-
-                        EdgeWeight ownBlockWgt = blockwgt[ownBlockID];
-                        NodeID maxBlockID = 0;
-                        EdgeWeight maxBlockWgt = 0;
-                        for (size_t i = 0; i < blockwgt.size(); ++i) {
-                            if (i != ownBlockID) {
-                                if (blockwgt[i] > maxBlockWgt) {
-                                    maxBlockID = i;
-                                    maxBlockWgt = blockwgt[i];
-                                }
-                            }
-                        }
-
-                        if (maxBlockWgt) {
-                            inBoundary[n] = false;
-                        }
-
-                        int64_t gain = static_cast<int64_t>(maxBlockWgt)
-                                       - static_cast<int64_t>(ownBlockWgt);
-
-                        for (EdgeID e : G->edges_of(n)) {
-                            auto [t, w] = G->getEdge(n, e);
-                            auto [nbrBlockID, nbrGain] = nextBest[t];
-                            int64_t movegain = nbrGain + gain + 2 * w;
-                            if (globalSolution[t] == globalSolution[n] &&
-                                nbrBlockID == maxBlockID && movegain >= 0) {
-                                blocksize[maxBlockID] += 2;
-                                blocksize[globalSolution[n]] -= 2;
-                                globalSolution[n] = maxBlockID;
-                                globalSolution[t] = maxBlockID;
-                                flow_sum -= movegain;
-                                if (movegain > 0) {
-                                    change_found = true;
-                                    LOG1 << "DBLMOVE " << n << " and " << t
-                                         << " with gain " << movegain;
-                                }
-
-                                for (EdgeID e : G->edges_of(n)) {
-                                    NodeID b = G->getEdgeTarget(n, e);
-                                    nextBest[b] =
-                                        std::make_pair(UNDEFINED_NODE, 0);
-                                    inBoundary[b] = true;
-                                }
-                                nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
-                                for (EdgeID e : G->edges_of(t)) {
-                                    NodeID b = G->getEdgeTarget(t, e);
-                                    nextBest[b] =
-                                        std::make_pair(UNDEFINED_NODE, 0);
-                                    inBoundary[b] = true;
-                                }
-                            }
-                        }
-
-                        if (gain >= 0) {
-                            globalSolution[n] = maxBlockID;
-                            flow_sum -= gain;
-                            blocksize[maxBlockID] += 1;
-                            blocksize[ownBlockID] -= 1;
-                            if (gain > 0) {
-                                LOG1 << n << " has gain " << gain;
-                                change_found = true;
-                            }
-                            for (EdgeID e : G->edges_of(n)) {
-                                NodeID t = G->getEdgeTarget(n, e);
-                                nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
-                                inBoundary[t] = true;
-                            }
-                        } else {
-                            nextBest[n] = std::make_pair(maxBlockID, gain);
-                        }
-                    }
-                }
-            }
-
+            graph_io gio;
+            gio.writeVector(globalSolution, "solution");
             LOG1 << "size: " << blocksize;
         }
 

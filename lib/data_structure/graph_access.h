@@ -420,7 +420,7 @@ class graph_access {
         assert(0);
     }
 
-    EdgeWeight getNodeDegree(NodeID node) const {
+    EdgeWeight getUnweightedNodeDegree(NodeID node) const {
         return graphref->m_nodes[node + 1].firstEdge
                - graphref->m_nodes[node].firstEdge;
     }

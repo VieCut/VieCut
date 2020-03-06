@@ -218,7 +218,7 @@ class mutable_graph {
         partition_index[node] = id;
     }
 
-    EdgeWeight getNodeDegree(NodeID node) const {
+    EdgeWeight getUnweightedNodeDegree(NodeID node) const {
         return get_first_invalid_edge(node);
     }
 

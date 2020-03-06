@@ -141,26 +141,26 @@ TEST(Mutable_Graph_Test, DeleteEdges) {
     mutable_graph G = make_circle();
 
     for (NodeID n : G.nodes()) {
-        ASSERT_EQ(G.getNodeDegree(n), 2);
+        ASSERT_EQ(G.getUnweightedNodeDegree(n), 2);
     }
 
     G.deleteEdge(0, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 1);
-    ASSERT_EQ(G.getNodeDegree(1), 1);
-    ASSERT_EQ(G.getNodeDegree(2), 2);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(2), 2);
 
     G.deleteEdge(0, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 0);
-    ASSERT_EQ(G.getNodeDegree(1), 1);
-    ASSERT_EQ(G.getNodeDegree(2), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(2), 1);
 
     G.deleteEdge(1, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 0);
-    ASSERT_EQ(G.getNodeDegree(1), 0);
-    ASSERT_EQ(G.getNodeDegree(2), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(2), 0);
 }
 
 TEST(Mutable_Graph_Test, DeleteWeightedEdges) {
@@ -199,8 +199,8 @@ TEST(Mutable_Graph_Test, ContractEdges) {
 
     G.contractEdge(0, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 1);
-    ASSERT_EQ(G.getNodeDegree(1), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 1);
     ASSERT_EQ(G.getWeightedNodeDegree(0), 2);
     ASSERT_EQ(G.getWeightedNodeDegree(1), 2);
     ASSERT_EQ(G.number_of_nodes(), 2);
@@ -208,8 +208,8 @@ TEST(Mutable_Graph_Test, ContractEdges) {
 
     G.contractEdge(0, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 0);
-    ASSERT_EQ(G.getNodeDegree(1), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 0);
     ASSERT_EQ(G.number_of_nodes(), 1);
     ASSERT_EQ(G.number_of_edges(), 0);
 }
@@ -228,8 +228,8 @@ TEST(Mutable_Graph_Test, ContractEdgesWeighted) {
 
     G.contractEdge(0, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 1);
-    ASSERT_EQ(G.getNodeDegree(1), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 1);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 1);
     ASSERT_EQ(G.getWeightedNodeDegree(0), 30);
     ASSERT_EQ(G.getWeightedNodeDegree(1), 30);
     ASSERT_EQ(G.number_of_nodes(), 2);
@@ -237,8 +237,8 @@ TEST(Mutable_Graph_Test, ContractEdgesWeighted) {
 
     G.contractEdge(0, 0);
 
-    ASSERT_EQ(G.getNodeDegree(0), 0);
-    ASSERT_EQ(G.getNodeDegree(1), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(0), 0);
+    ASSERT_EQ(G.getUnweightedNodeDegree(1), 0);
     ASSERT_EQ(G.number_of_nodes(), 1);
     ASSERT_EQ(G.number_of_edges(), 0);
 }
@@ -257,7 +257,7 @@ TEST(Mutable_Graph_Test, LargerGraph) {
 
         EdgeWeight zero_weight = (size * (size - 1)) / 2;
 
-        ASSERT_EQ(G->getNodeDegree(0), size - 1);
+        ASSERT_EQ(G->getUnweightedNodeDegree(0), size - 1);
         ASSERT_EQ(G->getWeightedNodeDegree(0), zero_weight);
         ASSERT_EQ(G->number_of_nodes(), size);
         ASSERT_EQ(G->number_of_edges(), size * (size - 1));
@@ -280,7 +280,7 @@ TEST(Mutable_Graph_Test, LargerGraph) {
 
             ASSERT_EQ(G->number_of_nodes(), rem + 1);
             ASSERT_EQ(G->number_of_edges(), (rem + 1) * (rem));
-            ASSERT_EQ(G->getNodeDegree(0), rem);
+            ASSERT_EQ(G->getUnweightedNodeDegree(0), rem);
             ASSERT_EQ(G->getWeightedNodeDegree(0), zero_weight);
         }
     }

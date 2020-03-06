@@ -332,7 +332,7 @@ class recursive_cactus {
             }
         }
         for (NodeID n : contract->nodes()) {
-            for (EdgeID e = contract->getNodeDegree(n); e-- > 0; ) {
+            for (EdgeID e = contract->getUnweightedNodeDegree(n); e-- > 0; ) {
                 if (contract->getEdgeWeight(n, e) == 0) {
                     contract->deleteEdge(n, e);
                 }
@@ -492,9 +492,9 @@ class recursive_cactus {
         NodeID s = UNDEFINED_NODE;
 
         for (NodeID n : G->nodes()) {
-            if (G->getNodeDegree(n) > max_degree &&
+            if (G->getUnweightedNodeDegree(n) > max_degree &&
                 !G->isEmpty(n)) {
-                max_degree = G->getNodeDegree(n);
+                max_degree = G->getUnweightedNodeDegree(n);
                 s = n;
             }
         }
@@ -504,9 +504,9 @@ class recursive_cactus {
         NodeWeight max_ngbr = 0;
         for (EdgeID edge : G->edges_of(s)) {
             NodeID ngbr = G->getEdgeTarget(s, edge);
-            if (G->getNodeDegree(ngbr) > max_ngbr &&
+            if (G->getUnweightedNodeDegree(ngbr) > max_ngbr &&
                 !G->isEmpty(ngbr)) {
-                max_ngbr = G->getNodeDegree(ngbr);
+                max_ngbr = G->getUnweightedNodeDegree(ngbr);
                 t = ngbr;
                 e = edge;
             }

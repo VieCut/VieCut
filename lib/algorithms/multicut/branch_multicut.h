@@ -616,8 +616,8 @@ class branch_multicut {
         for (size_t i = 0; i < problem->terminals.size(); ++i) {
             if (maxID == i)
                 continue;
-            
-            //TODO(anoe): build flow problem and optimize
+
+            // TODO(anoe): build flow problem and optimize
         }
     }
 
@@ -860,7 +860,7 @@ class branch_multicut {
         auto c = g->getEdgeWeight(b_vtx, b_edge);
         NodeID term = g->getEdgeTarget(b_vtx, b_edge);
         EdgeWeight max_incident_wgt = 0;
-        if (!(g->getNodeDegree(b_vtx) == 3))
+        if (!(g->getUnweightedNodeDegree(b_vtx) == 3))
             return false;
 
         for (EdgeID e : g->edges_of(b_vtx)) {
@@ -873,7 +873,7 @@ class branch_multicut {
         if (max_incident_wgt != c)
             return false;
 
-        for (EdgeID e = 0; e < g->getNodeDegree(b_vtx); ++e) {
+        for (EdgeID e = 0; e < g->getUnweightedNodeDegree(b_vtx); ++e) {
             if (g->getEdgeTarget(b_vtx, e) != term) {
                 problem->deleted_weight += g->getEdgeWeight(b_vtx, e);
                 g->deleteEdge(b_vtx, e);

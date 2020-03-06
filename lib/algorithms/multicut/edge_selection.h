@@ -152,7 +152,8 @@
     std::vector<EdgeWeight> prefixsum(problem->terminals.size() + 1, 0);
     EdgeWeight s = 0;
     for (size_t i = 0; i < prefixsum.size() - 1; ++i) {
-        s += problem->graph->getNodeDegree(problem->terminals[i].position);
+        s += problem->graph->getUnweightedNodeDegree(
+            problem->terminals[i].position);
         prefixsum[i + 1] = s;
     }
 

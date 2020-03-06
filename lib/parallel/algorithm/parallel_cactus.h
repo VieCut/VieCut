@@ -131,7 +131,7 @@ class parallel_cactus : public minimum_cut {
             EdgeWeight current_mincut = mincut;
 
             for (NodeID n : graphs.back()->nodes()) {
-                if (graphs.back()->getNodeDegree(n) == 1) {
+                if (graphs.back()->getUnweightedNodeDegree(n) == 1) {
                     EdgeID e = graphs.back()->get_first_edge(n);
                     if ((graphs.back()->getEdgeWeight(e) == mincut)
                         && (guaranteed_edges.back().size() + 1 < n)) {

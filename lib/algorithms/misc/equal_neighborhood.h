@@ -58,9 +58,9 @@ class equal_neighborhood {
                 continue;
             }
 
-            if (G->getNodeDegree(n) <=
+            if (G->getUnweightedNodeDegree(n) <=
                 configuration::getConfig()->neighborhood_degrees
-                && G->getNodeDegree(n) > 0) {
+                && G->getUnweightedNodeDegree(n) > 0) {
                 std::vector<NodeID> v;
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID tgt = G->getEdgeTarget(n, e);
@@ -133,14 +133,15 @@ class equal_neighborhood {
                 continue;
             }
 
-            if (G->getNodeDegree(n) <=
+            if (G->getUnweightedNodeDegree(n) <=
                 configuration::getConfig()->neighborhood_degrees
-                && G->getNodeDegree(n) > 0) {
+                && G->getUnweightedNodeDegree(n) > 0) {
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID o = G->getEdgeTarget(n, e);
 
-                    if (terminals.count(o) == 0 &&
-                        G->getNodeDegree(n) == G->getNodeDegree(o)
+                    if (terminals.count(o) == 0
+                        && G->getUnweightedNodeDegree(n)
+                        == G->getUnweightedNodeDegree(o)
                         && G->getWeightedNodeDegree(n)
                         == G->getWeightedNodeDegree(o)) {
                         std::vector<std::pair<NodeID, EdgeWeight> > ngbrs_n;

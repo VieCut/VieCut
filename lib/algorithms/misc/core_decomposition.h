@@ -43,7 +43,7 @@ class core_decomposition {
         EdgeWeight max_degree = 0;
 
         for (NodeID n : G->nodes()) {
-            EdgeWeight deg = G->getNodeDegree(n);
+            EdgeWeight deg = G->getUnweightedNodeDegree(n);
             if (deg > max_degree) {
                 kCores.buckets.resize(deg + 1);
                 max_degree = deg;
@@ -61,7 +61,7 @@ class core_decomposition {
         }
 
         for (NodeID n : G->nodes()) {
-            EdgeWeight n_deg = G->getNodeDegree(n);
+            EdgeWeight n_deg = G->getUnweightedNodeDegree(n);
             kCores.position[n] = kCores.buckets[n_deg];
             kCores.vertices[kCores.position[n]] = n;
             ++kCores.buckets[n_deg];

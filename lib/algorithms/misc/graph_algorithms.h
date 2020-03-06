@@ -29,7 +29,7 @@ class graph_algorithms {
         std::shared_ptr<graph_access> G, size_t k) {
         std::vector<std::pair<NodeID, EdgeWeight> > all_degrees;
         for (NodeID n : G->nodes()) {
-            all_degrees.emplace_back(n, G->getNodeDegree(n));
+            all_degrees.emplace_back(n, G->getUnweightedNodeDegree(n));
         }
 
         return find_top_k(all_degrees, k);

@@ -299,7 +299,7 @@ class sparsify {
                 while (no_try < MAX_TRIES) {
                     // match with a random neighbor
                     EdgeID s = G_in->get_first_edge(n);
-                    EdgeID modulo = G_in->getNodeDegree(n);
+                    EdgeID modulo = G_in->getUnweightedNodeDegree(n);
                     EdgeID r = s + (random_functions::next() % modulo);
 
                     NodeID tgt = G_in->getEdgeTarget(r);
@@ -427,7 +427,7 @@ class sparsify {
         for (NodeID n : G_in->nodes()) {
             if (G_in->getWeightedNodeDegree(n) < bound_deg) {
                 prefixsum[n] = ctr++;
-                existing_edges += G_in->getNodeDegree(n);
+                existing_edges += G_in->getUnweightedNodeDegree(n);
             } else {
                 prefixsum[n] = G_in->number_of_nodes();
             }

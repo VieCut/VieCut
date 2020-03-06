@@ -123,7 +123,7 @@ class graph_contraction {
         for (size_t i = 0; i < original_terminals.size(); ++i) {
             NodeID o = problem->mapped(original_terminals[i]);
             NodeID node = problem->graph->getCurrentPosition(o);
-            if ((problem->graph->getNodeDegree(node) > 0)
+            if ((problem->graph->getUnweightedNodeDegree(node) > 0)
                 && (node < problem->graph->number_of_nodes())) {
                 NodeID n = invalid_flows.count(node);
                 bool flow_invalid = n == 0 || invalid_flows[node];

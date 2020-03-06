@@ -18,14 +18,12 @@ endmacro(build_and_test)
 macro(run_test TESTNAME)
 add_test(
         NAME ${TESTNAME}
-        COMMAND ${TESTNAME}
+	COMMAND ${TESTNAME}
 )
+set_tests_properties(${TESTNAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=4)
 endmacro(run_test)
 
 set(TESTLIBS ${LIBS} gtest gtest_main)
-
-#build viecut library with all parameters enabled and disabled for testing purposes
-remove_definitions(-DPARALLEL)
 
 build_and_test(graph_test FALSE)
 build_and_test(mutable_graph_test FALSE)

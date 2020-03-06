@@ -447,7 +447,6 @@ class branch_multicut {
     }
 
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
-        bestsol_mutex.lock();
         if (problem->upper_bound < non_ls_global_upper_bound) {
             auto cfg = configuration::getConfig();
             non_ls_global_upper_bound = problem->upper_bound;
@@ -483,6 +482,9 @@ class branch_multicut {
             LOGC(testing) << "before l-search: " << prev_gub;
             // printBoundaries();
             bool change_found = true;
+
+            flowLocalSearch(problem, current_solution);
+
             while (change_found) {
                 std::vector<NodeID> permute(original_graph.n(), 0);
                 std::vector<bool> inBoundary(original_graph.n(), true);
@@ -576,6 +578,7 @@ class branch_multicut {
                 }
             }
 
+            bestsol_mutex.lock();
             if (ls_bound < global_upper_bound) {
                 global_upper_bound = ls_bound;
                 non_ls_global_upper_bound = prev_gub;
@@ -590,10 +593,32 @@ class branch_multicut {
                               << global_upper_bound << " even though it was"
                               << " better before local search";
             }
+            bestsol_mutex.unlock();
 
             mpic.broadcastImprovedSolution(global_upper_bound);
         }
-        bestsol_mutex.unlock();
+    }
+
+    void flowLocalSearch(std::shared_ptr<multicut_problem> problem,
+                         const std::vector<NodeID>& solution) {
+        NodeID maxID = 0;
+        EdgeWeight maxWgt = 0;
+
+        for (size_t i = 0; i < problem->terminals.size(); ++i) {
+            NodeID p = problem->terminals[i].position;
+            EdgeWeight deg = problem->graph->getWeightedNodeDegree(p);
+            if (deg > maxWgt) {
+                maxID = i;
+                maxWgt = deg;
+            }
+        }
+
+        for (size_t i = 0; i < problem->terminals.size(); ++i) {
+            if (maxID == i)
+                continue;
+            
+            //TODO(anoe): build flow problem and optimize
+        }
     }
 
     void printBoundaries() {

@@ -25,8 +25,8 @@
 #include <queue>
 #include <string>
 #include <thread>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -482,13 +482,12 @@ class branch_multicut {
             FlowType ls_bound = prev_gub;
             bool change_found = true;
 
-            FlowType improvement = 1;
-            while (improvement > 0) {
-                improvement = flowLocalSearch(problem, &current_solution);
-                ls_bound -= improvement;
-            }
-
             while (change_found) {
+                FlowType imp = flowLocalSearch(problem, &current_solution);
+                ls_bound -= imp;
+                if (imp > 0) {
+                    change_found = true;
+                }
                 std::vector<NodeID> permute(original_graph.n(), 0);
                 std::vector<bool> inBoundary(original_graph.n(), true);
                 std::vector<std::pair<NodeID, int64_t> > nextBest(

@@ -482,7 +482,11 @@ class branch_multicut {
             FlowType ls_bound = prev_gub;
             bool change_found = true;
 
-            ls_bound -= flowLocalSearch(problem, &current_solution);
+            FlowType improvement = 1;
+            while (improvement > 0) {
+                improvement = flowLocalSearch(problem, &current_solution);
+                ls_bound -= improvement;
+            }
 
             while (change_found) {
                 std::vector<NodeID> permute(original_graph.n(), 0);
@@ -617,8 +621,14 @@ class branch_multicut {
             }
         }
 
+        std::vector<NodeID> other_terminals;
+        for (size_t i = 0; i < problem->terminals.size(); ++i) {
+            other_terminals.emplace_back(problem->terminals[i].original_id);
+        }
+        random_functions::permutate_vector_good(&other_terminals, false);
+
         for (size_t j = 0; j < problem->terminals.size(); ++j) {
-            NodeID i = problem->terminals[j].original_id;
+            NodeID i = other_terminals[j];
             if (maxID == i)
                 continue;
 

@@ -26,6 +26,7 @@
 #include <string>
 #include <thread>
 #include <unordered_set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -335,6 +336,7 @@ class branch_multicut {
                           << " lower:" << problem->lower_bound
                           << " upper:" << problem->upper_bound
                           << " global_upper:" << global_upper_bound
+                          << " non_ls_upper:" << non_ls_global_upper_bound
                           << " queue.size:" << problems.size();
         }
 
@@ -449,7 +451,6 @@ class branch_multicut {
     void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
         if (problem->upper_bound < non_ls_global_upper_bound) {
             auto cfg = configuration::getConfig();
-            non_ls_global_upper_bound = problem->upper_bound;
             std::vector<NodeID> current_solution(original_graph.n(), 0);
             std::vector<size_t> blocksize(original_terminals.size(), 0);
             for (NodeID n = 0; n < current_solution.size(); ++n) {
@@ -479,11 +480,9 @@ class branch_multicut {
 
             FlowType prev_gub = flowValue(false, current_solution);
             FlowType ls_bound = prev_gub;
-            LOGC(testing) << "before l-search: " << prev_gub;
-            // printBoundaries();
             bool change_found = true;
 
-            flowLocalSearch(problem, current_solution);
+            ls_bound -= flowLocalSearch(problem, &current_solution);
 
             while (change_found) {
                 std::vector<NodeID> permute(original_graph.n(), 0);
@@ -579,6 +578,7 @@ class branch_multicut {
             }
 
             bestsol_mutex.lock();
+
             if (ls_bound < global_upper_bound) {
                 global_upper_bound = ls_bound;
                 non_ls_global_upper_bound = prev_gub;
@@ -591,7 +591,9 @@ class branch_multicut {
             } else {
                 LOGC(testing) << "No improvement, as " << ls_bound << " >= "
                               << global_upper_bound << " even though it was"
-                              << " better before local search";
+                              << " better before local search "
+                              << "(" << prev_gub << " < "
+                              << non_ls_global_upper_bound << ")";
             }
             bestsol_mutex.unlock();
 
@@ -599,26 +601,115 @@ class branch_multicut {
         }
     }
 
-    void flowLocalSearch(std::shared_ptr<multicut_problem> problem,
-                         const std::vector<NodeID>& solution) {
+    EdgeWeight flowLocalSearch(std::shared_ptr<multicut_problem> problem,
+                               std::vector<NodeID>* sol) {
+        std::vector<NodeID>& solution = *sol;
         NodeID maxID = 0;
         EdgeWeight maxWgt = 0;
+        EdgeWeight improvement = 0;
 
-        for (size_t i = 0; i < problem->terminals.size(); ++i) {
-            NodeID p = problem->terminals[i].position;
+        for (auto t : problem->terminals) {
+            NodeID p = t.position;
             EdgeWeight deg = problem->graph->getWeightedNodeDegree(p);
             if (deg > maxWgt) {
-                maxID = i;
+                maxID = t.original_id;
                 maxWgt = deg;
             }
         }
 
-        for (size_t i = 0; i < problem->terminals.size(); ++i) {
+        for (size_t j = 0; j < problem->terminals.size(); ++j) {
+            NodeID i = problem->terminals[j].original_id;
             if (maxID == i)
                 continue;
 
-            // TODO(anoe): build flow problem and optimize
+            std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
+            auto G = std::make_shared<mutable_graph>();
+            EdgeWeight sol_weight = 0;
+
+            NodeID id = 2;
+            for (NodeID n : original_graph.nodes()) {
+                if (solution[n] != i && solution[n] != maxID)
+                    continue;
+                if (fixed_vertex[n]) {
+                    mapping[n] = (solution[n] == maxID ? 0 : 1);
+                } else {
+                    mapping[n] = id;
+                    id++;
+                }
+            }
+            G->start_construction(id);
+            std::unordered_map<NodeID, EdgeWeight> edgesToFixed0;
+            std::unordered_map<NodeID, EdgeWeight> edgesToFixed1;
+            for (NodeID n : original_graph.nodes()) {
+                if (solution[n] != i && solution[n] != maxID)
+                    continue;
+                NodeID m_n = mapping[n];
+                for (EdgeID e : original_graph.edges_of(n)) {
+                    auto [t, w] = original_graph.getEdge(n, e);
+                    NodeID m_t = mapping[t];
+                    if ((solution[t] != maxID && solution[t] != i)
+                        || m_n >= m_t || m_t < 2)
+                        continue;
+
+                    if (solution[t] != solution[n]) {
+                        sol_weight += w;
+                    }
+
+                    if (m_n < 2) {
+                        if (m_n == 0) {
+                            if (edgesToFixed0.count(m_t) > 0) {
+                                edgesToFixed0[m_t] += w;
+                            } else {
+                                edgesToFixed0[m_t] = w;
+                            }
+                        } else {
+                            if (edgesToFixed1.count(m_t) > 0) {
+                                edgesToFixed1[m_t] += w;
+                            } else {
+                                edgesToFixed1[m_t] = w;
+                            }
+                        }
+                    } else {
+                        G->new_edge_order(m_n, m_t, w);
+                    }
+                }
+            }
+            for (auto [n, w] : edgesToFixed0) {
+                G->new_edge_order(n, 0, w);
+            }
+            for (auto [n, w] : edgesToFixed1) {
+                G->new_edge_order(n, 1, w);
+            }
+
+            std::vector<NodeID> terminals = { 0, 1 };
+            push_relabel pr;
+            auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
+            std::unordered_set<NodeID> zero;
+
+            for (NodeID v : s) {
+                zero.insert(v);
+            }
+
+            improvement += (sol_weight - f);
+            for (NodeID n : original_graph.nodes()) {
+                if (solution[n] == maxID || solution[n] == i) {
+                    if (fixed_vertex[n]) {
+                        if (zero.count(mapping[n]) != (solution[n] == maxID)) {
+                            LOG1 << "DIFFERENT";
+                            exit(1);
+                        }
+                    }
+                    NodeID map = mapping[n];
+                    if (zero.count(map) > 0) {
+                        solution[n] = maxID;
+                    } else {
+                        solution[n] = i;
+                    }
+                }
+            }
         }
+
+        return improvement;
     }
 
     void printBoundaries() {
@@ -643,23 +734,14 @@ class branch_multicut {
 
     FlowType flowValue(bool verbose, const std::vector<NodeID>& sol) {
         std::vector<size_t> block_sizes(original_terminals.size(), 0);
-        for (NodeID n : original_graph.nodes()) {
-            original_graph.setPartitionIndex(n, sol[n]);
-            block_sizes[sol[n]]++;
-        }
 
         EdgeWeight total_weight = 0;
         for (NodeID n : original_graph.nodes()) {
+            block_sizes[sol[n]]++;
             for (EdgeID e : original_graph.edges_of(n)) {
                 NodeID tgt = original_graph.getEdgeTarget(n, e);
                 EdgeWeight wgt = original_graph.getEdgeWeight(n, e);
-                if (original_graph.getPartitionIndex(n)
-                    != original_graph.getPartitionIndex(tgt)) {
-                    LOG0 << "PARTITION INDEX OF " << n << " IS "
-                         << original_graph.getPartitionIndex(n)
-                         << " WHILE " << tgt << " IS "
-                         << original_graph.getPartitionIndex(tgt);
-
+                if (sol[n] != sol[tgt]) {
                     total_weight += wgt;
                 }
             }
@@ -685,7 +767,6 @@ class branch_multicut {
                 exit(1);
             }
         }
-
         return total_weight;
     }
 

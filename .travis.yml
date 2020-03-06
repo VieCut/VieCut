@@ -1,10 +1,10 @@
 # Travis-CI build scripts
 
 language: cpp
-sudo: false
+os: linux
 dist: bionic
 
-matrix:
+jobs:
   include:
 # gcc 7.x, Debug 
     - env: CMAKE_CC="gcc-7" CMAKE_CXX="g++-7" BUILD_TYPE="Debug" MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && OMP_NUM_THREADS=4"

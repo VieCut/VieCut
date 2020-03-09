@@ -381,6 +381,15 @@ class branch_multicut {
             size_t lowestTerminals =
                 std::ceil(static_cast<double>(problem->terminals.size()) *
                           c->removeTerminalsBeforeBranch);
+
+            for (auto t : problem->terminals) {
+                NodeID pos = t.position;
+                auto deg = problem->graph->getWeightedNodeDegree(pos);
+                if (deg > heaviest_weight) {
+                    heaviest_weight = deg;
+                    heaviest_t = t.position;
+                }
+            }
             for (size_t i = 0; i < lowestTerminals; ++i) {
                 NodeID lightest_t = 0;
                 EdgeWeight lightest_weight = UNDEFINED_FLOW;
@@ -391,10 +400,6 @@ class branch_multicut {
                     if (deg < lightest_weight && deg > 0) {
                         lightest_weight = deg;
                         lightest_t = t.position;
-                    }
-                    if (deg > heaviest_weight) {
-                        heaviest_weight = deg;
-                        heaviest_t = t.position;
                     }
                 }
 
@@ -428,7 +433,8 @@ class branch_multicut {
                         neighboringOtherTerminal = true;
                         break;
                     }
-                    if (d + 1 < c->contractionDepthAroundTerminal
+
+                    if (d < c->contractionDepthAroundTerminal
                         && !found[nbr]) {
                         found[nbr] = true;
                         nodeAndDistance.emplace(nbr, d + 1);
@@ -438,7 +444,9 @@ class branch_multicut {
                     contractSet.insert(n);
                 }
             }
-            problem->graph->contractVertexSet(contractSet);
+            if (contractSet.size() > 0) {
+                problem->graph->contractVertexSet(contractSet);
+            }
         }
 
         if (branchOnCurrentInstance) {

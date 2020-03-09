@@ -55,7 +55,7 @@ class configuration {
     size_t neighborhood_degrees = 50;
     size_t random_flows = 5;
     double removeTerminalsBeforeBranch = 0.1;
-    size_t contractionDepthAroundTerminal = 2;
+    size_t contractionDepthAroundTerminal = 1;
     bool multibranch = true;
     bool inexact = false;
 

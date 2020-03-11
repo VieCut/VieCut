@@ -612,118 +612,138 @@ class branch_multicut {
         }
     }
 
+    EdgeWeight flowBetweenBlocks(std::vector<NodeID>* sol,
+                                 NodeID terminal1,
+                                 NodeID terminal2) {
+        std::vector<NodeID>& solution = *sol;
+
+        std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
+        auto G = std::make_shared<mutable_graph>();
+        EdgeWeight sol_weight = 0;
+
+        NodeID id = 2;
+        for (NodeID n : original_graph.nodes()) {
+            if (solution[n] != terminal1 && solution[n] != terminal2)
+                continue;
+            if (fixed_vertex[n]) {
+                mapping[n] = (solution[n] == terminal1 ? 0 : 1);
+            } else {
+                mapping[n] = id;
+                id++;
+            }
+        }
+        G->start_construction(id);
+        std::unordered_map<NodeID, EdgeWeight> edgesToFixed0;
+        std::unordered_map<NodeID, EdgeWeight> edgesToFixed1;
+        for (NodeID n : original_graph.nodes()) {
+            if (solution[n] != terminal1 && solution[n] != terminal2)
+                continue;
+            NodeID m_n = mapping[n];
+            for (EdgeID e : original_graph.edges_of(n)) {
+                auto [t, w] = original_graph.getEdge(n, e);
+                NodeID m_t = mapping[t];
+                if ((solution[t] != terminal1 && solution[t] != terminal2)
+                    || m_n >= m_t || m_t < 2)
+                    continue;
+
+                if (solution[t] != solution[n]) {
+                    sol_weight += w;
+                }
+
+                if (m_n < 2) {
+                    if (m_n == 0) {
+                        if (edgesToFixed0.count(m_t) > 0) {
+                            edgesToFixed0[m_t] += w;
+                        } else {
+                            edgesToFixed0[m_t] = w;
+                        }
+                    } else {
+                        if (edgesToFixed1.count(m_t) > 0) {
+                            edgesToFixed1[m_t] += w;
+                        } else {
+                            edgesToFixed1[m_t] = w;
+                        }
+                    }
+                } else {
+                    G->new_edge_order(m_n, m_t, w);
+                }
+            }
+        }
+        for (auto [n, w] : edgesToFixed0) {
+            G->new_edge_order(n, 0, w);
+        }
+        for (auto [n, w] : edgesToFixed1) {
+            G->new_edge_order(n, 1, w);
+        }
+
+        std::vector<NodeID> terminals = { 0, 1 };
+        push_relabel pr;
+        auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
+        std::unordered_set<NodeID> zero;
+
+        for (NodeID v : s) {
+            zero.insert(v);
+        }
+
+        size_t improvement = (sol_weight - f);
+        LOG1 << terminal1 << " to " << terminal2
+             << " from " << sol_weight << " to " << f;
+        for (NodeID n : original_graph.nodes()) {
+            if (solution[n] == terminal1 || solution[n] == terminal2) {
+                if (fixed_vertex[n]) {
+                    if (zero.count(mapping[n]) != (solution[n] == terminal1)) {
+                        LOG1 << "DIFFERENT";
+                        exit(1);
+                    }
+                }
+                NodeID map = mapping[n];
+                if (zero.count(map) > 0) {
+                    solution[n] = terminal1;
+                } else {
+                    solution[n] = terminal2;
+                }
+            }
+        }
+        return improvement;
+    }
+
     EdgeWeight flowLocalSearch(std::shared_ptr<multicut_problem> problem,
                                std::vector<NodeID>* sol) {
         std::vector<NodeID>& solution = *sol;
-        NodeID maxID = 0;
-        EdgeWeight maxWgt = 0;
+        std::vector<std::vector<EdgeWeight> > blockConnectivity(
+            original_terminals.size());
+
         EdgeWeight improvement = 0;
 
-        for (auto t : problem->terminals) {
-            NodeID p = t.position;
-            EdgeWeight deg = problem->graph->getWeightedNodeDegree(p);
-            if (deg > maxWgt) {
-                maxID = t.original_id;
-                maxWgt = deg;
+        std::vector<std::pair<NodeID, NodeID> > neighboringBlocks;
+
+        for (auto& b : blockConnectivity) {
+            b.resize(original_terminals.size(), 0);
+        }
+
+        for (NodeID n : original_graph.nodes()) {
+            NodeID blockn = solution[n];
+            for (EdgeID e : original_graph.edges_of(n)) {
+                auto [t, w] = original_graph.getEdge(n, e);
+                if (solution[t] > blockn) {
+                    blockConnectivity[blockn][solution[t]] += w;
+                }
             }
         }
 
-        std::vector<NodeID> other_terminals;
-        for (size_t i = 0; i < problem->terminals.size(); ++i) {
-            other_terminals.emplace_back(problem->terminals[i].original_id);
+        for (size_t i = 0; i < blockConnectivity.size(); ++i) {
+            for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
+                // TODO (anoe): find lower limit for when flow is useful.
+                if (blockConnectivity[i][j] > 0) {
+                    neighboringBlocks.emplace_back(i, j);
+                }
+            }
         }
-        random_functions::permutate_vector_good(&other_terminals, false);
 
-        for (size_t j = 0; j < problem->terminals.size(); ++j) {
-            NodeID i = other_terminals[j];
-            if (maxID == i)
-                continue;
+        random_functions::permutate_vector_good(&neighboringBlocks);
 
-            std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
-            auto G = std::make_shared<mutable_graph>();
-            EdgeWeight sol_weight = 0;
-
-            NodeID id = 2;
-            for (NodeID n : original_graph.nodes()) {
-                if (solution[n] != i && solution[n] != maxID)
-                    continue;
-                if (fixed_vertex[n]) {
-                    mapping[n] = (solution[n] == maxID ? 0 : 1);
-                } else {
-                    mapping[n] = id;
-                    id++;
-                }
-            }
-            G->start_construction(id);
-            std::unordered_map<NodeID, EdgeWeight> edgesToFixed0;
-            std::unordered_map<NodeID, EdgeWeight> edgesToFixed1;
-            for (NodeID n : original_graph.nodes()) {
-                if (solution[n] != i && solution[n] != maxID)
-                    continue;
-                NodeID m_n = mapping[n];
-                for (EdgeID e : original_graph.edges_of(n)) {
-                    auto [t, w] = original_graph.getEdge(n, e);
-                    NodeID m_t = mapping[t];
-                    if ((solution[t] != maxID && solution[t] != i)
-                        || m_n >= m_t || m_t < 2)
-                        continue;
-
-                    if (solution[t] != solution[n]) {
-                        sol_weight += w;
-                    }
-
-                    if (m_n < 2) {
-                        if (m_n == 0) {
-                            if (edgesToFixed0.count(m_t) > 0) {
-                                edgesToFixed0[m_t] += w;
-                            } else {
-                                edgesToFixed0[m_t] = w;
-                            }
-                        } else {
-                            if (edgesToFixed1.count(m_t) > 0) {
-                                edgesToFixed1[m_t] += w;
-                            } else {
-                                edgesToFixed1[m_t] = w;
-                            }
-                        }
-                    } else {
-                        G->new_edge_order(m_n, m_t, w);
-                    }
-                }
-            }
-            for (auto [n, w] : edgesToFixed0) {
-                G->new_edge_order(n, 0, w);
-            }
-            for (auto [n, w] : edgesToFixed1) {
-                G->new_edge_order(n, 1, w);
-            }
-
-            std::vector<NodeID> terminals = { 0, 1 };
-            push_relabel pr;
-            auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
-            std::unordered_set<NodeID> zero;
-
-            for (NodeID v : s) {
-                zero.insert(v);
-            }
-
-            improvement += (sol_weight - f);
-            for (NodeID n : original_graph.nodes()) {
-                if (solution[n] == maxID || solution[n] == i) {
-                    if (fixed_vertex[n]) {
-                        if (zero.count(mapping[n]) != (solution[n] == maxID)) {
-                            LOG1 << "DIFFERENT";
-                            exit(1);
-                        }
-                    }
-                    NodeID map = mapping[n];
-                    if (zero.count(map) > 0) {
-                        solution[n] = maxID;
-                    } else {
-                        solution[n] = i;
-                    }
-                }
-            }
+        for (auto [a, b] : neighboringBlocks) {
+            improvement += flowBetweenBlocks(sol, a, b);
         }
 
         return improvement;

@@ -140,15 +140,15 @@ class mutable_graph {
         }
     }
 
-    auto nodes() {
+    auto nodes() const {
         return iterator<NodeID>(0, number_of_nodes());
     }
 
-    auto edges_of(NodeID n) {
+    auto edges_of(NodeID n) const {
         return iterator<EdgeID>(get_first_edge(n), get_first_invalid_edge(n));
     }
 
-    auto edges_of_starting_at(NodeID n, EdgeID e) {
+    auto edges_of_starting_at(NodeID n, EdgeID e) const {
         return iterator<EdgeID>(e, get_first_invalid_edge(n));
     }
 

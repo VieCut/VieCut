@@ -125,7 +125,7 @@ class local_search {
         std::vector<std::pair<NodeID, NodeID> > neighboringBlocks;
 
         for (auto& b : blockConnectivity) {
-            b.resize(original_terminals.size(), 0);
+            b.resize(original_terms.size(), 0);
         }
 
         for (NodeID n : original_graph.nodes()) {

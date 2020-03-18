@@ -113,19 +113,19 @@ class ilp_model {
 
                         edges[j].set(GRB_DoubleAttr_Start, start);
                         for (size_t q = 0; q < num_terminals; q++) {
-                            GRBLinExpr cons = nodes[q][n] - nodes[q][t];
+                            GRBLinExpr c = nodes[q][n] - nodes[q][t];
                             // Add constraint: valid partiton
                             std::string v =
                                 "valid part on edge " + std::to_string(j)
                                 + " between " + std::to_string(n)
                                 + " and " + std::to_string(t);
-                            std::string nv =
+                            std::string w =
                                 "neg valid part on edge "
                                 + std::to_string(j) + " between "
                                 + std::to_string(n) + " and "
                                 + std::to_string(t);
-                            model.addConstr(edges[j] >= cons, v);
-                            model.addConstr(edges[j] >= -cons, nv);
+                            model.addConstr(edges[j], GRB_GREATER_EQUAL, c, v);
+                            model.addConstr(edges[j], GRB_GREATER_EQUAL, -c, w);
                         }
                         j++;
                     }
@@ -138,7 +138,7 @@ class ilp_model {
                 for (size_t q = 0; q < num_terminals; q++) {
                     sumCons += nodes[q][i];
                 }
-                model.addConstr(sumCons == 1);
+                model.addConstr(sumCons, GRB_EQUAL, 1);
             }
 
             model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);

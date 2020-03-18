@@ -162,7 +162,6 @@ class ilp_model {
                 LOG1 << "No solution";
             }
 
-
             bool reIntroduce = false;
             if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
                 LOG1 << "ILP Timeout - Re-introducing problem to queue!";

@@ -11,12 +11,17 @@
 
 #pragma once
 
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 #include "common/configuration.h"
 #include "common/definitions.h"
 
 class local_search {
  public:
-
     static EdgeWeight flowBetweenBlocks(const mutable_graph& original_graph,
                                         const std::vector<bool>& fixed_vertex,
                                         std::vector<NodeID>* sol,
@@ -140,7 +145,7 @@ class local_search {
 
         for (size_t i = 0; i < blockConnectivity.size(); ++i) {
             for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
-                // TODO (anoe): find lower limit for when flow is useful.
+                // TODO(anoe): find lower limit for when flow is useful.
                 if (blockConnectivity[i][j] > 0) {
                     neighboringBlocks.emplace_back(i, j);
                 }

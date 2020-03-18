@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -25,7 +26,7 @@
 
 class ilp_model {
  public:
-    std::pair<std::vector<NodeID>, EdgeWeight> computeIlp(
+    std::tuple<std::vector<NodeID>, EdgeWeight, bool> computeIlp(
         std::shared_ptr<multicut_problem> problem,
         const std::vector<NodeID>& presets,
         size_t num_terminals,
@@ -55,7 +56,6 @@ class ilp_model {
                 v.resize(graph->n());
             }
 
-            model.set(GRB_IntParam_Threads, 1);
             model.set(GRB_StringAttr_ModelName, "Partition");
             model.set(GRB_DoubleParam_MIPGap, 0);
             if (!parallel) {
@@ -161,6 +161,14 @@ class ilp_model {
             } else {
                 LOG1 << "No solution";
             }
+
+
+            bool reIntroduce = false;
+            if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+                LOG1 << "ILP Timeout - Re-introducing problem to queue!";
+                reIntroduce = true;
+            }
+
             EdgeWeight wgt =
                 static_cast<EdgeWeight>(model.get(GRB_DoubleAttr_ObjVal));
 
@@ -182,7 +190,7 @@ class ilp_model {
                 }
             }
 
-            return std::make_pair(result, wgt);
+            return std::make_tuple(result, wgt, reIntroduce);
         } catch (GRBException e) {
             LOG1 << e.getErrorCode() << " Message: " << e.getMessage();
             exit(1);

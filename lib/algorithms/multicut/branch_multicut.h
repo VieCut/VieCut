@@ -799,10 +799,9 @@ class branch_multicut {
 
         LOG1 << "start with deleted " << problem->deleted_weight;
 
-        auto [result, wgt] = ilp.computeIlp(problem, presets,
-                                            original_terminals.size(),
-                                            problems.size() == 0,
-                                            thread_id);
+        auto [result, wgt, reIntroduce] =
+            ilp.computeIlp(problem, presets, original_terminals.size(),
+                           problems.size() == 0, thread_id);
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (problem->upper_bound < non_ls_global_upper_bound) {
@@ -810,6 +809,9 @@ class branch_multicut {
                 problem->graph->setPartitionIndex(n, result[n]);
             }
             updateBestSolution(problem);
+        }
+        if (reIntroduce) {
+            problems.addProblem(problem, thread_id);
         }
     }
 #else

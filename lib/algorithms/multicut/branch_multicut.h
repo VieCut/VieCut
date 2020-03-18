@@ -495,11 +495,6 @@ class branch_multicut {
             bestsol_mutex.lock();
 
             if (ls_bound < global_upper_bound) {
-                global_upper_bound = ls_bound;
-                non_ls_global_upper_bound = prev_gub;
-                for (size_t i = 0; i < current_solution.size(); ++i) {
-                    best_solution[i] = current_solution[i];
-                }
                 LOGC(testing) << "Improvement after time="
                               << total_time.elapsed() << " upper_bound="
                               << global_upper_bound;
@@ -509,6 +504,14 @@ class branch_multicut {
                               << " better before local search "
                               << "(" << prev_gub << " < "
                               << non_ls_global_upper_bound << ")";
+            }
+
+            if (ls_bound <= global_upper_bound) {
+                global_upper_bound = ls_bound;
+                non_ls_global_upper_bound = prev_gub;
+                for (size_t i = 0; i < current_solution.size(); ++i) {
+                    best_solution[i] = current_solution[i];
+                }
             }
             bestsol_mutex.unlock();
 

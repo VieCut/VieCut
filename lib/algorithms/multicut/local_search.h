@@ -27,6 +27,8 @@ class local_search {
     const std::vector<bool>& fixed_vertex;
     std::vector<NodeID>* sol;
     std::unordered_map<NodeID, NodeID> movedToNewBlock;
+    std::vector<std::vector<FlowType> > previousConnectivity;
+    std::vector<NodeID> noImprovement;
 
  public:
     local_search(const mutable_graph& original_graph,
@@ -36,15 +38,20 @@ class local_search {
         : original_graph(original_graph),
           original_terminals(original_terminals),
           fixed_vertex(fixed_vertex),
-          sol(sol) { }
+          sol(sol),
+          previousConnectivity(original_terminals.size()) {
+            for (auto & pc : previousConnectivity) {
+                pc.resize(original_terminals.size(), 0);
+            }
+        }
 
  private:
-    std::pair<EdgeWeight, std::vector<NodeID> >
+    std::tuple<EdgeWeight, FlowType, std::vector<NodeID> >
     flowBetweenBlocks(NodeID terminal1, NodeID terminal2) {
         std::vector<NodeID>& solution = *sol;
         std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
         auto G = std::make_shared<mutable_graph>();
-        EdgeWeight sol_weight = 0;
+        FlowType sol_weight = 0;
 
         NodeID id = 2;
         for (NodeID n : original_graph.nodes()) {
@@ -110,8 +117,12 @@ class local_search {
             zero.insert(v);
         }
 
-        LOG1 << terminal1 << "-" << terminal2 << ": "
-             << sol_weight << " to " << f;
+        if (f < sol_weight) {
+            LOG0 << terminal1 << "-" << terminal2 << ": "
+                 << sol_weight << " to " << f;
+        } else {
+            noImprovement.emplace_back(f);
+        }
         size_t improvement = (sol_weight - f);
         std::vector<NodeID> movedVertices;
         bool inexact = configuration::getConfig()->inexact;
@@ -137,12 +148,12 @@ class local_search {
                 }
             }
         }
-        return std::make_pair(improvement, movedVertices);
+        return std::make_tuple(improvement, f, movedVertices);
     }
 
     EdgeWeight flowLocalSearch() {
         std::vector<NodeID>& solution = *sol;
-        std::vector<std::vector<EdgeWeight> >
+        std::vector<std::vector<FlowType> >
         blockConnectivity(original_terminals.size());
 
         EdgeWeight improvement = 0;
@@ -167,8 +178,7 @@ class local_search {
 
         for (size_t i = 0; i < blockConnectivity.size(); ++i) {
             for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
-                // TODO(anoe): find lower limit for when flow is useful.
-                if (blockConnectivity[i][j] > 0) {
+                if (blockConnectivity[i][j] != previousConnectivity[i][j]) {
                     neighboringBlocks.emplace_back(i, j);
                 }
             }
@@ -177,13 +187,17 @@ class local_search {
         random_functions::permutate_vector_good(&neighboringBlocks);
 
         for (auto [a, b] : neighboringBlocks) {
-            auto [impr, movedVertices] = flowBetweenBlocks(a, b);
+            auto [impr, connect, movedVertices] = flowBetweenBlocks(a, b);
             improvement += impr;
+            previousConnectivity[a][b] = connect;
             for (const auto& n : movedVertices) {
                 NodeID newBlock = solution[n];
                 movedToNewBlock[n] = newBlock;
             }
         }
+
+        LOG0 << "no improvement in " << noImprovement;
+        noImprovement.clear();
 
         return improvement;
     }

@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -168,8 +169,7 @@ class ilp_model {
                 reIntroduce = true;
             }
 
-            EdgeWeight wgt =
-                static_cast<EdgeWeight>(model.get(GRB_DoubleAttr_ObjVal));
+            EdgeWeight wgt = std::lround(model.get(GRB_DoubleAttr_ObjVal));
 
             LOG1 << "SOLUTION time=" << ilp_timer.elapsed()
                  << " graph=" << configuration::getConfig()->graph_filename

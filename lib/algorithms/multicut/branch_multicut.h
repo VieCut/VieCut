@@ -503,7 +503,6 @@ class branch_multicut {
                 }
 
                 for (size_t i = 0; i < ctrSets.size(); ++i) {
-                    LOG1 << "i: " << i;
                     for (auto [v, nb] : movedToNewBlock) {
                         if (nb == i) {
                             NodeID m = problem->mapped(v);
@@ -515,25 +514,13 @@ class branch_multicut {
                     }
 
                     if (ctrSets[i].size() > 1) {
-                        LOG1 << "contracting set of size " << ctrSets[i].size();
                         problem->graph->contractVertexSet(ctrSets[i]);
                     }
-                    graph_contraction::setTerminals(problem, original_terminals);
-
-                    mf.maximumIsolatingFlow(problem, 0, problems.size() == 0);
-                    // if (problem->upper_bound > ls_bound) {
-
-                    FlowType pregub = flowValue(false, current_solution);
-                    LOG1 << problem->lower_bound << " " << problem->upper_bound << " to nonls " << non_ls_global_upper_bound << " (actual " << pregub << ")";
-                    //  exit(1);
-                    // }
+                    graph_contraction::setTerminals(problem,
+                                                    original_terminals);
                 }
 
-                mf.maximumIsolatingFlow(problem, 0, problems.size() == 0);
-                if (problem->upper_bound > ls_bound) {
-                    LOG1 << problem->upper_bound << " > " << ls_bound;
-                  //  exit(1);
-                }
+                graph_contraction::deleteTermEdges(problem, original_terminals);
             }
 
             bestsol_mutex.lock();

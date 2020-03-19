@@ -21,7 +21,7 @@
 #include "common/definitions.h"
 
 class local_search {
- public:
+ private:
     static std::pair<EdgeWeight, std::vector<NodeID> >
     flowBetweenBlocks(const mutable_graph& original_graph,
                       const std::vector<bool>& fixed_vertex,
@@ -180,122 +180,132 @@ class local_search {
         return improvement;
     }
 
+    static EdgeWeight gainLocalSearch(
+        const mutable_graph& original_graph,
+        const std::vector<NodeID>& original_terms,
+        const std::vector<bool>& fixed_vertex,
+        std::vector<NodeID>* sol,
+        std::unordered_map<NodeID, NodeID>* toNew) {
+        bool inexact = configuration::getConfig()->inexact;
+        FlowType improvement = 0;
+        std::vector<NodeID>& current_solution = *sol;
+        std::unordered_map<NodeID, NodeID>& movedToNewBlock = *toNew;
+        std::vector<NodeID> permute(original_graph.n(), 0);
+        std::vector<bool> inBoundary(original_graph.n(), true);
+        std::vector<std::pair<NodeID, int64_t> > nextBest(
+            original_graph.n(), { UNDEFINED_NODE, 0 });
+
+        random_functions::permutate_vector_good(&permute, true);
+
+        for (NodeID v : original_graph.nodes()) {
+            NodeID n = permute[v];
+            if (fixed_vertex[n] || !inBoundary[n])
+                continue;
+
+            std::vector<EdgeWeight> blockwgt(
+                configuration::getConfig()->num_terminals, 0);
+            NodeID ownBlockID = current_solution[n];
+            for (EdgeID e : original_graph.edges_of(n)) {
+                auto [t, w] = original_graph.getEdge(n, e);
+                NodeID block = current_solution[t];
+                blockwgt[block] += w;
+            }
+
+            EdgeWeight ownBlockWgt = blockwgt[ownBlockID];
+            NodeID maxBlockID = 0;
+            EdgeWeight maxBlockWgt = 0;
+            for (size_t i = 0; i < blockwgt.size(); ++i) {
+                if (i != ownBlockID) {
+                    if (blockwgt[i] > maxBlockWgt) {
+                        maxBlockID = i;
+                        maxBlockWgt = blockwgt[i];
+                    }
+                }
+            }
+
+            if (maxBlockWgt) {
+                inBoundary[n] = false;
+            }
+
+            int64_t gain = static_cast<int64_t>(maxBlockWgt)
+                           - static_cast<int64_t>(ownBlockWgt);
+
+            bool notDoublemoved = true;
+            for (EdgeID e : original_graph.edges_of(n)) {
+                auto [t, w] = original_graph.getEdge(n, e);
+                auto [nbrBlockID, nbrGain] = nextBest[t];
+                int64_t movegain = nbrGain + gain + 2 * w;
+                if (current_solution[t] == current_solution[n] &&
+                    nbrBlockID == maxBlockID && movegain > 0
+                    && movegain > gain) {
+                    current_solution[n] = maxBlockID;
+                    current_solution[t] = maxBlockID;
+                    improvement += movegain;
+                    if (inexact) {
+                        movedToNewBlock[n] = maxBlockID;
+                        movedToNewBlock[t] = maxBlockID;
+                    }
+
+                    notDoublemoved = false;
+
+                    for (EdgeID e : original_graph.edges_of(n)) {
+                        NodeID b = original_graph.getEdgeTarget(n, e);
+                        nextBest[b] = std::make_pair(UNDEFINED_NODE, 0);
+                        inBoundary[b] = true;
+                    }
+                    nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
+                    for (EdgeID e : original_graph.edges_of(t)) {
+                        NodeID b = original_graph.getEdgeTarget(t, e);
+                        nextBest[b] = std::make_pair(UNDEFINED_NODE, 0);
+                        inBoundary[b] = true;
+                    }
+                }
+            }
+
+            if (!notDoublemoved) {
+                continue;
+            }
+
+            if (gain >= 0) {
+                current_solution[n] = maxBlockID;
+                if (inexact) {
+                    movedToNewBlock[n] = maxBlockID;
+                }
+                improvement += gain;
+                for (EdgeID e : original_graph.edges_of(n)) {
+                    NodeID t = original_graph.getEdgeTarget(n, e);
+                    nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
+                    inBoundary[t] = true;
+                }
+            } else {
+                nextBest[n] = std::make_pair(maxBlockID, gain);
+            }
+        }
+        return improvement;
+    }
+
+ public:
     static std::pair<FlowType, std::unordered_map<NodeID, NodeID> >
     improveSolution(const mutable_graph& original_graph,
                     const std::vector<NodeID>& original_terms,
                     const std::vector<bool>& fixed_vertex,
                     std::vector<NodeID>* sol,
                     FlowType valueBefore) {
-        std::vector<NodeID>& current_solution = *sol;
         FlowType ls_bound = valueBefore;
         std::unordered_map<NodeID, NodeID> movedToNewBlock;
-
-        bool inexact = configuration::getConfig()->inexact;
         bool change_found = true;
 
         while (change_found) {
             change_found = false;
+            auto impFlow = flowLocalSearch(original_graph, original_terms,
+                                           fixed_vertex, sol, &movedToNewBlock);
+            ls_bound -= impFlow;
+            auto impGain = gainLocalSearch(original_graph, original_terms,
+                                           fixed_vertex, sol, &movedToNewBlock);
+            ls_bound -= impGain;
 
-            auto imp = flowLocalSearch(original_graph, original_terms,
-                                       fixed_vertex, sol, &movedToNewBlock);
-            ls_bound -= imp;
-            if (imp > 0) {
+            if (impFlow > 0 || impGain > 0)
                 change_found = true;
-            }
-            std::vector<NodeID> permute(original_graph.n(), 0);
-            std::vector<bool> inBoundary(original_graph.n(), true);
-            std::vector<std::pair<NodeID, int64_t> > nextBest(
-                original_graph.n(), { UNDEFINED_NODE, 0 });
-
-            random_functions::permutate_vector_good(&permute, true);
-
-            for (NodeID v : original_graph.nodes()) {
-                NodeID n = permute[v];
-                if (fixed_vertex[n] || !inBoundary[n])
-                    continue;
-
-                std::vector<EdgeWeight> blockwgt(
-                    configuration::getConfig()->num_terminals, 0);
-                NodeID ownBlockID = current_solution[n];
-                for (EdgeID e : original_graph.edges_of(n)) {
-                    auto [t, w] = original_graph.getEdge(n, e);
-                    NodeID block = current_solution[t];
-                    blockwgt[block] += w;
-                }
-
-                EdgeWeight ownBlockWgt = blockwgt[ownBlockID];
-                NodeID maxBlockID = 0;
-                EdgeWeight maxBlockWgt = 0;
-                for (size_t i = 0; i < blockwgt.size(); ++i) {
-                    if (i != ownBlockID) {
-                        if (blockwgt[i] > maxBlockWgt) {
-                            maxBlockID = i;
-                            maxBlockWgt = blockwgt[i];
-                        }
-                    }
-                }
-
-                if (maxBlockWgt) {
-                    inBoundary[n] = false;
-                }
-
-                int64_t gain = static_cast<int64_t>(maxBlockWgt)
-                               - static_cast<int64_t>(ownBlockWgt);
-
-                bool notDoublemoved = true;
-                for (EdgeID e : original_graph.edges_of(n)) {
-                    auto [t, w] = original_graph.getEdge(n, e);
-                    auto [nbrBlockID, nbrGain] = nextBest[t];
-                    int64_t movegain = nbrGain + gain + 2 * w;
-                    if (current_solution[t] == current_solution[n] &&
-                        nbrBlockID == maxBlockID && movegain > 0
-                        && movegain > gain) {
-                        current_solution[n] = maxBlockID;
-                        current_solution[t] = maxBlockID;
-                        ls_bound -= movegain;
-                        if (inexact) {
-                            movedToNewBlock[n] = maxBlockID;
-                            movedToNewBlock[t] = maxBlockID;
-                        }
-
-                        if (movegain > 0) {
-                            change_found = true;
-                        }
-                        notDoublemoved = false;
-
-                        for (EdgeID e : original_graph.edges_of(n)) {
-                            NodeID b = original_graph.getEdgeTarget(n, e);
-                            nextBest[b] = std::make_pair(UNDEFINED_NODE, 0);
-                            inBoundary[b] = true;
-                        }
-                        nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
-                        for (EdgeID e : original_graph.edges_of(t)) {
-                            NodeID b = original_graph.getEdgeTarget(t, e);
-                            nextBest[b] = std::make_pair(UNDEFINED_NODE, 0);
-                            inBoundary[b] = true;
-                        }
-                    }
-                }
-
-                if (!notDoublemoved) {
-                    continue;
-                }
-
-                if (gain >= 0) {
-                    current_solution[n] = maxBlockID;
-                    if (inexact) {
-                        movedToNewBlock[n] = maxBlockID;
-                    }
-                    ls_bound -= gain;
-                    for (EdgeID e : original_graph.edges_of(n)) {
-                        NodeID t = original_graph.getEdgeTarget(n, e);
-                        nextBest[t] = std::make_pair(UNDEFINED_NODE, 0);
-                        inBoundary[t] = true;
-                    }
-                } else {
-                    nextBest[n] = std::make_pair(maxBlockID, gain);
-                }
-            }
         }
         return std::make_pair(ls_bound, movedToNewBlock);
     }

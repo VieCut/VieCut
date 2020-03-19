@@ -158,7 +158,9 @@ class local_search {
             for (EdgeID e : original_graph.edges_of(n)) {
                 auto [t, w] = original_graph.getEdge(n, e);
                 if (solution[t] > blockn) {
-                    blockConnectivity[blockn][solution[t]] += w;
+                    if (!fixed_vertex[n] || !fixed_vertex[t]) {
+                        blockConnectivity[blockn][solution[t]] += w;
+                    }
                 }
             }
         }

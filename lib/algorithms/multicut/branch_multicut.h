@@ -497,6 +497,8 @@ class branch_multicut {
                 ls.contractMovedVertices(problem);
             }
 
+            problem->upper_bound = ls_bound;
+
             bestsol_mutex.lock();
 
             if (ls_bound < global_upper_bound) {

@@ -488,39 +488,13 @@ class branch_multicut {
             }
 
             FlowType prev_gub = flowValue(false, current_solution);
-            auto [ls_bound, movedToNewBlock] = local_search::improveSolution(
-                original_graph, original_terminals, fixed_vertex,
-                &current_solution, prev_gub);
+            local_search ls(original_graph, original_terminals,
+                            fixed_vertex, &current_solution);
+            FlowType total_improvement = ls.improveSolution();
+            FlowType ls_bound = prev_gub - total_improvement;
 
             if (cfg->inexact) {
-                std::vector<std::unordered_set<NodeID> > ctrSets(
-                    original_terminals.size());
-                std::vector<bool> isTerm(problem->graph->n(), false);
-
-                for (auto t : problem->terminals) {
-                    ctrSets[t.original_id].insert(t.position);
-                    isTerm[t.position] = true;
-                }
-
-                for (size_t i = 0; i < ctrSets.size(); ++i) {
-                    for (auto [v, nb] : movedToNewBlock) {
-                        if (nb == i) {
-                            NodeID m = problem->mapped(v);
-                            NodeID curr = problem->graph->getCurrentPosition(m);
-                            if (!isTerm[curr]) {
-                                ctrSets[nb].insert(curr);
-                            }
-                        }
-                    }
-
-                    if (ctrSets[i].size() > 1) {
-                        problem->graph->contractVertexSet(ctrSets[i]);
-                    }
-                    graph_contraction::setTerminals(problem,
-                                                    original_terminals);
-                }
-
-                graph_contraction::deleteTermEdges(problem, original_terminals);
+                ls.contractMovedVertices(problem);
             }
 
             bestsol_mutex.lock();

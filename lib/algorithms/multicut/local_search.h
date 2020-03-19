@@ -22,12 +22,25 @@
 
 class local_search {
  private:
-    static std::pair<EdgeWeight, std::vector<NodeID> >
-    flowBetweenBlocks(const mutable_graph& original_graph,
-                      const std::vector<bool>& fixed_vertex,
-                      std::vector<NodeID>* sol,
-                      NodeID terminal1,
-                      NodeID terminal2) {
+    const mutable_graph& original_graph;
+    const std::vector<NodeID>& original_terminals;
+    const std::vector<bool>& fixed_vertex;
+    std::vector<NodeID>* sol;
+    std::unordered_map<NodeID, NodeID> movedToNewBlock;
+
+ public:
+    local_search(const mutable_graph& original_graph,
+                 const std::vector<NodeID>& original_terminals,
+                 const std::vector<bool>& fixed_vertex,
+                 std::vector<NodeID>* sol)
+        : original_graph(original_graph),
+          original_terminals(original_terminals),
+          fixed_vertex(fixed_vertex),
+          sol(sol) { }
+
+ private:
+    std::pair<EdgeWeight, std::vector<NodeID> >
+    flowBetweenBlocks(NodeID terminal1, NodeID terminal2) {
         std::vector<NodeID>& solution = *sol;
         std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
         auto G = std::make_shared<mutable_graph>();
@@ -127,23 +140,17 @@ class local_search {
         return std::make_pair(improvement, movedVertices);
     }
 
-    static EdgeWeight flowLocalSearch(
-        const mutable_graph& original_graph,
-        const std::vector<NodeID>& original_terms,
-        const std::vector<bool>& fixed_vertex,
-        std::vector<NodeID>* sol,
-        std::unordered_map<NodeID, NodeID>* toNew) {
+    EdgeWeight flowLocalSearch() {
         std::vector<NodeID>& solution = *sol;
-        std::unordered_map<NodeID, NodeID>& movedToNewBlock = *toNew;
-        std::vector<std::vector<EdgeWeight> > blockConnectivity(
-            original_terms.size());
+        std::vector<std::vector<EdgeWeight> >
+        blockConnectivity(original_terminals.size());
 
         EdgeWeight improvement = 0;
 
         std::vector<std::pair<NodeID, NodeID> > neighboringBlocks;
 
         for (auto& b : blockConnectivity) {
-            b.resize(original_terms.size(), 0);
+            b.resize(original_terminals.size(), 0);
         }
 
         for (NodeID n : original_graph.nodes()) {
@@ -168,8 +175,7 @@ class local_search {
         random_functions::permutate_vector_good(&neighboringBlocks);
 
         for (auto [a, b] : neighboringBlocks) {
-            auto [impr, movedVertices] = flowBetweenBlocks(
-                original_graph, fixed_vertex, sol, a, b);
+            auto [impr, movedVertices] = flowBetweenBlocks(a, b);
             improvement += impr;
             for (const auto& n : movedVertices) {
                 NodeID newBlock = solution[n];
@@ -180,16 +186,10 @@ class local_search {
         return improvement;
     }
 
-    static EdgeWeight gainLocalSearch(
-        const mutable_graph& original_graph,
-        const std::vector<NodeID>& original_terms,
-        const std::vector<bool>& fixed_vertex,
-        std::vector<NodeID>* sol,
-        std::unordered_map<NodeID, NodeID>* toNew) {
+    EdgeWeight gainLocalSearch() {
         bool inexact = configuration::getConfig()->inexact;
         FlowType improvement = 0;
         std::vector<NodeID>& current_solution = *sol;
-        std::unordered_map<NodeID, NodeID>& movedToNewBlock = *toNew;
         std::vector<NodeID> permute(original_graph.n(), 0);
         std::vector<bool> inBoundary(original_graph.n(), true);
         std::vector<std::pair<NodeID, int64_t> > nextBest(
@@ -285,29 +285,48 @@ class local_search {
     }
 
  public:
-    static std::pair<FlowType, std::unordered_map<NodeID, NodeID> >
-    improveSolution(const mutable_graph& original_graph,
-                    const std::vector<NodeID>& original_terms,
-                    const std::vector<bool>& fixed_vertex,
-                    std::vector<NodeID>* sol,
-                    FlowType valueBefore) {
-        FlowType ls_bound = valueBefore;
-        std::unordered_map<NodeID, NodeID> movedToNewBlock;
+    FlowType improveSolution() {
+        FlowType total_improvement = 0;
         bool change_found = true;
-
         while (change_found) {
             change_found = false;
-            auto impFlow = flowLocalSearch(original_graph, original_terms,
-                                           fixed_vertex, sol, &movedToNewBlock);
-            ls_bound -= impFlow;
-            auto impGain = gainLocalSearch(original_graph, original_terms,
-                                           fixed_vertex, sol, &movedToNewBlock);
-            ls_bound -= impGain;
+            auto impFlow = flowLocalSearch();
+            total_improvement += impFlow;
+            auto impGain = gainLocalSearch();
+            total_improvement += impGain;
 
             if (impFlow > 0 || impGain > 0)
                 change_found = true;
         }
-        return std::make_pair(ls_bound, movedToNewBlock);
+        return total_improvement;
+    }
+
+    void contractMovedVertices(std::shared_ptr<multicut_problem> problem) {
+        std::vector<std::unordered_set<NodeID> > ctrSets(
+            original_terminals.size());
+        std::vector<bool> isTerm(problem->graph->n(), false);
+
+        for (auto t : problem->terminals) {
+            ctrSets[t.original_id].insert(t.position);
+            isTerm[t.position] = true;
+        }
+
+        for (size_t i = 0; i < ctrSets.size(); ++i) {
+            for (auto [v, nb] : movedToNewBlock) {
+                if (nb == i) {
+                    NodeID m = problem->mapped(v);
+                    NodeID curr = problem->graph->getCurrentPosition(m);
+                    if (!isTerm[curr]) {
+                        ctrSets[nb].insert(curr);
+                    }
+                }
+            }
+            if (ctrSets[i].size() > 1) {
+                problem->graph->contractVertexSet(ctrSets[i]);
+            }
+            graph_contraction::setTerminals(problem, original_terminals);
+        }
+        graph_contraction::deleteTermEdges(problem, original_terminals);
     }
 
  private:

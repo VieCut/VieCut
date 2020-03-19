@@ -311,7 +311,7 @@ class branch_multicut {
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 
-        uint64_t max_size = 50UL * 1024UL * 1024UL * 1024UL;
+        uint64_t max_size = 4UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
             LOG1 << "RESULT Memoryout";
             exit(1);
@@ -488,16 +488,60 @@ class branch_multicut {
             }
 
             FlowType prev_gub = flowValue(false, current_solution);
-            FlowType ls_bound = local_search::improveSolution(
+            auto [ls_bound, movedToNewBlock] = local_search::improveSolution(
                 original_graph, original_terminals, fixed_vertex,
                 &current_solution, prev_gub);
+
+            if (cfg->inexact) {
+                std::vector<std::unordered_set<NodeID> > ctrSets(
+                    original_terminals.size());
+                std::vector<bool> isTerm(problem->graph->n(), false);
+
+                for (auto t : problem->terminals) {
+                    ctrSets[t.original_id].insert(t.position);
+                    isTerm[t.position] = true;
+                }
+
+                for (size_t i = 0; i < ctrSets.size(); ++i) {
+                    LOG1 << "i: " << i;
+                    for (auto [v, nb] : movedToNewBlock) {
+                        if (nb == i) {
+                            NodeID m = problem->mapped(v);
+                            NodeID curr = problem->graph->getCurrentPosition(m);
+                            if (!isTerm[curr]) {
+                                ctrSets[nb].insert(curr);
+                            }
+                        }
+                    }
+
+                    if (ctrSets[i].size() > 1) {
+                        LOG1 << "contracting set of size " << ctrSets[i].size();
+                        problem->graph->contractVertexSet(ctrSets[i]);
+                    }
+                    graph_contraction::setTerminals(problem, original_terminals);
+
+                    mf.maximumIsolatingFlow(problem, 0, problems.size() == 0);
+                    // if (problem->upper_bound > ls_bound) {
+
+                    FlowType pregub = flowValue(false, current_solution);
+                    LOG1 << problem->lower_bound << " " << problem->upper_bound << " to nonls " << non_ls_global_upper_bound << " (actual " << pregub << ")";
+                    //  exit(1);
+                    // }
+                }
+
+                mf.maximumIsolatingFlow(problem, 0, problems.size() == 0);
+                if (problem->upper_bound > ls_bound) {
+                    LOG1 << problem->upper_bound << " > " << ls_bound;
+                  //  exit(1);
+                }
+            }
 
             bestsol_mutex.lock();
 
             if (ls_bound < global_upper_bound) {
                 LOGC(testing) << "Improvement after time="
                               << total_time.elapsed() << " upper_bound="
-                              << global_upper_bound;
+                              << ls_bound;
             } else {
                 LOGC(testing) << "No improvement, as " << ls_bound << " >= "
                               << global_upper_bound << " even though it was"

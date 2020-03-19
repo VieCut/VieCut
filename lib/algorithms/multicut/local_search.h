@@ -22,13 +22,13 @@
 
 class local_search {
  public:
-    static EdgeWeight flowBetweenBlocks(const mutable_graph& original_graph,
-                                        const std::vector<bool>& fixed_vertex,
-                                        std::vector<NodeID>* sol,
-                                        NodeID terminal1,
-                                        NodeID terminal2) {
+    static std::pair<EdgeWeight, std::vector<NodeID> >
+    flowBetweenBlocks(const mutable_graph& original_graph,
+                      const std::vector<bool>& fixed_vertex,
+                      std::vector<NodeID>* sol,
+                      NodeID terminal1,
+                      NodeID terminal2) {
         std::vector<NodeID>& solution = *sol;
-
         std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
         auto G = std::make_shared<mutable_graph>();
         EdgeWeight sol_weight = 0;
@@ -97,7 +97,11 @@ class local_search {
             zero.insert(v);
         }
 
+        LOG1 << terminal1 << "-" << terminal2 << ": "
+             << sol_weight << " to " << f;
         size_t improvement = (sol_weight - f);
+        std::vector<NodeID> movedVertices;
+        bool inexact = configuration::getConfig()->inexact;
         for (NodeID n : original_graph.nodes()) {
             if (solution[n] == terminal1 || solution[n] == terminal2) {
                 if (fixed_vertex[n]) {
@@ -106,7 +110,13 @@ class local_search {
                         exit(1);
                     }
                 }
+
                 NodeID map = mapping[n];
+
+                if (inexact && zero.count(map) != (solution[n] == terminal1)) {
+                    movedVertices.emplace_back(n);
+                }
+
                 if (zero.count(map) > 0) {
                     solution[n] = terminal1;
                 } else {
@@ -114,14 +124,17 @@ class local_search {
                 }
             }
         }
-        return improvement;
+        return std::make_pair(improvement, movedVertices);
     }
 
-    static EdgeWeight flowLocalSearch(const mutable_graph& original_graph,
-                                      const std::vector<NodeID>& original_terms,
-                                      const std::vector<bool>& fixed_vertex,
-                                      std::vector<NodeID>* sol) {
+    static EdgeWeight flowLocalSearch(
+        const mutable_graph& original_graph,
+        const std::vector<NodeID>& original_terms,
+        const std::vector<bool>& fixed_vertex,
+        std::vector<NodeID>* sol,
+        std::unordered_map<NodeID, NodeID>* toNew) {
         std::vector<NodeID>& solution = *sol;
+        std::unordered_map<NodeID, NodeID>& movedToNewBlock = *toNew;
         std::vector<std::vector<EdgeWeight> > blockConnectivity(
             original_terms.size());
 
@@ -155,28 +168,36 @@ class local_search {
         random_functions::permutate_vector_good(&neighboringBlocks);
 
         for (auto [a, b] : neighboringBlocks) {
-            improvement += flowBetweenBlocks(
+            auto [impr, movedVertices] = flowBetweenBlocks(
                 original_graph, fixed_vertex, sol, a, b);
+            improvement += impr;
+            for (const auto& n : movedVertices) {
+                NodeID newBlock = solution[n];
+                movedToNewBlock[n] = newBlock;
+            }
         }
 
         return improvement;
     }
 
-    static EdgeWeight improveSolution(const mutable_graph& original_graph,
-                                      const std::vector<NodeID>& original_terms,
-                                      const std::vector<bool>& fixed_vertex,
-                                      std::vector<NodeID>* sol,
-                                      EdgeWeight valueBefore) {
+    static std::pair<FlowType, std::unordered_map<NodeID, NodeID> >
+    improveSolution(const mutable_graph& original_graph,
+                    const std::vector<NodeID>& original_terms,
+                    const std::vector<bool>& fixed_vertex,
+                    std::vector<NodeID>* sol,
+                    FlowType valueBefore) {
         std::vector<NodeID>& current_solution = *sol;
-        EdgeWeight ls_bound = valueBefore;
+        FlowType ls_bound = valueBefore;
+        std::unordered_map<NodeID, NodeID> movedToNewBlock;
 
+        bool inexact = configuration::getConfig()->inexact;
         bool change_found = true;
 
         while (change_found) {
             change_found = false;
 
-            FlowType imp = flowLocalSearch(original_graph, original_terms,
-                                           fixed_vertex, sol);
+            auto imp = flowLocalSearch(original_graph, original_terms,
+                                       fixed_vertex, sol, &movedToNewBlock);
             ls_bound -= imp;
             if (imp > 0) {
                 change_found = true;
@@ -232,6 +253,11 @@ class local_search {
                         current_solution[n] = maxBlockID;
                         current_solution[t] = maxBlockID;
                         ls_bound -= movegain;
+                        if (inexact) {
+                            movedToNewBlock[n] = maxBlockID;
+                            movedToNewBlock[t] = maxBlockID;
+                        }
+
                         if (movegain > 0) {
                             change_found = true;
                         }
@@ -257,6 +283,9 @@ class local_search {
 
                 if (gain >= 0) {
                     current_solution[n] = maxBlockID;
+                    if (inexact) {
+                        movedToNewBlock[n] = maxBlockID;
+                    }
                     ls_bound -= gain;
                     for (EdgeID e : original_graph.edges_of(n)) {
                         NodeID t = original_graph.getEdgeTarget(n, e);
@@ -268,7 +297,7 @@ class local_search {
                 }
             }
         }
-        return ls_bound;
+        return std::make_pair(ls_bound, movedToNewBlock);
     }
 
  private:

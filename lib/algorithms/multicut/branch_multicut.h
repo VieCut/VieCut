@@ -360,7 +360,7 @@ class branch_multicut {
         auto c = configuration::getConfig();
 #ifdef USE_GUROBI
         branchOnCurrentInstance =
-            problem->graph->m() > 50000 || (!c->use_ilp);
+            problem->graph->n() > 1000 || (!c->use_ilp);
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;
@@ -490,7 +490,7 @@ class branch_multicut {
             FlowType prev_gub = flowValue(false, current_solution);
             local_search ls(original_graph, original_terminals,
                             fixed_vertex, &current_solution);
-            FlowType total_improvement = ls.improveSolution();
+            FlowType total_improvement = ls.improveSolution(problem);
             FlowType ls_bound = prev_gub - total_improvement;
 
             if (cfg->inexact) {

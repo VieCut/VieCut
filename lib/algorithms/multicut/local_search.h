@@ -188,7 +188,7 @@ class local_search {
         return improvement;
     }
 
-    EdgeWeight gainLocalSearch() {
+    EdgeWeight gainLocalSearch(std::shared_ptr<multicut_problem> problem) {
         bool inexact = configuration::getConfig()->inexact;
         FlowType improvement = 0;
         std::vector<NodeID>& current_solution = *sol;
@@ -197,11 +197,18 @@ class local_search {
         std::vector<std::pair<NodeID, int64_t> > nextBest(
             original_graph.n(), { UNDEFINED_NODE, 0 });
 
+        std::vector<bool> isTerm(problem->graph->n(), false);
+        for (auto t : problem->terminals) {
+            isTerm[t.position] = true;
+        }
+
         random_functions::permutate_vector_good(&permute, true);
 
         for (NodeID v : original_graph.nodes()) {
             NodeID n = permute[v];
-            if (fixed_vertex[n] || !inBoundary[n])
+            NodeID o = problem->mapped(n);
+            NodeID pos = problem->graph->getCurrentPosition(o);
+            if (fixed_vertex[n] || !inBoundary[n] || isTerm[pos])
                 continue;
 
             std::vector<EdgeWeight> blockwgt(
@@ -287,14 +294,14 @@ class local_search {
     }
 
  public:
-    FlowType improveSolution() {
+    FlowType improveSolution(std::shared_ptr<multicut_problem> problem) {
         FlowType total_improvement = 0;
         bool change_found = true;
         while (change_found) {
             change_found = false;
             auto impFlow = flowLocalSearch();
             total_improvement += impFlow;
-            auto impGain = gainLocalSearch();
+            auto impGain = gainLocalSearch(problem);
             total_improvement += impGain;
 
             if (impFlow > 0 || impGain > 0)

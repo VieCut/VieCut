@@ -495,9 +495,10 @@ class branch_multicut {
 
             if (cfg->inexact) {
                 ls.contractMovedVertices(problem);
+                problem->upper_bound = ls_bound;
+                prev_gub = ls_bound;
             }
 
-            problem->upper_bound = ls_bound;
 
             bestsol_mutex.lock();
 

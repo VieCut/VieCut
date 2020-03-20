@@ -226,16 +226,8 @@ findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
     std::vector<size_t> possible_terminals;
     EdgeWeight nodeDegree = problem->graph->getWeightedNodeDegree(vtx);
     EdgeWeight nonTerminalWeight = nodeDegree - sumToTerminals;
-
-    for (const auto& nt : neighbouring_terminals) {
-        // only when weight to this terminal + nonterminal is heavier than
-        // heaviest edge to terminal this could be better than that.
-        // second part is to make sure that if nonTerminalWeight is zero, at
-        // least one value thats maximum gets returned
-        if (nonTerminalWeight + nt.second > heavy || heavy == nt.second) {
-            possible_terminals.emplace_back(nt.first);
-        }
-    }
+    LOG1 << "TOTAL WEIGHT " << problem->graph->getWeightedNodeDegree(vtx)
+         << " non_terminal " << nonTerminalWeight;
 
     // if 'vtx' is not connected to all terminals and non-terminal neighbors
     // are heavier than heaviest edge to terminal neighbour
@@ -243,7 +235,26 @@ findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
     // block
     if (neighbouring_terminals.size() < problem->terminals.size()
         && nonTerminalWeight > heavy) {
-        possible_terminals.emplace_back(UNDEFINED_NODE);
+        neighbouring_terminals.emplace_back(UNDEFINED_NODE, nonTerminalWeight);
+    }
+
+    std::sort(neighbouring_terminals.begin(), neighbouring_terminals.end(),
+              [](const auto& n1, const auto& n2) {
+                  return n1.second > n2.second;
+              });
+
+    bool inexact = configuration::getConfig()->inexact;
+    size_t branching_f = configuration::getConfig()->maximumBranchingFactor;
+
+    for (const auto& nt : neighbouring_terminals) {
+        // only when weight to this terminal + nonterminal is heavier than
+        // heaviest edge to terminal this could be better than that.
+        // second part is to make sure that if nonTerminalWeight is zero, at
+        // least one value thats maximum gets returned
+        if ((nonTerminalWeight + nt.second > heavy || heavy == nt.second) &&
+            (!inexact || branching_f > possible_terminals.size())) {
+            possible_terminals.emplace_back(nt.first);
+        }
     }
 
     return std::make_pair(vtx, possible_terminals);

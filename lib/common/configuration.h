@@ -56,6 +56,7 @@ class configuration {
     size_t random_flows = 5;
     double removeTerminalsBeforeBranch = 0.1;
     size_t contractionDepthAroundTerminal = 1;
+    size_t maximumBranchingFactor = 3;
     bool multibranch = true;
     bool inexact = false;
 

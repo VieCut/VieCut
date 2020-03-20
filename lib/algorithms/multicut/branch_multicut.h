@@ -488,17 +488,10 @@ class branch_multicut {
             }
 
             FlowType prev_gub = flowValue(false, current_solution);
-            local_search ls(original_graph, original_terminals,
+            local_search ls(problem, original_graph, original_terminals,
                             fixed_vertex, &current_solution);
-            FlowType total_improvement = ls.improveSolution(problem);
+            FlowType total_improvement = ls.improveSolution();
             FlowType ls_bound = prev_gub - total_improvement;
-
-            if (cfg->inexact) {
-                ls.contractMovedVertices(problem);
-                problem->upper_bound = ls_bound;
-                prev_gub = ls_bound;
-            }
-
 
             bestsol_mutex.lock();
 

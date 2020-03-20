@@ -12,6 +12,7 @@
 #pragma once
 
 #include <memory>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -22,6 +23,7 @@
 
 class local_search {
  private:
+    std::shared_ptr<multicut_problem> problem;
     const mutable_graph& original_graph;
     const std::vector<NodeID>& original_terminals;
     const std::vector<bool>& fixed_vertex;
@@ -31,22 +33,24 @@ class local_search {
     std::vector<NodeID> noImprovement;
 
  public:
-    local_search(const mutable_graph& original_graph,
+    local_search(std::shared_ptr<multicut_problem> problem,
+                 const mutable_graph& original_graph,
                  const std::vector<NodeID>& original_terminals,
                  const std::vector<bool>& fixed_vertex,
                  std::vector<NodeID>* sol)
-        : original_graph(original_graph),
+        : problem(problem),
+          original_graph(original_graph),
           original_terminals(original_terminals),
           fixed_vertex(fixed_vertex),
           sol(sol),
           previousConnectivity(original_terminals.size()) {
-            for (auto & pc : previousConnectivity) {
-                pc.resize(original_terminals.size(), 0);
-            }
+        for (auto& pc : previousConnectivity) {
+            pc.resize(original_terminals.size(), 0);
         }
+    }
 
  private:
-    std::tuple<EdgeWeight, FlowType, std::vector<NodeID> >
+    std::tuple<EdgeWeight, FlowType>
     flowBetweenBlocks(NodeID terminal1, NodeID terminal2) {
         std::vector<NodeID>& solution = *sol;
         std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
@@ -110,9 +114,10 @@ class local_search {
 
         std::vector<NodeID> terminals = { 0, 1 };
         push_relabel pr;
-        auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
+        auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 1, true);
         std::unordered_set<NodeID> zero;
 
+        for (auto n : G->nodes()) { }
         for (NodeID v : s) {
             zero.insert(v);
         }
@@ -137,10 +142,6 @@ class local_search {
 
                 NodeID map = mapping[n];
 
-                if (inexact && zero.count(map) != (solution[n] == terminal1)) {
-                    movedVertices.emplace_back(n);
-                }
-
                 if (zero.count(map) > 0) {
                     solution[n] = terminal1;
                 } else {
@@ -148,7 +149,7 @@ class local_search {
                 }
             }
         }
-        return std::make_tuple(improvement, f, movedVertices);
+        return std::make_tuple(improvement, f);
     }
 
     EdgeWeight flowLocalSearch() {
@@ -187,13 +188,9 @@ class local_search {
         random_functions::permutate_vector_good(&neighboringBlocks);
 
         for (auto [a, b] : neighboringBlocks) {
-            auto [impr, connect, movedVertices] = flowBetweenBlocks(a, b);
+            auto [impr, connect] = flowBetweenBlocks(a, b);
             improvement += impr;
             previousConnectivity[a][b] = connect;
-            for (const auto& n : movedVertices) {
-                NodeID newBlock = solution[n];
-                movedToNewBlock[n] = newBlock;
-            }
         }
 
         LOG0 << "no improvement in " << noImprovement;
@@ -202,7 +199,7 @@ class local_search {
         return improvement;
     }
 
-    EdgeWeight gainLocalSearch(std::shared_ptr<multicut_problem> problem) {
+    EdgeWeight gainLocalSearch() {
         bool inexact = configuration::getConfig()->inexact;
         FlowType improvement = 0;
         std::vector<NodeID>& current_solution = *sol;
@@ -308,14 +305,14 @@ class local_search {
     }
 
  public:
-    FlowType improveSolution(std::shared_ptr<multicut_problem> problem) {
+    FlowType improveSolution() {
         FlowType total_improvement = 0;
         bool change_found = true;
         while (change_found) {
             change_found = false;
             auto impFlow = flowLocalSearch();
             total_improvement += impFlow;
-            auto impGain = gainLocalSearch(problem);
+            auto impGain = gainLocalSearch();
             total_improvement += impGain;
 
             if (impFlow > 0 || impGain > 0)
@@ -324,7 +321,7 @@ class local_search {
         return total_improvement;
     }
 
-    void contractMovedVertices(std::shared_ptr<multicut_problem> problem) {
+    void contractMovedVertices() {
         std::vector<std::unordered_set<NodeID> > ctrSets(
             original_terminals.size());
         std::vector<bool> isTerm(problem->graph->n(), false);
@@ -351,6 +348,4 @@ class local_search {
         }
         graph_contraction::deleteTermEdges(problem, original_terminals);
     }
-
- private:
 };

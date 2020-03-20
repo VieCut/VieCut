@@ -114,10 +114,9 @@ class local_search {
 
         std::vector<NodeID> terminals = { 0, 1 };
         push_relabel pr;
-        auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 1, true);
+        auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
         std::unordered_set<NodeID> zero;
 
-        for (auto n : G->nodes()) { }
         for (NodeID v : s) {
             zero.insert(v);
         }
@@ -130,7 +129,6 @@ class local_search {
         }
         size_t improvement = (sol_weight - f);
         std::vector<NodeID> movedVertices;
-        bool inexact = configuration::getConfig()->inexact;
         for (NodeID n : original_graph.nodes()) {
             if (solution[n] == terminal1 || solution[n] == terminal2) {
                 if (fixed_vertex[n]) {

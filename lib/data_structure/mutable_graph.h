@@ -552,12 +552,18 @@ class mutable_graph {
         size_t idx = 0;
 
         for (auto i : vertex_set) {
+            if (i >= vertices.size())
+                continue;
+
             if (i < first) {
                 first = i;
                 idx = vertex_set_vec.size();
             }
             vertex_set_vec.emplace_back(i);
         }
+
+        if (vertex_set_vec.size() <= 1)
+            return;
 
         vertex_set_vec.erase(vertex_set_vec.begin() + idx);
 

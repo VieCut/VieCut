@@ -98,9 +98,9 @@ class random_functions {
         }
     }
 
-    static void permutate_vector_good(
-        std::vector<std::pair<NodeID, NodeID> >* v) {
-        std::vector<std::pair<NodeID, NodeID> >& vec = *v;
+    template <typename sometype>
+    static void permutate_vector_good(std::vector<sometype>* v) {
+        std::vector<sometype>& vec = *v;
 
         unsigned int size = vec.size();
         if (size < 4) return;

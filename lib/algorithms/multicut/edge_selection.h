@@ -226,8 +226,6 @@ findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
     std::vector<size_t> possible_terminals;
     EdgeWeight nodeDegree = problem->graph->getWeightedNodeDegree(vtx);
     EdgeWeight nonTerminalWeight = nodeDegree - sumToTerminals;
-    LOG1 << "TOTAL WEIGHT " << problem->graph->getWeightedNodeDegree(vtx)
-         << " non_terminal " << nonTerminalWeight;
 
     // if 'vtx' is not connected to all terminals and non-terminal neighbors
     // are heavier than heaviest edge to terminal neighbour

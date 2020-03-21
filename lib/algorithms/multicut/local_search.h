@@ -157,7 +157,7 @@ class local_search {
 
         EdgeWeight improvement = 0;
 
-        std::vector<std::pair<NodeID, NodeID> > neighboringBlocks;
+        std::vector<std::tuple<NodeID, NodeID, FlowType> > neighboringBlocks;
 
         for (auto& b : blockConnectivity) {
             b.resize(original_terminals.size(), 0);
@@ -177,15 +177,20 @@ class local_search {
 
         for (size_t i = 0; i < blockConnectivity.size(); ++i) {
             for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
-                if (blockConnectivity[i][j] != previousConnectivity[i][j]) {
-                    neighboringBlocks.emplace_back(i, j);
+                FlowType connect = blockConnectivity[i][j];
+                if (connect != previousConnectivity[i][j]) {
+                    neighboringBlocks.emplace_back(i, j, connect);
                 }
             }
         }
 
         random_functions::permutate_vector_good(&neighboringBlocks);
+        //    std::sort(neighboringBlocks.begin(), neighboringBlocks.end(),
+        //        [](const auto& n1, const auto& n2) {
+        //            return std::get<2>(n1) > std::get<2>(n2);
+        //        });
 
-        for (auto [a, b] : neighboringBlocks) {
+        for (auto [a, b, c] : neighboringBlocks) {
             auto [impr, connect] = flowBetweenBlocks(a, b);
             improvement += impr;
             previousConnectivity[a][b] = connect;
@@ -306,7 +311,9 @@ class local_search {
     FlowType improveSolution() {
         FlowType total_improvement = 0;
         bool change_found = true;
+        size_t ls_iter = 0;
         while (change_found) {
+            timer t;
             change_found = false;
             auto impFlow = flowLocalSearch();
             total_improvement += impFlow;
@@ -315,6 +322,9 @@ class local_search {
 
             if (impFlow > 0 || impGain > 0)
                 change_found = true;
+
+            LOG1 << "local search iteration " << ls_iter++ << " complete - t:"
+                 << t.elapsed() << " flow:" << impFlow << " gain:" << impGain;
         }
         return total_improvement;
     }

@@ -404,6 +404,13 @@ class branch_multicut {
                     }
                 }
 
+                for (size_t i = 0; i < original_terminals.size(); ++i) {
+                    if (i != lightest_t) {
+                        problem->addFinishedPair(
+                            i, lightest_t, original_terminals.size());
+                    }
+                }
+
                 EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
                 for (EdgeID e = e1; e-- != 0; ) {
                     auto wgt = problem->graph->getEdgeWeight(lightest_t, e);

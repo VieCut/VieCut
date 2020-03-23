@@ -412,7 +412,8 @@ class branch_multicut {
                 contractIntoTerminal.insert(lightest_t);
                 for (size_t i = 0; i < best_solution.size(); ++i) {
                     NodeID cp = problem->graph->getCurrentPosition(i);
-                    if (terminalpositions.count(cp) > 0)
+                    if (terminalpositions.count(cp) > 0
+                        && cp >= problem->graph->n())
                         continue;
                     if (best_solution[i] == lightest_oid && cp != lightest_t) {
                         contractIntoTerminal.insert(cp);

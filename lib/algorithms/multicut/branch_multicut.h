@@ -435,8 +435,7 @@ class branch_multicut {
                         break;
                     }
 
-                    if (d < c->contractionDepthAroundTerminal
-                        && !found[nbr]) {
+                    if (d < c->contractionDepthAroundTerminal && !found[nbr]) {
                         found[nbr] = true;
                         nodeAndDistance.emplace(nbr, d + 1);
                     }
@@ -616,6 +615,7 @@ class branch_multicut {
                 new_p->lower_bound = problem->lower_bound;
                 new_p->upper_bound = problem->upper_bound;
                 new_p->deleted_weight = problem->deleted_weight;
+                new_p->finished_blockpairs = problem->finished_blockpairs;
                 for (size_t j = 0; j < new_p->terminals.size(); ++j) {
                     new_p->terminals[j].invalid_flow = true;
                 }

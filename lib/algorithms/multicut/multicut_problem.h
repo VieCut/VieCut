@@ -55,7 +55,7 @@ struct multicut_problem {
                            std::numeric_limits<FlowType>::max(),
                            0,
                            { UNDEFINED_NODE, UNDEFINED_EDGE },
-                           "") { }
+                           std::unordered_set<NodeID>()) { }
 
     multicut_problem(std::shared_ptr<mutable_graph> G,
                      std::vector<terminal> term,
@@ -65,14 +65,15 @@ struct multicut_problem {
                      FlowType upper,
                      EdgeWeight deleted,
                      std::pair<NodeID, EdgeID> prio,
-                     std::string path) : graph(G),
-                                         terminals(term),
-                                         mappings(mappings),
-                                         lower_bound(lower),
-                                         upper_bound(upper),
-                                         deleted_weight(deleted),
-                                         priority_edge(prio),
-                                         path(path) { }
+                     std::unordered_set<NodeID> finished_bp)
+        : graph(G),
+          terminals(term),
+          mappings(mappings),
+          lower_bound(lower),
+          upper_bound(upper),
+          deleted_weight(deleted),
+          priority_edge(prio),
+          finished_blockpairs(finished_bp) { }
 
     NodeID mapped(NodeID n) const {
         NodeID n_coarse = n;
@@ -80,6 +81,30 @@ struct multicut_problem {
             n_coarse = (*map)[n_coarse];
         }
         return n_coarse;
+    }
+
+    void addFinishedPair(NodeID a, NodeID b, NodeID numOriginalTerminals) {
+        if (a == b) {
+            LOG1 << "Error. Pair between " << a << " and itself!";
+            exit(1);
+        }
+        NodeID min = std::min(a, b);
+        NodeID max = std::max(a, b);
+
+        NodeID combined = min * numOriginalTerminals + max;
+        finished_blockpairs.insert(combined);
+    }
+
+    bool isPairFinished(NodeID a, NodeID b, NodeID numOriginalTerminals) {
+        if (a == b) {
+            LOG1 << "Error. Searching pair between " << a << " and itself!";
+            exit(1);
+        }
+        NodeID min = std::min(a, b);
+        NodeID max = std::max(a, b);
+
+        NodeID combined = min * numOriginalTerminals + max;
+        return (finished_blockpairs.count(combined) > 0);
     }
 
     static void writeGraph(std::shared_ptr<multicut_problem> problem,
@@ -159,5 +184,5 @@ struct multicut_problem {
     FlowType                                            upper_bound;
     EdgeWeight                                          deleted_weight;
     std::pair<NodeID, EdgeID>                           priority_edge;
-    std::string                                         path;
+    std::unordered_set<NodeID>                          finished_blockpairs;
 };

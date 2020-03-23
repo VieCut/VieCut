@@ -393,6 +393,7 @@ class branch_multicut {
             }
             for (size_t i = 0; i < lowestTerminals; ++i) {
                 NodeID lightest_t = 0;
+                NodeID lightest_origid = 0;
                 EdgeWeight lightest_weight = UNDEFINED_FLOW;
 
                 for (auto t : problem->terminals) {
@@ -401,13 +402,14 @@ class branch_multicut {
                     if (deg < lightest_weight && deg > 0) {
                         lightest_weight = deg;
                         lightest_t = t.position;
+                        lightest_origid = t.original_id;
                     }
                 }
 
                 for (size_t i = 0; i < original_terminals.size(); ++i) {
-                    if (i != lightest_t) {
+                    if (i != lightest_origid) {
                         problem->addFinishedPair(
-                            i, lightest_t, original_terminals.size());
+                            i, lightest_origid, original_terminals.size());
                     }
                 }
 

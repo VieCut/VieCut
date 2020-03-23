@@ -265,15 +265,11 @@ class local_search {
         //            return std::get<2>(n1) > std::get<2>(n2);
         //        });
 
-        EdgeWeight minconnect = 500000;
         for (auto [a, b, c] : neighboringBlocks) {
             if (!problem->isPairFinished(a, b, original_terminals.size())) {
                 auto [impr, connect] = flowBetweenBlocks(a, b, false);
                 improvement += impr;
                 previousConnectivity[a][b] = connect;
-                if (impr > 0 && connect < minconnect) {
-                    minconnect = connect;
-                }
             }
         }
         noImprovement.clear();

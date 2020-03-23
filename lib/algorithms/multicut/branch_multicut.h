@@ -377,23 +377,13 @@ class branch_multicut {
         }
 
         if (c->inexact) {
-            NodeID heaviest_t = 0;
-            EdgeWeight heaviest_weight = 0;
             size_t lowestTerminals =
                 std::ceil(static_cast<double>(problem->terminals.size()) *
                           c->removeTerminalsBeforeBranch);
 
-            for (auto t : problem->terminals) {
-                NodeID pos = t.position;
-                auto deg = problem->graph->getWeightedNodeDegree(pos);
-                if (deg > heaviest_weight) {
-                    heaviest_weight = deg;
-                    heaviest_t = t.position;
-                }
-            }
             for (size_t i = 0; i < lowestTerminals; ++i) {
                 NodeID lightest_t = 0;
-                NodeID lightest_origid = 0;
+                NodeID lightest_oid = 0;
                 EdgeWeight lightest_weight = UNDEFINED_FLOW;
 
                 for (auto t : problem->terminals) {
@@ -402,18 +392,49 @@ class branch_multicut {
                     if (deg < lightest_weight && deg > 0) {
                         lightest_weight = deg;
                         lightest_t = t.position;
-                        lightest_origid = t.original_id;
+                        lightest_oid = t.original_id;
                     }
                 }
 
                 for (size_t i = 0; i < original_terminals.size(); ++i) {
-                    if (i != lightest_origid) {
+                    if (i != lightest_oid) {
                         problem->addFinishedPair(
-                            i, lightest_origid, original_terminals.size());
+                            i, lightest_oid, original_terminals.size());
                     }
                 }
 
+                std::unordered_set<NodeID> terminalpositions;
+                for (auto t : problem->terminals) {
+                    terminalpositions.insert(t.position);
+                }
+
+                std::unordered_set<NodeID> contractIntoTerminal;
+                contractIntoTerminal.insert(lightest_t);
+                for (size_t i = 0; i < best_solution.size(); ++i) {
+                    NodeID cp = problem->graph->getCurrentPosition(i);
+                    if (terminalpositions.count(cp) > 0)
+                        continue;
+                    if (best_solution[i] == lightest_oid && cp != lightest_t) {
+                        contractIntoTerminal.insert(cp);
+                        for (auto v : problem->graph->containedVertices(cp)) {
+                            best_solution[v] = lightest_oid;
+                        }
+                    }
+                }
+
+                NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
+                problem->graph->contractVertexSet(contractIntoTerminal);
+                lightest_t = problem->graph->getCurrentPosition(invtx);
+                size_t zero = 0;
+                for (auto v : best_solution) {
+                    if (v == 0) {
+                        zero++;
+                    }
+                }
+
+                graph_contraction::deleteTermEdges(problem, original_terminals);
                 EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
+
                 for (EdgeID e = e1; e-- != 0; ) {
                     auto wgt = problem->graph->getEdgeWeight(lightest_t, e);
                     problem->graph->deleteEdge(lightest_t, e);
@@ -422,6 +443,16 @@ class branch_multicut {
                 graph_contraction::setTerminals(problem, original_terminals);
             }
 
+            NodeID heaviest_t = 0;
+            EdgeWeight heaviest_weight = 0;
+            for (auto t : problem->terminals) {
+                NodeID pos = t.position;
+                auto deg = problem->graph->getWeightedNodeDegree(pos);
+                if (deg > heaviest_weight) {
+                    heaviest_weight = deg;
+                    heaviest_t = t.position;
+                }
+            }
             std::vector<bool> found(problem->graph->n(), false);
             std::unordered_set<NodeID> contractSet;
             std::unordered_set<NodeID> isOtherTerminal;

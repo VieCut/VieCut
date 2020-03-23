@@ -51,18 +51,19 @@ class local_search {
 
  private:
     std::tuple<EdgeWeight, FlowType>
-    flowBetweenBlocks(NodeID terminal1, NodeID terminal2) {
+    flowBetweenBlocks(NodeID term1, NodeID term2, bool fixEdges) {
         std::vector<NodeID>& solution = *sol;
         std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
         auto G = std::make_shared<mutable_graph>();
         FlowType sol_weight = 0;
+        timer t;
 
         NodeID id = 2;
         for (NodeID n : original_graph.nodes()) {
-            if (solution[n] != terminal1 && solution[n] != terminal2)
+            if (solution[n] != term1 && solution[n] != term2)
                 continue;
             if (fixed_vertex[n]) {
-                mapping[n] = (solution[n] == terminal1 ? 0 : 1);
+                mapping[n] = (solution[n] == term1 ? 0 : 1);
             } else {
                 mapping[n] = id;
                 id++;
@@ -71,19 +72,22 @@ class local_search {
         G->start_construction(id);
         std::unordered_map<NodeID, EdgeWeight> edgesToFixed0;
         std::unordered_map<NodeID, EdgeWeight> edgesToFixed1;
+        std::vector<std::pair<NodeID, NodeID> > edgesOnOriginal;
+
         for (NodeID n : original_graph.nodes()) {
-            if (solution[n] != terminal1 && solution[n] != terminal2)
+            if (solution[n] != term1 && solution[n] != term2)
                 continue;
             NodeID m_n = mapping[n];
             for (EdgeID e : original_graph.edges_of(n)) {
                 auto [t, w] = original_graph.getEdge(n, e);
                 NodeID m_t = mapping[t];
-                if ((solution[t] != terminal1 && solution[t] != terminal2)
+                if ((solution[t] != term1 && solution[t] != term2)
                     || m_n >= m_t || m_t < 2)
                     continue;
 
                 if (solution[t] != solution[n]) {
                     sol_weight += w;
+                    edgesOnOriginal.emplace_back(n, t);
                 }
 
                 if (m_n < 2) {
@@ -114,15 +118,16 @@ class local_search {
 
         std::vector<NodeID> terminals = { 0, 1 };
         push_relabel pr;
+        LOG0 << "build " << t.elapsed();
         auto [f, s] = pr.solve_max_flow_min_cut(G, terminals, 0, true);
         std::unordered_set<NodeID> zero;
-
+        sLOG0 << "flow " << t.elapsed() << term1 << term2;
         for (NodeID v : s) {
             zero.insert(v);
         }
 
         if (f < sol_weight) {
-            LOG0 << terminal1 << "-" << terminal2 << ": "
+            LOG0 << term1 << "-" << term2 << ": "
                  << sol_weight << " to " << f;
         } else {
             noImprovement.emplace_back(f);
@@ -130,9 +135,9 @@ class local_search {
         size_t improvement = (sol_weight - f);
         std::vector<NodeID> movedVertices;
         for (NodeID n : original_graph.nodes()) {
-            if (solution[n] == terminal1 || solution[n] == terminal2) {
+            if (solution[n] == term1 || solution[n] == term2) {
                 if (fixed_vertex[n]) {
-                    if (zero.count(mapping[n]) != (solution[n] == terminal1)) {
+                    if (zero.count(mapping[n]) != (solution[n] == term1)) {
                         LOG1 << "DIFFERENT";
                         exit(1);
                     }
@@ -141,13 +146,83 @@ class local_search {
                 NodeID map = mapping[n];
 
                 if (zero.count(map) > 0) {
-                    solution[n] = terminal1;
+                    solution[n] = term1;
                 } else {
-                    solution[n] = terminal2;
+                    solution[n] = term2;
                 }
             }
         }
+
+        if ((f <= 5 || fixEdges) && configuration::getConfig()->inexact) {
+            // inexact: let's just say these are optimal and delete the edges
+            for (auto [a, b] : edgesOnOriginal) {
+                LOG0 << "edge " << a << " " << b;
+                NodeID pa = problem->graph->getCurrentPosition(a);
+                NodeID pb = problem->graph->getCurrentPosition(b);
+
+                NodeID pia = problem->graph->getPartitionIndex(pa);
+                NodeID pib = problem->graph->getPartitionIndex(pb);
+                if (pa >= problem->graph->n() || pb >= problem->graph->n()) {
+                    LOG1 << "edge too large";
+                    continue;
+                }
+                if ((pia == term1 || pia == term2) &&
+                    (pib == term1 || pib == term2) && pia != pib) {
+                    for (EdgeID e : problem->graph->edges_of(pa)) {
+                        auto [t, w] = problem->graph->getEdge(pa, e);
+                        if (t == pb) {
+                            problem->graph->deleteEdge(pa, e);
+                            problem->deleted_weight += w;
+                        }
+                    }
+                }
+            }
+            problem->addFinishedPair(term1, term2, original_terminals.size());
+        }
+        LOG0 << "done " << t.elapsed();
+
         return std::make_tuple(improvement, f);
+    }
+
+    void fixLargestFlow() {
+        std::vector<NodeID>& solution = *sol;
+        size_t numflows = original_terminals.size();
+        LOG1 << numflows << " numflows";
+        std::vector<std::vector<FlowType> > blockConnectivity(numflows);
+        for (auto& b : blockConnectivity) {
+            b.resize(numflows, 0);
+        }
+
+        for (NodeID n : original_graph.nodes()) {
+            NodeID blockn = solution[n];
+            for (EdgeID e : original_graph.edges_of(n)) {
+                auto [t, w] = original_graph.getEdge(n, e);
+                if (solution[t] > blockn) {
+                    if (!fixed_vertex[n] || !fixed_vertex[t]) {
+                        blockConnectivity[blockn][solution[t]] += w;
+                    }
+                }
+            }
+        }
+
+        NodeID maxi = 0;
+        NodeID maxj = 0;
+        FlowType maxcon = 0;
+        for (size_t i = 0; i < blockConnectivity.size(); ++i) {
+            for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
+                FlowType connect = blockConnectivity[i][j];
+                if (connect > maxcon) {
+                    maxi = i;
+                    maxj = j;
+                    maxcon = connect;
+                }
+            }
+        }
+        LOG1 << "max connect from " << maxi << " to " << maxj << ": " << maxcon;
+        flowBetweenBlocks(maxi, maxj, true);
+        LOG1 << "flowed";
+        problem->addFinishedPair(maxi, maxj, original_terminals.size());
+        LOG1 << "addingt";
     }
 
     EdgeWeight flowLocalSearch() {
@@ -190,13 +265,17 @@ class local_search {
         //            return std::get<2>(n1) > std::get<2>(n2);
         //        });
 
+        EdgeWeight minconnect = 500000;
         for (auto [a, b, c] : neighboringBlocks) {
-            auto [impr, connect] = flowBetweenBlocks(a, b);
-            improvement += impr;
-            previousConnectivity[a][b] = connect;
+            if (!problem->isPairFinished(a, b, original_terminals.size())) {
+                auto [impr, connect] = flowBetweenBlocks(a, b, false);
+                improvement += impr;
+                previousConnectivity[a][b] = connect;
+                if (impr > 0 && connect < minconnect) {
+                    minconnect = connect;
+                }
+            }
         }
-
-        LOG0 << "no improvement in " << noImprovement;
         noImprovement.clear();
 
         return improvement;
@@ -315,10 +394,11 @@ class local_search {
         while (change_found) {
             timer t;
             change_found = false;
-            auto impFlow = flowLocalSearch();
-            total_improvement += impFlow;
             auto impGain = gainLocalSearch();
             total_improvement += impGain;
+            LOG1 << "gain " << t.elapsed();
+            auto impFlow = flowLocalSearch();
+            total_improvement += impFlow;
 
             if (impFlow > 0 || impGain > 0)
                 change_found = true;
@@ -326,6 +406,7 @@ class local_search {
             LOG1 << "local search iteration " << ls_iter++ << " complete - t:"
                  << t.elapsed() << " flow:" << impFlow << " gain:" << impGain;
         }
+        // fixLargestFlow();
         return total_improvement;
     }
 

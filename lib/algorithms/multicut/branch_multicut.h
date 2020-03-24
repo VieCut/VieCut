@@ -425,8 +425,9 @@ class branch_multicut {
                             contractIntoTerminal.insert(cp);
                         } else {
                             noContractVertices.insert(cp);
-                            problem->removeFinishedPair(lightest_oid,
-                                                        best_solution[i]);
+                            problem->removeFinishedPair(
+                                lightest_oid, best_solution[i],
+                                original_terminals.size());
                         }
                     }
                 }

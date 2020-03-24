@@ -58,11 +58,33 @@ class local_search {
         FlowType sol_weight = 0;
         timer t;
 
+        std::unordered_set<NodeID> terminalPositions;
+        for (auto p : problem->terminals) {
+            terminalPositions.insert(p.position);
+        }
+
+        NodeID c_t1 = problem->graph->getCurrentPosition(
+            problem->mapped(original_terminals[term1]));
+        NodeID c_t2 = problem->graph->getCurrentPosition(
+            problem->mapped(original_terminals[term2]));
+
+        NodeID smallterm = UNDEFINED_NODE;
+        if (problem->graph->getWeightedNodeDegree(c_t1) <
+            problem->graph->getWeightedNodeDegree(c_t2)) {
+            smallterm = c_t1;
+        } else {
+            smallterm = c_t2;
+        }
+
         NodeID id = 2;
         for (NodeID n : original_graph.nodes()) {
             if (solution[n] != term1 && solution[n] != term2)
                 continue;
-            if (fixed_vertex[n]) {
+
+            NodeID map = problem->mapped(n);
+            NodeID pos = problem->graph->getCurrentPosition(map);
+            if ((pos < problem->graph->n()) && (fixed_vertex[n] ||
+                                                pos == smallterm)) {
                 mapping[n] = (solution[n] == term1 ? 0 : 1);
             } else {
                 mapping[n] = id;
@@ -77,6 +99,7 @@ class local_search {
         for (NodeID n : original_graph.nodes()) {
             if (solution[n] != term1 && solution[n] != term2)
                 continue;
+
             NodeID m_n = mapping[n];
             for (EdgeID e : original_graph.edges_of(n)) {
                 auto [t, w] = original_graph.getEdge(n, e);

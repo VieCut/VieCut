@@ -412,7 +412,7 @@ class branch_multicut {
                     NodeID map = problem->mapped(i);
                     NodeID cp = problem->graph->getCurrentPosition(map);
                     if (best_solution[i] != lightest_oid) {
-                        contractVertices[cp] = best_solution[i];                        
+                        contractVertices[cp] = best_solution[i];
                     } else {
                         if (contractVertices[cp] != UNDEFINED_NODE) {
                             problem->removeFinishedPair(
@@ -421,7 +421,7 @@ class branch_multicut {
                         }
                     }
                 }
-                    
+
                 for (size_t i = 0; i < contractVertices.size(); ++i) {
                     if (contractVertices[i] == UNDEFINED_NODE) {
                         contractIntoTerminal.insert(i);

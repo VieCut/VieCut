@@ -414,9 +414,11 @@ class branch_multicut {
                     if (best_solution[i] == lightest_oid && cp != lightest_t
                         && noContractVertices.count(cp) == 0) {
                         bool dontContract = false;
+                        NodeID otherBlock = UNDEFINED_NODE;
                         for (auto v : problem->graph->containedVertices(cp)) {
                             if (best_solution[v] != lightest_oid) {
                                 dontContract = true;
+                                otherBlock = best_solution[v];
                                 break;
                             }
                         }
@@ -426,7 +428,7 @@ class branch_multicut {
                         } else {
                             noContractVertices.insert(cp);
                             problem->removeFinishedPair(
-                                lightest_oid, best_solution[i],
+                                lightest_oid, otherBlock,
                                 original_terminals.size());
                         }
                     }

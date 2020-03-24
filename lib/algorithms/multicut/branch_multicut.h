@@ -341,7 +341,7 @@ class branch_multicut {
                           << " queue.size:" << problems.size();
         }
 
-        if (false && problem->graph->n() * 2 < problem->graph->getOriginalNodes()) {
+        if (problem->graph->n() * 2 < problem->graph->getOriginalNodes()) {
             auto map = std::make_shared<std::vector<NodeID> >();
             for (size_t i = 0; i < problem->graph->getOriginalNodes(); ++i) {
                 map->emplace_back(problem->graph->getCurrentPosition(i));
@@ -405,45 +405,32 @@ class branch_multicut {
 
                 std::unordered_set<NodeID> contractIntoTerminal;
                 contractIntoTerminal.insert(lightest_t);
-                std::unordered_set<NodeID> noContractVertices;
+                std::vector<NodeID> contractVertices(problem->graph->n(),
+                                                     UNDEFINED_NODE);
+
                 for (size_t i = 0; i < best_solution.size(); ++i) {
-                    NodeID cp = problem->graph->getCurrentPosition(i);
-                    if (cp >= problem->graph->n())
-                        continue;
-
-                    if (best_solution[i] == lightest_oid && cp != lightest_t
-                        && noContractVertices.count(cp) == 0) {
-                        bool dontContract = false;
-                        NodeID otherBlock = UNDEFINED_NODE;
-                        for (auto v : problem->graph->containedVertices(cp)) {
-                            if (best_solution[v] != lightest_oid) {
-                                dontContract = true;
-                                otherBlock = best_solution[v];
-                                break;
-                            }
-                        }
-
-                        if (!dontContract) {
-                            contractIntoTerminal.insert(cp);
-                        } else {
-                            noContractVertices.insert(cp);
+                    NodeID map = problem->mapped(i);
+                    NodeID cp = problem->graph->getCurrentPosition(map);
+                    if (best_solution[i] != lightest_oid) {
+                        contractVertices[cp] = best_solution[i];                        
+                    } else {
+                        if (contractVertices[cp] != UNDEFINED_NODE) {
                             problem->removeFinishedPair(
-                                lightest_oid, otherBlock,
+                                lightest_oid, contractVertices[cp],
                                 original_terminals.size());
                         }
+                    }
+                }
+                    
+                for (size_t i = 0; i < contractVertices.size(); ++i) {
+                    if (contractVertices[i] == UNDEFINED_NODE) {
+                        contractIntoTerminal.insert(i);
                     }
                 }
 
                 NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
                 problem->graph->contractVertexSet(contractIntoTerminal);
                 lightest_t = problem->graph->getCurrentPosition(invtx);
-                size_t zero = 0;
-                for (auto v : best_solution) {
-                    if (v == 0) {
-                        zero++;
-                    }
-                }
-
                 graph_contraction::deleteTermEdges(problem, original_terminals);
                 EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
 

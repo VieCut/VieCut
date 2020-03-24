@@ -95,6 +95,18 @@ struct multicut_problem {
         finished_blockpairs.insert(combined);
     }
 
+    void removeFinishedPair(NodeID a, NodeID b, NodeID numOriginalTerminals) {
+        if (a == b) {
+            LOG1 << "Error. Pair between " << a << " and itself!";
+            exit(1);
+        }
+        NodeID min = std::min(a, b);
+        NodeID max = std::max(a, b);
+
+        NodeID combined = min * numOriginalTerminals + max;
+        finished_blockpairs.extract(combined);
+    }
+
     bool isPairFinished(NodeID a, NodeID b, NodeID numOriginalTerminals) {
         if (a == b) {
             LOG1 << "Error. Searching pair between " << a << " and itself!";

@@ -178,10 +178,10 @@ class kernelization_criteria {
     }
 
     union_find lowDegreeContraction(std::shared_ptr<multicut_problem> problem) {
-        union_find uf(problem->graph->number_of_nodes());
-        graph_contraction::setTerminals(problem, original_terminals);
-        std::vector<bool> terminals(problem->graph->number_of_nodes(), false);
         auto graph = problem->graph;
+        union_find uf(graph->number_of_nodes());
+        graph_contraction::setTerminals(problem, original_terminals);
+        std::vector<bool> terminals(graph->number_of_nodes(), false);
 
         for (const auto& p : problem->terminals) {
             terminals[p.position] = true;

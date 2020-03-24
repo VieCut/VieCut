@@ -341,7 +341,7 @@ class branch_multicut {
                           << " queue.size:" << problems.size();
         }
 
-        if (problem->graph->n() * 2 < problem->graph->getOriginalNodes()) {
+        if (false && problem->graph->n() * 2 < problem->graph->getOriginalNodes()) {
             auto map = std::make_shared<std::vector<NodeID> >();
             for (size_t i = 0; i < problem->graph->getOriginalNodes(); ++i) {
                 map->emplace_back(problem->graph->getCurrentPosition(i));
@@ -403,22 +403,30 @@ class branch_multicut {
                     }
                 }
 
-                std::unordered_set<NodeID> terminalpositions;
-                for (auto t : problem->terminals) {
-                    terminalpositions.insert(t.position);
-                }
-
                 std::unordered_set<NodeID> contractIntoTerminal;
                 contractIntoTerminal.insert(lightest_t);
+                std::unordered_set<NodeID> noContractVertices;
                 for (size_t i = 0; i < best_solution.size(); ++i) {
                     NodeID cp = problem->graph->getCurrentPosition(i);
-                    if (terminalpositions.count(cp) > 0
-                        || cp >= problem->graph->n())
+                    if (cp >= problem->graph->n())
                         continue;
-                    if (best_solution[i] == lightest_oid && cp != lightest_t) {
-                        contractIntoTerminal.insert(cp);
+
+                    if (best_solution[i] == lightest_oid && cp != lightest_t
+                        && noContractVertices.count(cp) == 0) {
+                        bool dontContract = false;
                         for (auto v : problem->graph->containedVertices(cp)) {
-                            best_solution[v] = lightest_oid;
+                            if (best_solution[v] != lightest_oid) {
+                                dontContract = true;
+                                break;
+                            }
+                        }
+
+                        if (!dontContract) {
+                            contractIntoTerminal.insert(cp);
+                        } else {
+                            noContractVertices.insert(cp);
+                            problem->removeFinishedPair(lightest_oid,
+                                                        best_solution[i]);
                         }
                     }
                 }

@@ -58,33 +58,12 @@ class local_search {
         FlowType sol_weight = 0;
         timer t;
 
-        std::unordered_set<NodeID> terminalPositions;
-        for (auto p : problem->terminals) {
-            terminalPositions.insert(p.position);
-        }
-
-        NodeID c_t1 = problem->graph->getCurrentPosition(
-            problem->mapped(original_terminals[term1]));
-        NodeID c_t2 = problem->graph->getCurrentPosition(
-            problem->mapped(original_terminals[term2]));
-
-        NodeID smallterm = UNDEFINED_NODE;
-        if (problem->graph->getWeightedNodeDegree(c_t1) <
-            problem->graph->getWeightedNodeDegree(c_t2)) {
-            smallterm = c_t1;
-        } else {
-            smallterm = c_t2;
-        }
-
         NodeID id = 2;
         for (NodeID n : original_graph.nodes()) {
             if (solution[n] != term1 && solution[n] != term2)
                 continue;
 
-            NodeID map = problem->mapped(n);
-            NodeID pos = problem->graph->getCurrentPosition(map);
-            if ((pos < problem->graph->n()) && (fixed_vertex[n] ||
-                                                pos == smallterm)) {
+            if (fixed_vertex[n]) {
                 mapping[n] = (solution[n] == term1 ? 0 : 1);
             } else {
                 mapping[n] = id;
@@ -202,7 +181,8 @@ class local_search {
             }
             problem->addFinishedPair(term1, term2, original_terminals.size());
         }
-        LOG0 << "done " << t.elapsed();
+        LOG0 << "done " << t.elapsed() << " improvement " << improvement
+             << " after " << f << " id " << id;
 
         return std::make_tuple(improvement, f);
     }
@@ -252,7 +232,6 @@ class local_search {
         std::vector<NodeID>& solution = *sol;
         std::vector<std::vector<FlowType> >
         blockConnectivity(original_terminals.size());
-
         EdgeWeight improvement = 0;
 
         std::vector<std::tuple<NodeID, NodeID, FlowType> > neighboringBlocks;
@@ -275,6 +254,8 @@ class local_search {
 
         for (size_t i = 0; i < blockConnectivity.size(); ++i) {
             for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
+                if (i >= j)
+                    continue;
                 FlowType connect = blockConnectivity[i][j];
                 if (connect != previousConnectivity[i][j]) {
                     neighboringBlocks.emplace_back(i, j, connect);
@@ -283,15 +264,16 @@ class local_search {
         }
 
         random_functions::permutate_vector_good(&neighboringBlocks);
-        //    std::sort(neighboringBlocks.begin(), neighboringBlocks.end(),
-        //        [](const auto& n1, const auto& n2) {
-        //            return std::get<2>(n1) > std::get<2>(n2);
-        //        });
+        /*std::sort(neighboringBlocks.begin(), neighboringBlocks.end(),
+            [](const auto& n1, const auto& n2) {
+                return std::get<2>(n1) > std::get<2>(n2);
+            });*/
 
         for (auto [a, b, c] : neighboringBlocks) {
             if (!problem->isPairFinished(a, b, original_terminals.size())) {
                 auto [impr, connect] = flowBetweenBlocks(a, b, false);
                 improvement += impr;
+                sLOG0 << "out" << a << b << impr << connect;
                 previousConnectivity[a][b] = connect;
             }
         }
@@ -409,22 +391,44 @@ class local_search {
     FlowType improveSolution() {
         FlowType total_improvement = 0;
         bool change_found = true;
-        size_t ls_iter = 0;
         while (change_found) {
             timer t;
             change_found = false;
             auto impGain = gainLocalSearch();
             total_improvement += impGain;
-            LOG1 << "gain " << t.elapsed();
+            LOG1 << "gain " << t.elapsed() << "s impro " << impGain;
+
+            if (impGain > 0)
+                change_found = true;
+        }
+
+        change_found = true;
+
+        while (change_found) {
+            timer t;
+            change_found = false;
             auto impFlow = flowLocalSearch();
             total_improvement += impFlow;
 
-            if (impFlow > 0 || impGain > 0)
+            if (impFlow > 0)
                 change_found = true;
 
-            LOG1 << "local search iteration " << ls_iter++ << " complete - t:"
-                 << t.elapsed() << " flow:" << impFlow << " gain:" << impGain;
+            LOG1 << "flow " << t.elapsed() << "s impro " << impFlow;
         }
+
+        change_found = true;
+
+        while (change_found) {
+            timer t;
+            change_found = false;
+            auto impGain = gainLocalSearch();
+            total_improvement += impGain;
+            LOG1 << "gain " << t.elapsed() << "s impro " << impGain;
+
+            if (impGain > 0)
+                change_found = true;
+        }
+
         // fixLargestFlow();
         return total_improvement;
     }

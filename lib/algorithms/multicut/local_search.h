@@ -273,7 +273,7 @@ class local_search {
             if (!problem->isPairFinished(a, b, original_terminals.size())) {
                 auto [impr, connect] = flowBetweenBlocks(a, b, false);
                 improvement += impr;
-                sLOG0 << "out" << a << b << impr << connect;
+                sLOG0 << "out" << a << b << c << impr << connect;
                 previousConnectivity[a][b] = connect;
             }
         }

@@ -722,12 +722,11 @@ class branch_multicut {
             }
 
             if (new_p->lower_bound < global_upper_bound) {
+                size_t thr = problems.addProblem(new_p, thread_id);
+                q_cv[thr].notify_all();
                 if (new_p->upper_bound < non_ls_global_upper_bound) {
                     updateBestSolution(new_p);
                 }
-
-                size_t thr = problems.addProblem(new_p, thread_id);
-                q_cv[thr].notify_all();
             }
         }
     }
@@ -844,14 +843,15 @@ class branch_multicut {
                            problems.size() == 0, thread_id);
         problem->upper_bound = problem->deleted_weight + wgt;
 
+        if (reIntroduce) {
+            problems.addProblem(problem, thread_id);
+        }
+
         if (problem->upper_bound < non_ls_global_upper_bound) {
             for (const auto& n : problem->graph->nodes()) {
                 problem->graph->setPartitionIndex(n, result[n]);
             }
             updateBestSolution(problem);
-        }
-        if (reIntroduce) {
-            problems.addProblem(problem, thread_id);
         }
     }
 #else

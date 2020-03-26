@@ -5,7 +5,7 @@
  *
  ******************************************************************************
  * Copyright (C) 2018-2019 Alexander Noe <alexander.noe@univie.ac.at>
- * 
+ *
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
@@ -102,9 +102,9 @@ int main(int argn, char** argv) {
             exit(-1);
         }
 
-	LOG1 << config->graph_filename << " terminals:"
-	     << config->num_terminals << " contraction:"
-	     << config->preset_percentage; 
+        LOG1 << config->graph_filename << " terminals:"
+             << config->num_terminals << " contraction:"
+             << config->preset_percentage;
         t.restart();
         flow = mc.multicut(G, terminals, config->num_terminals);
 

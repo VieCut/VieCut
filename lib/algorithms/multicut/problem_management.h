@@ -10,8 +10,12 @@
  *****************************************************************************/
 #pragma once
 
+#include <algorithm>
 #include <chrono>
+#include <limits>
 #include <memory>
+#include <unordered_set>
+#include <vector>
 
 #include "algorithms/multicut/measurements.h"
 #include "algorithms/multicut/multicut_problem.h"
@@ -205,10 +209,11 @@ class problem_management {
                 return;
             }
 
-            if (new_p->lower_bound < global_upper_bound) {
-                size_t thr = problems.addProblem(new_p, thread_id);
+            if (checkProblem(new_p)) {
+                size_t thr = problems.addProblem(
+                    new_p, thread_id, runLocalSearch(new_p));
                 q_cv[thr].notify_all();
-                if (new_p->upper_bound < non_ls_global_upper_bound) {
+                if (runLocalSearch(new_p)) {
                     findBestSolution(new_p);
                 }
             }
@@ -334,8 +339,9 @@ class problem_management {
         problems.prepareQueue(thread_id, global_upper_bound);
     }
 
-    void addProblem(std::shared_ptr<multicut_problem> p, size_t thread_id) {
-        problems.addProblem(p, thread_id);
+    void addProblem(std::shared_ptr<multicut_problem> p,
+                    size_t thread_id, bool preferLocal) {
+        problems.addProblem(p, thread_id, preferLocal);
     }
 
     bool checkProblem(std::shared_ptr<multicut_problem> problem) {
@@ -364,7 +370,7 @@ class problem_management {
         }
     }
 
-    bool q(size_t thread_id) {
+    bool leaveWaitState(size_t thread_id) {
         return !queueEmpty(thread_id) || is_finished || (allThreadsIdle());
     }
 
@@ -373,7 +379,7 @@ class problem_management {
         q_cv[thread_id].wait_for(
             lck, 1000ms,
             [this, thread_id] {
-                return q(thread_id);
+                return leaveWaitState(thread_id);
             });
     }
 

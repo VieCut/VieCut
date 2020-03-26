@@ -92,9 +92,9 @@ class branch_multicut {
         std::shared_ptr<multicut_problem> problem) {
         if (mpi_rank == 0) {
             mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
-            pm.addProblem(problem, 0);
+            pm.addProblem(problem, 0, false);
+            pm.updateBound(problem->upper_bound);
         }
-        updateBestSolution(problem);
 
         std::vector<std::thread> threads;
         for (size_t i = 0; i < num_threads; ++i) {
@@ -107,6 +107,10 @@ class branch_multicut {
                 pthread_setaffinity_np(
                     threads[i].native_handle(), sizeof(cpu_set_t), &cpuset);
             }
+        }
+
+        if (mpi_rank == 0) {
+            updateBestSolution(problem);
         }
 
         for (auto& t : threads) {
@@ -208,7 +212,7 @@ class branch_multicut {
                                           4000, MPI_COMM_WORLD, &rq);
                             }
                             auto p = mpic.recvProblem(std::get<int>(src));
-                            pm.addProblem(p, thread_id);
+                            pm.addProblem(p, thread_id, true);
                         } else {
                             if (std::get<bool>(src)) {
                                 pm.setFinish();
@@ -535,7 +539,7 @@ class branch_multicut {
         problem->upper_bound = problem->deleted_weight + wgt;
 
         if (reIntroduce) {
-            pm.addProblem(problem, thread_id);
+            pm.addProblem(problem, thread_id, !pm.runLocalSearch(problem));
         }
 
         if (pm.runLocalSearch(problem)) {

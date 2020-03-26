@@ -134,9 +134,13 @@ class per_thread_problem_queue {
         return currentProblem;
     }
 
-    size_t addProblem(problemPointer p, size_t local_id) {
+    size_t addProblem(problemPointer p, size_t local_id, bool preferLocal) {
         if (sizes[local_id].second) {
             sizes[local_id].second = false;
+        }
+
+        if (!preferLocal) {
+            sizes[local_id].second = true;
         }
 
         auto min =
@@ -146,10 +150,14 @@ class per_thread_problem_queue {
                                  < e2.first + e2.second;
                              });
 
+        if (!preferLocal) {
+            sizes[local_id].second = false;
+        }
+
         size_t min_index = min - sizes.begin();
         size_t min_element = min->first;
 
-        if (min_element == sizes[local_id].first) {
+        if (min_element == sizes[local_id].first && preferLocal) {
             min_index = local_id;
         }
 

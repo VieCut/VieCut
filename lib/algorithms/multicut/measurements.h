@@ -10,8 +10,10 @@
  *****************************************************************************/
 #pragma once
 
-#include <common/definitions.h>
-#include <data_structure/mutable_graph.h>
+#include <vector>
+
+#include "common/definitions.h"
+#include "data_structure/mutable_graph.h"
 
 class measurements {
  public:

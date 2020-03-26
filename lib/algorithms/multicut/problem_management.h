@@ -29,7 +29,11 @@ using namespace std::chrono_literals;
 class problem_management {
  private:
     static const bool testing = false;
+#ifndef NDEBUG
+    static const bool debug = true;
+#else
     static const bool debug = false;
+#endif
 
     const std::vector<NodeID>& original_terminals;
     const mutable_graph& original_graph;
@@ -47,6 +51,7 @@ class problem_management {
     FlowType non_ls_global_upper_bound;
 
     std::vector<NodeID> best_solution;
+    measurements msm;
 
  public:
     problem_management(const mutable_graph& original_graph,
@@ -64,7 +69,8 @@ class problem_management {
           is_finished(false),
           idle_threads(0),
           global_upper_bound(std::numeric_limits<FlowType>::max()),
-          non_ls_global_upper_bound(std::numeric_limits<FlowType>::max()) {
+          non_ls_global_upper_bound(std::numeric_limits<FlowType>::max()),
+          msm(this->original_graph, this->original_terminals) {
         best_solution.resize(original_graph.number_of_nodes());
     }
 
@@ -186,72 +192,52 @@ class problem_management {
         }
     }
 
-    void processNewProblem(std::shared_ptr<multicut_problem> new_p,
-                           size_t thread_id) {
-        if (new_p->terminals.size() < 2
-            && new_p->upper_bound < non_ls_global_upper_bound) {
-            findBestSolution(new_p);
+    std::optional<FlowType> processNewProblem(
+        std::shared_ptr<multicut_problem> new_p, size_t thread_id) {
+        if (new_p->terminals.size() < 2 && runLocalSearch(new_p)) {
+            auto sol = msm.getSolution(new_p);
+            return findBestSolution(&sol);
         }
 
         if (new_p->terminals.size() == 2) {
             mf.maximumSTFlow(new_p);
-            if (new_p->upper_bound < non_ls_global_upper_bound) {
-                findBestSolution(new_p);
+            if (runLocalSearch(new_p)) {
+                auto sol = msm.getSolution(new_p);
+                return findBestSolution(&sol);
             }
-        } else {
-            mf.maximumIsolatingFlow(new_p, thread_id, problems.size() == 0);
-            graph_contraction::deleteTermEdges(new_p, original_terminals);
-            if (new_p->graph->m() == 0) {
-                new_p->upper_bound = new_p->deleted_weight;
-                if (new_p->upper_bound < non_ls_global_upper_bound) {
-                    findBestSolution(new_p);
-                }
-                return;
-            }
+            return std::nullopt;
+        }
 
-            if (checkProblem(new_p)) {
-                size_t thr = problems.addProblem(
-                    new_p, thread_id, runLocalSearch(new_p));
-                q_cv[thr].notify_all();
-                if (runLocalSearch(new_p)) {
-                    findBestSolution(new_p);
-                }
+        mf.maximumIsolatingFlow(new_p, thread_id, problems.size() == 0);
+        graph_contraction::deleteTermEdges(new_p, original_terminals);
+        if (new_p->graph->m() == 0) {
+            new_p->upper_bound = new_p->deleted_weight;
+            if (runLocalSearch(new_p)) {
+                auto sol = msm.getSolution(new_p);
+                return findBestSolution(&sol);
+            }
+            return std::nullopt;
+        }
+
+        if (checkProblem(new_p)) {
+            size_t thr = problems.addProblem(
+                new_p, thread_id, runLocalSearch(new_p));
+            q_cv[thr].notify_all();
+            if (runLocalSearch(new_p)) {
+                auto sol = msm.getSolution(new_p);
+                return findBestSolution(&sol);
             }
         }
+        return std::nullopt;
     }
 
     std::optional<FlowType> findBestSolution(
-        std::shared_ptr<multicut_problem> problem) {
-        if (!runLocalSearch(problem))
+        std::vector<NodeID>* current_solution) {
+        local_search ls(original_graph, original_terminals,
+                        fixed_vertex, current_solution);
+        FlowType prev_gub = msm.flowValue(false, *current_solution);
+        if (prev_gub > non_ls_global_upper_bound)
             return std::nullopt;
-        auto cfg = configuration::getConfig();
-        std::vector<NodeID> current_solution(original_graph.n(), 0);
-        std::vector<size_t> blocksize(original_terminals.size(), 0);
-        for (NodeID n = 0; n < current_solution.size(); ++n) {
-            NodeID n_coarse = problem->mapped(n);
-            auto t = problem->graph->getCurrentPosition(n_coarse);
-            current_solution[n] = problem->graph->getPartitionIndex(t);
-            blocksize[current_solution[n]]++;
-        }
-
-        if (debug) {
-            std::vector<size_t> term_in_block(original_terminals.size(), 0);
-            for (const auto& t : original_terminals) {
-                ++term_in_block[current_solution[t]];
-            }
-
-            for (size_t i = 0; i < term_in_block.size(); ++i) {
-                if (term_in_block[i] != 1) {
-                    LOG1 << term_in_block[i] << " terminals on block " << i;
-                    exit(1);
-                }
-            }
-        }
-
-        local_search ls(problem, original_graph, original_terminals,
-                        fixed_vertex, &current_solution);
-        FlowType prev_gub = measurements::flowValue(
-            original_graph, original_terminals, false, current_solution);
         FlowType total_improvement = ls.improveSolution();
         FlowType ls_bound = prev_gub - total_improvement;
 
@@ -260,8 +246,8 @@ class problem_management {
             non_ls_global_upper_bound = prev_gub;
 
             bestsol_mutex.lock();
-            for (size_t i = 0; i < current_solution.size(); ++i) {
-                best_solution[i] = current_solution[i];
+            for (size_t i = 0; i < current_solution->size(); ++i) {
+                best_solution[i] = (*current_solution)[i];
             }
             bestsol_mutex.unlock();
             return ls_bound;

@@ -10,16 +10,55 @@
  *****************************************************************************/
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
 
 class measurements {
+ private:
+#ifndef NDEBUG
+    static const bool debug = true;
+#else
+    static const bool debug = false;
+#endif
+    const mutable_graph& original_graph;
+    const std::vector<NodeID>& original_terminals;
+
  public:
-    static FlowType flowValue(const mutable_graph& original_graph,
-                              const std::vector<NodeID>& original_terminals,
-                              bool verbose, const std::vector<NodeID>& sol) {
+    measurements(const mutable_graph& original_graph,
+                 const std::vector<NodeID>& original_terminals)
+        : original_graph(original_graph),
+          original_terminals(original_terminals) { }
+
+    std::vector<NodeID> getSolution(std::shared_ptr<multicut_problem> problem) {
+        std::vector<NodeID> current_solution(original_graph.n(), 0);
+        std::vector<size_t> blocksize(original_terminals.size(), 0);
+        for (NodeID n = 0; n < current_solution.size(); ++n) {
+            NodeID n_coarse = problem->mapped(n);
+            auto t = problem->graph->getCurrentPosition(n_coarse);
+            current_solution[n] = problem->graph->getPartitionIndex(t);
+            blocksize[current_solution[n]]++;
+        }
+
+        if (debug) {
+            std::vector<size_t> term_in_block(original_terminals.size(), 0);
+            for (const auto& t : original_terminals) {
+                ++term_in_block[current_solution[t]];
+            }
+
+            for (size_t i = 0; i < term_in_block.size(); ++i) {
+                if (term_in_block[i] != 1) {
+                    LOG1 << term_in_block[i] << " terminals on block " << i;
+                    exit(1);
+                }
+            }
+        }
+        return current_solution;
+    }
+
+    FlowType flowValue(bool verbose, const std::vector<NodeID>& sol) {
         std::vector<size_t> block_sizes(original_terminals.size(), 0);
 
         EdgeWeight total_weight = 0;

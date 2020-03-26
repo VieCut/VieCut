@@ -78,6 +78,8 @@ class branch_multicut {
           mf(original_terminals),
           pm(this->original_graph, this->original_terminals,
              this->fixed_vertex),
+          msm(this->original_graph, this->original_terminals),
+          last_sent_flow(std::numeric_limits<FlowType>::max()),
           log_timer(0) {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -90,8 +92,10 @@ class branch_multicut {
 
     std::pair<std::vector<NodeID>, size_t> find_multiterminal_cut(
         std::shared_ptr<multicut_problem> problem) {
+        std::vector<NodeID> sol;
         if (mpi_rank == 0) {
             mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
+            sol = msm.getSolution(problem);
             pm.addProblem(problem, 0, false);
             pm.updateBound(problem->upper_bound);
         }
@@ -110,7 +114,7 @@ class branch_multicut {
         }
 
         if (mpi_rank == 0) {
-            updateBestSolution(problem);
+            updateBestSolution(&sol);
         }
 
         for (auto& t : threads) {
@@ -161,8 +165,7 @@ class branch_multicut {
         MPI_Bcast(&best_solution.front(), bsize, MPI_INT,
                   global_bcast_id, MPI_COMM_WORLD);
 
-        total_weight = measurements::flowValue(
-            original_graph, original_terminals, false, best_solution);
+        total_weight = msm.flowValue(false, best_solution);
         VIECUT_ASSERT_LEQ(total_weight, pm.bestCut());
 
         return std::make_pair(best_solution, total_weight);
@@ -172,6 +175,10 @@ class branch_multicut {
     void pollWork(size_t thread_id) {
         bool im_idle = false;
         while (!pm.finished()) {
+            if (last_sent_flow > pm.bestCut()) {
+                last_sent_flow = pm.bestCut();
+                mpic.broadcastImprovedSolution(last_sent_flow);
+            }
             pm.prepareQueue(thread_id);
             if (!pm.queueEmpty(thread_id) || pm.haveASendProblem()) {
                 if (thread_id == 0) {
@@ -472,8 +479,8 @@ class branch_multicut {
         }
     }
 
-    void updateBestSolution(std::shared_ptr<multicut_problem> problem) {
-        auto s = pm.findBestSolution(problem);
+    void updateBestSolution(std::vector<NodeID>* sol) {
+        auto s = pm.findBestSolution(sol);
         if (s.has_value()) {
             mpic.broadcastImprovedSolution(s.value());
         }
@@ -504,7 +511,8 @@ class branch_multicut {
         graph_contraction::deleteTermEdges(problem, original_terminals);
         if (!problem->graph->number_of_edges()) {
             problem->upper_bound = problem->deleted_weight;
-            updateBestSolution(problem);
+            auto sol = msm.getSolution(problem);
+            updateBestSolution(&sol);
             return;
         }
         pm.branch(problem, thread_id);
@@ -538,15 +546,16 @@ class branch_multicut {
                            pm.numProblems() == 0, thread_id);
         problem->upper_bound = problem->deleted_weight + wgt;
 
-        if (reIntroduce) {
-            pm.addProblem(problem, thread_id, !pm.runLocalSearch(problem));
-        }
-
         if (pm.runLocalSearch(problem)) {
             for (const auto& n : problem->graph->nodes()) {
                 problem->graph->setPartitionIndex(n, result[n]);
             }
-            updateBestSolution(problem);
+            auto sol = msm.getSolution(problem);
+            updateBestSolution(&sol);
+        }
+
+        if (reIntroduce) {
+            pm.addProblem(problem, thread_id, !pm.runLocalSearch(problem));
         }
     }
 #else
@@ -571,6 +580,8 @@ class branch_multicut {
     kernelization_criteria kc;
     maximum_flow mf;
     problem_management pm;
+    measurements msm;
+    FlowType last_sent_flow;
     std::atomic<double> log_timer;
 
 #ifdef USE_GUROBI

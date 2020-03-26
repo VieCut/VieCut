@@ -23,7 +23,6 @@
 
 class local_search {
  private:
-    std::shared_ptr<multicut_problem> problem;
     const mutable_graph& original_graph;
     const std::vector<NodeID>& original_terminals;
     const std::vector<bool>& fixed_vertex;
@@ -33,13 +32,11 @@ class local_search {
     std::vector<NodeID> noImprovement;
 
  public:
-    local_search(std::shared_ptr<multicut_problem> problem,
-                 const mutable_graph& original_graph,
+    local_search(const mutable_graph& original_graph,
                  const std::vector<NodeID>& original_terminals,
                  const std::vector<bool>& fixed_vertex,
                  std::vector<NodeID>* sol)
-        : problem(problem),
-          original_graph(original_graph),
+        : original_graph(original_graph),
           original_terminals(original_terminals),
           fixed_vertex(fixed_vertex),
           sol(sol),
@@ -50,8 +47,8 @@ class local_search {
     }
 
  private:
-    std::tuple<EdgeWeight, FlowType>
-    flowBetweenBlocks(NodeID term1, NodeID term2, bool fixEdges) {
+    std::tuple<EdgeWeight, FlowType> flowBetweenBlocks(NodeID term1,
+                                                       NodeID term2) {
         std::vector<NodeID>& solution = *sol;
         std::vector<NodeID> mapping(original_graph.n(), UNDEFINED_NODE);
         auto G = std::make_shared<mutable_graph>();
@@ -155,77 +152,10 @@ class local_search {
             }
         }
 
-        if ((f <= 5 || fixEdges) && configuration::getConfig()->inexact) {
-            // inexact: let's just say these are optimal and delete the edges
-            for (auto [a, b] : edgesOnOriginal) {
-                LOG0 << "edge " << a << " " << b;
-                NodeID pa = problem->graph->getCurrentPosition(a);
-                NodeID pb = problem->graph->getCurrentPosition(b);
-
-                NodeID pia = problem->graph->getPartitionIndex(pa);
-                NodeID pib = problem->graph->getPartitionIndex(pb);
-                if (pa >= problem->graph->n() || pb >= problem->graph->n()) {
-                    LOG1 << "edge too large";
-                    continue;
-                }
-                if ((pia == term1 || pia == term2) &&
-                    (pib == term1 || pib == term2) && pia != pib) {
-                    for (EdgeID e : problem->graph->edges_of(pa)) {
-                        auto [t, w] = problem->graph->getEdge(pa, e);
-                        if (t == pb) {
-                            problem->graph->deleteEdge(pa, e);
-                            problem->deleted_weight += w;
-                        }
-                    }
-                }
-            }
-            problem->addFinishedPair(term1, term2, original_terminals.size());
-        }
         LOG0 << "done " << t.elapsed() << " improvement " << improvement
              << " after " << f << " id " << id;
 
         return std::make_tuple(improvement, f);
-    }
-
-    void fixLargestFlow() {
-        std::vector<NodeID>& solution = *sol;
-        size_t numflows = original_terminals.size();
-        LOG1 << numflows << " numflows";
-        std::vector<std::vector<FlowType> > blockConnectivity(numflows);
-        for (auto& b : blockConnectivity) {
-            b.resize(numflows, 0);
-        }
-
-        for (NodeID n : original_graph.nodes()) {
-            NodeID blockn = solution[n];
-            for (EdgeID e : original_graph.edges_of(n)) {
-                auto [t, w] = original_graph.getEdge(n, e);
-                if (solution[t] > blockn) {
-                    if (!fixed_vertex[n] || !fixed_vertex[t]) {
-                        blockConnectivity[blockn][solution[t]] += w;
-                    }
-                }
-            }
-        }
-
-        NodeID maxi = 0;
-        NodeID maxj = 0;
-        FlowType maxcon = 0;
-        for (size_t i = 0; i < blockConnectivity.size(); ++i) {
-            for (size_t j = 0; j < blockConnectivity[i].size(); ++j) {
-                FlowType connect = blockConnectivity[i][j];
-                if (connect > maxcon) {
-                    maxi = i;
-                    maxj = j;
-                    maxcon = connect;
-                }
-            }
-        }
-        LOG1 << "max connect from " << maxi << " to " << maxj << ": " << maxcon;
-        flowBetweenBlocks(maxi, maxj, true);
-        LOG1 << "flowed";
-        problem->addFinishedPair(maxi, maxj, original_terminals.size());
-        LOG1 << "addingt";
     }
 
     EdgeWeight flowLocalSearch() {
@@ -270,12 +200,10 @@ class local_search {
             });*/
 
         for (auto [a, b, c] : neighboringBlocks) {
-            if (!problem->isPairFinished(a, b, original_terminals.size())) {
-                auto [impr, connect] = flowBetweenBlocks(a, b, false);
-                improvement += impr;
-                sLOG0 << "out" << a << b << c << impr << connect;
-                previousConnectivity[a][b] = connect;
-            }
+            auto [impr, connect] = flowBetweenBlocks(a, b);
+            improvement += impr;
+            sLOG0 << "out" << a << b << c << impr << connect;
+            previousConnectivity[a][b] = connect;
         }
         noImprovement.clear();
 
@@ -291,18 +219,11 @@ class local_search {
         std::vector<std::pair<NodeID, int64_t> > nextBest(
             original_graph.n(), { UNDEFINED_NODE, 0 });
 
-        std::vector<bool> isTerm(problem->graph->n(), false);
-        for (auto t : problem->terminals) {
-            isTerm[t.position] = true;
-        }
-
         random_functions::permutate_vector_good(&permute, true);
 
         for (NodeID v : original_graph.nodes()) {
             NodeID n = permute[v];
-            NodeID o = problem->mapped(n);
-            NodeID pos = problem->graph->getCurrentPosition(o);
-            if (fixed_vertex[n] || !inBoundary[n] || isTerm[pos])
+            if (fixed_vertex[n] || !inBoundary[n])
                 continue;
 
             std::vector<EdgeWeight> blockwgt(
@@ -431,33 +352,5 @@ class local_search {
 
         // fixLargestFlow();
         return total_improvement;
-    }
-
-    void contractMovedVertices() {
-        std::vector<std::unordered_set<NodeID> > ctrSets(
-            original_terminals.size());
-        std::vector<bool> isTerm(problem->graph->n(), false);
-
-        for (auto t : problem->terminals) {
-            ctrSets[t.original_id].insert(t.position);
-            isTerm[t.position] = true;
-        }
-
-        for (size_t i = 0; i < ctrSets.size(); ++i) {
-            for (auto [v, nb] : movedToNewBlock) {
-                if (nb == i) {
-                    NodeID m = problem->mapped(v);
-                    NodeID curr = problem->graph->getCurrentPosition(m);
-                    if (!isTerm[curr]) {
-                        ctrSets[nb].insert(curr);
-                    }
-                }
-            }
-            if (ctrSets[i].size() > 1) {
-                problem->graph->contractVertexSet(ctrSets[i]);
-            }
-            graph_contraction::setTerminals(problem, original_terminals);
-        }
-        graph_contraction::deleteTermEdges(problem, original_terminals);
     }
 };

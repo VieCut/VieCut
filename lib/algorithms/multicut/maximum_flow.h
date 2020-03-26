@@ -297,8 +297,6 @@ class maximum_flow {
         problem->upper_bound = problem->deleted_weight + sum - maximum;
         problem->lower_bound = problem->deleted_weight + tlx::div_ceil(sum, 2);
 
-        // findSubproblems(problem);
-
         graph_contraction::setTerminals(problem, original_terminals);
     }
 

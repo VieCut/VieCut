@@ -18,7 +18,6 @@ class measurements {
     static FlowType flowValue(const mutable_graph& original_graph,
                               const std::vector<NodeID>& original_terminals,
                               bool verbose, const std::vector<NodeID>& sol) {
-        LOG1 << "measure " << original_terminals.size();
         std::vector<size_t> block_sizes(original_terminals.size(), 0);
 
         EdgeWeight total_weight = 0;

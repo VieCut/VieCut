@@ -527,7 +527,7 @@ class branch_multicut {
             presets[pos] = i;
         }
 
-        LOG1 << "start with deleted " << problem->deleted_weight;
+        LOG1 << "start ILP with deleted " << problem->deleted_weight;
 
         auto [result, wgt, reIntroduce] =
             ilp.computeIlp(problem, presets, original_terminals.size(),

@@ -220,11 +220,16 @@ class problem_management {
         }
 
         if (checkProblem(new_p)) {
-            size_t thr = problems.addProblem(
-                new_p, thread_id, runLocalSearch(new_p));
-            q_cv[thr].notify_all();
+            std::vector<NodeID> sol;
+            bool runLS = false;
             if (runLocalSearch(new_p)) {
-                auto sol = msm.getSolution(new_p);
+                sol = msm.getSolution(new_p);
+                runLS = true;
+            }
+            size_t thr = problems.addProblem(new_p, thread_id,
+                                             runLocalSearch(new_p));
+            q_cv[thr].notify_all();
+            if (runLS) {
                 return findBestSolution(&sol);
             }
         }

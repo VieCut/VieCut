@@ -114,6 +114,9 @@ class multiterminal_cut {
                 terminals.emplace_back(problem.terminals[i].position);
             }
 
+            configuration::getConfig()->orign = problems[p].graph->n();
+            configuration::getConfig()->origm = problems[p].graph->m();
+
             branch_multicut bmc(originalGraphs[p], terminals, fixedVertex[p]);
             auto p_pointer = std::make_shared<multicut_problem>(problem);
             auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);

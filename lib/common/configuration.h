@@ -60,6 +60,11 @@ class configuration {
     bool multibranch = true;
     bool inexact = false;
 
+    size_t kernelization_variant = 0;
+    bool endBeforeBranch = false;
+    NodeID orign;
+    EdgeID origm;
+
     // minimum cut parameters
     bool save_cut = false;
     std::string algorithm;

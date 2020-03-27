@@ -90,7 +90,8 @@ class maximum_flow {
     }
 
     union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem,
-                               bool parallel) {
+                               bool parallel,
+                               const std::vector<bool>& active) {
         union_find uf(problem->graph->n());
         std::unordered_set<NodeID> previous;
 
@@ -120,7 +121,8 @@ class maximum_flow {
             while (((max >= (problem->graph->getWeightedNodeDegree(r)
                              + num_tries++))
                     || uf.Find(r) != r
-                    || previous.count(r) > 0)
+                    || previous.count(r) > 0
+                    || !active[r])
                    && num_tries < max) {
                 r = random_functions::nextInt(0, problem->graph->n() - 1);
             }

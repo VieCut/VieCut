@@ -53,6 +53,8 @@ int main(int argn, char** argv) {
                  "Use terminals with high distance from each other");
     cmdl.add_string('e', "edge_selection", config->edge_selection,
                     "edge selection rule");
+    cmdl.add_bool('E', "endBeforeBranch", config->endBeforeBranch,
+                  "End before first branch, print graph stats");
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
     cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
@@ -73,15 +75,14 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('s', "seed", config->seed, "random seed");
     cmdl.add_stringlist('t', "terminal", config->term_strings,
                         "add terminal vertex");
+    cmdl.add_size_t('v', "kernelization_variant", config->kernelization_variant,
+                    "enable / disable kernelization functions (0-7)");
     cmdl.add_flag('w', "write_solution", config->write_solution,
                   "Print best solution");
     cmdl.add_flag('X', "inexact", config->inexact, "Apply inexact heuristics");
 
     if (!cmdl.process(argn, argv))
         return -1;
-
-    config->random_flows = config->threads / 2;
-    config->high_distance_flows = config->threads / 2;
 
     random_functions::setSeed(config->seed);
 

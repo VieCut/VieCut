@@ -114,7 +114,7 @@ class branch_multicut {
             }
         }
 
-        if (mpi_rank == 0) {
+        if (mpi_rank == 0 && !configuration::getConfig()->endBeforeBranch) {
             updateBestSolution(&sol, numTerminals);
         }
 
@@ -363,6 +363,17 @@ class branch_multicut {
             c->differences_set = true;
         }
 #endif
+
+        if (c->endBeforeBranch) {
+            LOG1 << "RESULT graph=" << c->graph_filename
+                 << " time=" << total_time.elapsed()
+                 << " variant=" << c->kernelization_variant
+                 << " n=" << problem->graph->n()
+                 << " orign=" << c->orign
+                 << " m=" << problem->graph->m()
+                 << " origm=" << c->origm;
+            exit(1);
+        }
 
         auto path = c->first_branch_path;
         if (path != "") {

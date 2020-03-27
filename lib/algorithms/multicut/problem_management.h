@@ -51,6 +51,7 @@ class problem_management {
     FlowType non_ls_global_upper_bound;
 
     std::vector<NodeID> best_solution;
+    bool bestSolutionInitialized;
     measurements msm;
 
  public:
@@ -70,6 +71,7 @@ class problem_management {
           idle_threads(0),
           global_upper_bound(std::numeric_limits<FlowType>::max()),
           non_ls_global_upper_bound(std::numeric_limits<FlowType>::max()),
+          bestSolutionInitialized(false),
           msm(this->original_graph, this->original_terminals) {
         best_solution.resize(original_graph.number_of_nodes());
     }
@@ -121,7 +123,9 @@ class problem_management {
         }
     }
 
-    std::vector<NodeID> getBestSolution() {
+    std::optional<std::vector<NodeID> > getBestSolution() {
+        if (!bestSolutionInitialized)
+            return std::nullopt;
         bestsol_mutex.lock();
         std::vector<NodeID> ret = best_solution;
         bestsol_mutex.unlock();
@@ -254,6 +258,7 @@ class problem_management {
             for (size_t i = 0; i < current_solution->size(); ++i) {
                 best_solution[i] = (*current_solution)[i];
             }
+            initalizeBestSolution();
             bestsol_mutex.unlock();
             return ls_bound;
         }
@@ -353,6 +358,10 @@ class problem_management {
 
     void notifyThread(size_t thread_id) {
         q_cv[thread_id].notify_all();
+    }
+
+    void initalizeBestSolution() {
+        bestSolutionInitialized = true;
     }
 
     void notifyAllThreads() {

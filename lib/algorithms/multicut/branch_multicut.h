@@ -160,8 +160,18 @@ class branch_multicut {
         size_t global_bcast_id = local_bcast_id;
         MPI_Allreduce(&local_bcast_id, &global_bcast_id, 1, MPI_LONG,
                       MPI_MIN, MPI_COMM_WORLD);
-        auto best_solution = pm.getBestSolution();
-        size_t bsize = best_solution.size();
+        auto bs = pm.getBestSolution();
+        std::vector<NodeID> best_solution;
+
+        size_t bsize;
+        if (bs.has_value()) {
+            best_solution = bs.value();
+            bsize = best_solution.size();
+        } else {
+            bsize = UNDEFINED_NODE;
+            best_solution.resize(original_graph.n());
+        }
+
         MPI_Bcast(&best_solution.front(), bsize, MPI_INT,
                   global_bcast_id, MPI_COMM_WORLD);
 
@@ -360,43 +370,105 @@ class branch_multicut {
         }
 
         if (c->inexact) {
-            size_t lowestTerminals =
-                std::ceil(static_cast<double>(problem->terminals.size()) *
-                          c->removeTerminalsBeforeBranch);
+            deleteLowestDegTerminals(problem);
+            contractHeaviestTerminal(problem);
+        }
 
-            for (size_t i = 0; i < lowestTerminals; ++i) {
-                NodeID lightest_t = 0;
-                NodeID lightest_oid = 0;
-                EdgeWeight lightest_weight = UNDEFINED_FLOW;
+        if (branchOnCurrentInstance) {
+            branchOnEdge(problem, thread_id);
+        } else {
+            solve_with_ilp(problem, thread_id);
+        }
+    }
 
-                for (auto t : problem->terminals) {
-                    NodeID pos = t.position;
-                    auto deg = problem->graph->getWeightedNodeDegree(pos);
-                    if (deg < lightest_weight && deg > 0) {
-                        lightest_weight = deg;
-                        lightest_t = t.position;
-                        lightest_oid = t.original_id;
-                    }
+    void contractHeaviestTerminal(std::shared_ptr<multicut_problem> problem) {
+        auto c = configuration::getConfig();
+        NodeID heaviest_t = 0;
+        EdgeWeight heaviest_weight = 0;
+        for (auto t : problem->terminals) {
+            NodeID pos = t.position;
+            auto deg = problem->graph->getWeightedNodeDegree(pos);
+            if (deg > heaviest_weight) {
+                heaviest_weight = deg;
+                heaviest_t = t.position;
+            }
+        }
+        std::vector<bool> found(problem->graph->n(), false);
+        std::unordered_set<NodeID> contractSet;
+        std::unordered_set<NodeID> isOtherTerminal;
+        std::queue<std::pair<NodeID, size_t> > nodeAndDistance;
+        nodeAndDistance.emplace(heaviest_t, 0);
+        for (auto t : problem->terminals) {
+            if (t.position != heaviest_t) {
+                isOtherTerminal.insert(t.position);
+            }
+        }
+
+        while (!nodeAndDistance.empty()) {
+            auto [n, d] = nodeAndDistance.front();
+            nodeAndDistance.pop();
+            bool neighboringOtherTerminal = false;
+            for (EdgeID e : problem->graph->edges_of(n)) {
+                NodeID nbr = problem->graph->getEdgeTarget(n, e);
+                if (isOtherTerminal.count(nbr) > 0) {
+                    neighboringOtherTerminal = true;
+                    break;
                 }
 
-                for (size_t i = 0; i < original_terminals.size(); ++i) {
-                    if (i != lightest_oid) {
-                        problem->addFinishedPair(
-                            i, lightest_oid, original_terminals.size());
-                    }
+                if (d < c->contractionDepthAroundTerminal && !found[nbr]) {
+                    found[nbr] = true;
+                    nodeAndDistance.emplace(nbr, d + 1);
                 }
+            }
+            if (!neighboringOtherTerminal) {
+                contractSet.insert(n);
+            }
+        }
+        if (contractSet.size() > 0) {
+            problem->graph->contractVertexSet(contractSet);
+        }
+    }
 
-                std::unordered_set<NodeID> contractIntoTerminal;
-                contractIntoTerminal.insert(lightest_t);
-                std::vector<NodeID> contractVertices(problem->graph->n(),
-                                                     UNDEFINED_NODE);
+    void deleteLowestDegTerminals(std::shared_ptr<multicut_problem> problem) {
+        size_t lowestTerminals =
+            std::ceil(
+                static_cast<double>(problem->terminals.size()) *
+                configuration::getConfig()->removeTerminalsBeforeBranch);
 
-                auto best_solution = pm.getBestSolution();
-                for (size_t i = 0; i < best_solution.size(); ++i) {
+        for (size_t i = 0; i < lowestTerminals; ++i) {
+            NodeID lightest_t = 0;
+            NodeID lightest_oid = 0;
+            EdgeWeight lightest_weight = UNDEFINED_FLOW;
+
+            for (auto t : problem->terminals) {
+                NodeID pos = t.position;
+                auto deg = problem->graph->getWeightedNodeDegree(pos);
+                if (deg < lightest_weight && deg > 0) {
+                    lightest_weight = deg;
+                    lightest_t = t.position;
+                    lightest_oid = t.original_id;
+                }
+            }
+
+            for (size_t i = 0; i < original_terminals.size(); ++i) {
+                if (i != lightest_oid) {
+                    problem->addFinishedPair(
+                        i, lightest_oid, original_terminals.size());
+                }
+            }
+
+            std::unordered_set<NodeID> contractIntoTerminal;
+            contractIntoTerminal.insert(lightest_t);
+            std::vector<NodeID> contractVertices(problem->graph->n(),
+                                                 UNDEFINED_NODE);
+
+            auto best_solution = pm.getBestSolution();
+            if (best_solution.has_value()) {
+                for (size_t i = 0; i < best_solution.value().size(); ++i) {
                     NodeID map = problem->mapped(i);
                     NodeID cp = problem->graph->getCurrentPosition(map);
-                    if (best_solution[i] != lightest_oid) {
-                        contractVertices[cp] = best_solution[i];
+                    if (best_solution.value()[i] != lightest_oid) {
+                        contractVertices[cp] = best_solution.value()[i];
                     } else {
                         if (contractVertices[cp] != UNDEFINED_NODE) {
                             problem->removeFinishedPair(
@@ -416,66 +488,15 @@ class branch_multicut {
                 problem->graph->contractVertexSet(contractIntoTerminal);
                 lightest_t = problem->graph->getCurrentPosition(invtx);
                 graph_contraction::deleteTermEdges(problem, original_terminals);
-                EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
-
-                for (EdgeID e = e1; e-- != 0; ) {
-                    auto wgt = problem->graph->getEdgeWeight(lightest_t, e);
-                    problem->graph->deleteEdge(lightest_t, e);
-                    problem->deleted_weight += wgt;
-                }
-                graph_contraction::setTerminals(problem, original_terminals);
             }
+            EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
 
-            NodeID heaviest_t = 0;
-            EdgeWeight heaviest_weight = 0;
-            for (auto t : problem->terminals) {
-                NodeID pos = t.position;
-                auto deg = problem->graph->getWeightedNodeDegree(pos);
-                if (deg > heaviest_weight) {
-                    heaviest_weight = deg;
-                    heaviest_t = t.position;
-                }
+            for (EdgeID e = e1; e-- != 0; ) {
+                auto wgt = problem->graph->getEdgeWeight(lightest_t, e);
+                problem->graph->deleteEdge(lightest_t, e);
+                problem->deleted_weight += wgt;
             }
-            std::vector<bool> found(problem->graph->n(), false);
-            std::unordered_set<NodeID> contractSet;
-            std::unordered_set<NodeID> isOtherTerminal;
-            std::queue<std::pair<NodeID, size_t> > nodeAndDistance;
-            nodeAndDistance.emplace(heaviest_t, 0);
-            for (auto t : problem->terminals) {
-                if (t.position != heaviest_t) {
-                    isOtherTerminal.insert(t.position);
-                }
-            }
-
-            while (!nodeAndDistance.empty()) {
-                auto [n, d] = nodeAndDistance.front();
-                nodeAndDistance.pop();
-                bool neighboringOtherTerminal = false;
-                for (EdgeID e : problem->graph->edges_of(n)) {
-                    NodeID nbr = problem->graph->getEdgeTarget(n, e);
-                    if (isOtherTerminal.count(nbr) > 0) {
-                        neighboringOtherTerminal = true;
-                        break;
-                    }
-
-                    if (d < c->contractionDepthAroundTerminal && !found[nbr]) {
-                        found[nbr] = true;
-                        nodeAndDistance.emplace(nbr, d + 1);
-                    }
-                }
-                if (!neighboringOtherTerminal) {
-                    contractSet.insert(n);
-                }
-            }
-            if (contractSet.size() > 0) {
-                problem->graph->contractVertexSet(contractSet);
-            }
-        }
-
-        if (branchOnCurrentInstance) {
-            branchOnEdge(problem, thread_id);
-        } else {
-            solve_with_ilp(problem, thread_id);
+            graph_contraction::setTerminals(problem, original_terminals);
         }
     }
 

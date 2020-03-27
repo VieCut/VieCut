@@ -79,7 +79,7 @@ class branch_multicut {
           pm(this->original_graph, this->original_terminals,
              this->fixed_vertex),
           msm(this->original_graph, this->original_terminals),
-          last_sent_flow(std::numeric_limits<FlowType>::max()),
+          last_sent_flow(UNDEFINED_FLOW),
           log_timer(0) {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -93,7 +93,8 @@ class branch_multicut {
     std::pair<std::vector<NodeID>, size_t> find_multiterminal_cut(
         std::shared_ptr<multicut_problem> problem) {
         std::vector<NodeID> sol;
-        if (mpi_rank == 0) {
+        size_t numTerminals = problem->terminals.size()
+                              if (mpi_rank == 0) {
             mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
             sol = msm.getSolution(problem);
             pm.addProblem(problem, 0, false);
@@ -114,7 +115,7 @@ class branch_multicut {
         }
 
         if (mpi_rank == 0) {
-            updateBestSolution(&sol);
+            updateBestSolution(&sol, numTerminals);
         }
 
         for (auto& t : threads) {
@@ -500,8 +501,8 @@ class branch_multicut {
         }
     }
 
-    void updateBestSolution(std::vector<NodeID>* sol) {
-        auto s = pm.findBestSolution(sol);
+    void updateBestSolution(std::vector<NodeID>* sol, size_t numTerminals) {
+        auto s = pm.findBestSolution(sol, numTerminals);
         if (s.has_value()) {
             mpic.broadcastImprovedSolution(s.value());
         }
@@ -533,7 +534,7 @@ class branch_multicut {
         if (!problem->graph->number_of_edges()) {
             problem->upper_bound = problem->deleted_weight;
             auto sol = msm.getSolution(problem);
-            updateBestSolution(&sol);
+            updateBestSolution(&sol, problem->terminals.size());
             return;
         }
         pm.branch(problem, thread_id);
@@ -572,7 +573,7 @@ class branch_multicut {
                 problem->graph->setPartitionIndex(n, result[n]);
             }
             auto sol = msm.getSolution(problem);
-            updateBestSolution(&sol);
+            updateBestSolution(&sol, problem->terminals.size());
         }
 
         if (reIntroduce) {

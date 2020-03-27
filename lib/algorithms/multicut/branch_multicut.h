@@ -93,8 +93,8 @@ class branch_multicut {
     std::pair<std::vector<NodeID>, size_t> find_multiterminal_cut(
         std::shared_ptr<multicut_problem> problem) {
         std::vector<NodeID> sol;
-        size_t numTerminals = problem->terminals.size()
-                              if (mpi_rank == 0) {
+        size_t numTerminals = problem->terminals.size();
+        if (mpi_rank == 0) {
             mf.maximumIsolatingFlow(problem, 0, /* parallel */ true);
             sol = msm.getSolution(problem);
             pm.addProblem(problem, 0, false);

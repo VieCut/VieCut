@@ -71,8 +71,8 @@ class problem_management {
           is_finished(false),
           idle_threads(0),
           global_upper_bound(UNDEFINED_FLOW),
-          terminalGUB(original_terminals.size(), UNDEFINED_FLOW),
-          beforeLSGUB(original_terminals.size(), UNDEFINED_FLOW),
+          terminalGUB(original_terminals.size() + 1, UNDEFINED_FLOW),
+          beforeLSGUB(original_terminals.size() + 1, UNDEFINED_FLOW),
           bestSolutionInitialized(false),
           msm(this->original_graph, this->original_terminals) {
         best_solution.resize(original_graph.number_of_nodes());

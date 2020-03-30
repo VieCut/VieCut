@@ -371,7 +371,11 @@ class branch_multicut {
                  << " n=" << problem->graph->n()
                  << " orign=" << c->orign
                  << " m=" << problem->graph->m()
-                 << " origm=" << c->origm;
+                 << " origm=" << c->origm
+                 << " term=" << c->num_terminals
+                 << " contr=" << c->preset_percentage
+                 << " seed=" << c->seed;
+
             exit(1);
         }
 

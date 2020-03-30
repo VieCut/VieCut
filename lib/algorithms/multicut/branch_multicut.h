@@ -376,7 +376,7 @@ class branch_multicut {
                  << " contr=" << c->preset_percentage
                  << " seed=" << c->seed;
 
-            exit(1);
+            exit(0);
         }
 
         auto path = c->first_branch_path;

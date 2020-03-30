@@ -278,7 +278,7 @@ class multiterminal_cut {
                     if (termBlocks[t].size() > 0) {
                         problemTerms.emplace_back(termBlocks[t][0],
                                                   problemTerms.size());
-                        globalTerminalIndex[problem].emplace_back(t);
+                        globalTerminalIndex.back().emplace_back(t);
                     }
                 }
 

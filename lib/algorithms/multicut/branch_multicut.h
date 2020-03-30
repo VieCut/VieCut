@@ -161,17 +161,9 @@ class branch_multicut {
         size_t global_bcast_id = local_bcast_id;
         MPI_Allreduce(&local_bcast_id, &global_bcast_id, 1, MPI_LONG,
                       MPI_MIN, MPI_COMM_WORLD);
-        auto bs = pm.getBestSolution();
-        std::vector<NodeID> best_solution;
+        auto best_solution = pm.getBestSolution();
 
-        size_t bsize;
-        if (bs.has_value()) {
-            best_solution = bs.value();
-            bsize = best_solution.size();
-        } else {
-            bsize = UNDEFINED_NODE;
-            best_solution.resize(original_graph.n());
-        }
+        size_t bsize = best_solution.size();
 
         MPI_Bcast(&best_solution.front(), bsize, MPI_INT,
                   global_bcast_id, MPI_COMM_WORLD);
@@ -294,13 +286,29 @@ class branch_multicut {
 
     void solveProblem(std::shared_ptr<multicut_problem> problem,
                       size_t thread_id) {
+        auto c = configuration::getConfig();
         if (problem == NULL) {
             LOG1 << "ERROR: Problem is NULL. This should not happen!";
             exit(1);
         }
 
-        if (!pm.checkProblem(problem))
+        if (!pm.checkProblem(problem)) {
+            if (c->endBeforeBranch) {
+                LOG1 << "RESULT graph=" << c->graph_filename
+                     << " time=" << total_time.elapsed()
+                     << " variant=" << c->kernelization_variant
+                     << " n=" << problem->graph->n()
+                     << " orign=" << c->orign
+                     << " m=" << problem->graph->m()
+                     << " origm=" << c->origm
+                     << " term=" << c->num_terminals
+                     << " contr=" << c->preset_percentage
+                     << " seed=" << c->seed;
+
+                exit(0);
+            }
             return;
+        }
 
 #ifdef USE_TCMALLOC
         uint64_t heapsize = 0;
@@ -346,23 +354,6 @@ class branch_multicut {
         }
         graph_contraction::setTerminals(problem, original_terminals);
         nonBranchingContraction(problem);
-        if (problem->deleted_weight > static_cast<EdgeWeight>(pm.bestCut())) {
-            return;
-        }
-
-        bool branchOnCurrentInstance = true;
-        auto c = configuration::getConfig();
-#ifdef USE_GUROBI
-        branchOnCurrentInstance =
-            problem->graph->n() > 1000 || (!c->use_ilp);
-        if (!c->differences_set) {
-            c->bound_difference = problem->upper_bound
-                                  - problem->lower_bound;
-            c->n = problem->graph->n();
-            c->m = problem->graph->m();
-            c->differences_set = true;
-        }
-#endif
 
         if (c->endBeforeBranch) {
             LOG1 << "RESULT graph=" << c->graph_filename
@@ -378,6 +369,22 @@ class branch_multicut {
 
             exit(0);
         }
+        if (problem->deleted_weight > static_cast<EdgeWeight>(pm.bestCut())) {
+            return;
+        }
+
+        bool branchOnCurrentInstance = true;
+#ifdef USE_GUROBI
+        branchOnCurrentInstance =
+            problem->graph->n() > 1000 || (!c->use_ilp);
+        if (!c->differences_set) {
+            c->bound_difference = problem->upper_bound
+                                  - problem->lower_bound;
+            c->n = problem->graph->n();
+            c->m = problem->graph->m();
+            c->differences_set = true;
+        }
+#endif
 
         auto path = c->first_branch_path;
         if (path != "") {
@@ -479,32 +486,30 @@ class branch_multicut {
                                                  UNDEFINED_NODE);
 
             auto best_solution = pm.getBestSolution();
-            if (best_solution.has_value()) {
-                for (size_t i = 0; i < best_solution.value().size(); ++i) {
-                    NodeID map = problem->mapped(i);
-                    NodeID cp = problem->graph->getCurrentPosition(map);
-                    if (best_solution.value()[i] != lightest_oid) {
-                        contractVertices[cp] = best_solution.value()[i];
-                    } else {
-                        if (contractVertices[cp] != UNDEFINED_NODE) {
-                            problem->removeFinishedPair(
-                                lightest_oid, contractVertices[cp],
-                                original_terminals.size());
-                        }
+            for (size_t i = 0; i < best_solution.size(); ++i) {
+                NodeID map = problem->mapped(i);
+                NodeID cp = problem->graph->getCurrentPosition(map);
+                if (best_solution[i] != lightest_oid) {
+                    contractVertices[cp] = best_solution[i];
+                } else {
+                    if (contractVertices[cp] != UNDEFINED_NODE) {
+                        problem->removeFinishedPair(
+                            lightest_oid, contractVertices[cp],
+                            original_terminals.size());
                     }
                 }
-
-                for (size_t i = 0; i < contractVertices.size(); ++i) {
-                    if (contractVertices[i] == UNDEFINED_NODE) {
-                        contractIntoTerminal.insert(i);
-                    }
-                }
-
-                NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
-                problem->graph->contractVertexSet(contractIntoTerminal);
-                lightest_t = problem->graph->getCurrentPosition(invtx);
-                graph_contraction::deleteTermEdges(problem, original_terminals);
             }
+
+            for (size_t i = 0; i < contractVertices.size(); ++i) {
+                if (contractVertices[i] == UNDEFINED_NODE) {
+                    contractIntoTerminal.insert(i);
+                }
+            }
+
+            NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
+            problem->graph->contractVertexSet(contractIntoTerminal);
+            lightest_t = problem->graph->getCurrentPosition(invtx);
+            graph_contraction::deleteTermEdges(problem, original_terminals);
             EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
 
             for (EdgeID e = e1; e-- != 0; ) {
@@ -557,7 +562,8 @@ class branch_multicut {
 
     void nonBranchingContraction(std::shared_ptr<multicut_problem> problem) {
         auto pe = kc.kernelization(problem, pm.bestCut(),
-                                   pm.numProblems() == 0);
+                                   pm.numProblems() == 0
+                                   && configuration::getConfig()->threads > 1);
         if (pe.has_value()) {
             problem->priority_edge = *pe;
         }

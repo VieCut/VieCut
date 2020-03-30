@@ -125,9 +125,10 @@ class problem_management {
         }
     }
 
-    std::optional<std::vector<NodeID> > getBestSolution() {
-        if (!bestSolutionInitialized)
-            return std::nullopt;
+    std::vector<NodeID> getBestSolution() {
+        while (!bestSolutionInitialized) {
+            std::this_thread::sleep_for(100ms);
+        }
         bestsol_mutex.lock();
         std::vector<NodeID> ret = best_solution;
         bestsol_mutex.unlock();

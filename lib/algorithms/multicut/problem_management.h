@@ -156,13 +156,13 @@ class problem_management {
                 new_p->upper_bound = problem->upper_bound;
                 new_p->deleted_weight = problem->deleted_weight;
                 new_p->finished_blockpairs = problem->finished_blockpairs;
-                for (size_t j = 0; j < new_p->terminals.size(); ++j) {
-                    new_p->terminals[j].invalid_flow = true;
-                }
             } else {
                 new_p = problem;
             }
 
+            for (size_t j = 0; j < new_p->terminals.size(); ++j) {
+                new_p->terminals[j].invalid_flow = true;
+            }
             NodeID coarse_vtx = new_p->graph->containedVertices(vertex)[0];
             bool finished = false;
             // first delete edges to terminals not picked

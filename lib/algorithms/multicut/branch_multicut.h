@@ -80,7 +80,8 @@ class branch_multicut {
              this->fixed_vertex),
           msm(this->original_graph, this->original_terminals),
           last_sent_flow(UNDEFINED_FLOW),
-          log_timer(0) {
+          log_timer(0),
+          finished(false) {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
         mpi_num_done = 0;
@@ -286,6 +287,9 @@ class branch_multicut {
 
     void solveProblem(problemPointer problem,
                       size_t thread_id) {
+        if (finished)
+            return;
+
         auto c = configuration::getConfig();
         if (problem == NULL) {
             LOG1 << "ERROR: Problem is NULL. This should not happen!";
@@ -318,13 +322,15 @@ class branch_multicut {
         uint64_t max_size = 50UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
             LOG1 << "RESULT Memoryout";
-            exit(1);
+            finished = true;
+            return;
         }
 #endif
 
         if (total_time.elapsed() > 3600) {
             LOG1 << "RESULT Timeout!";
-            exit(1);
+            finished = true;
+            return;
         }
 
         if (total_time.elapsed() > log_timer) {
@@ -626,6 +632,7 @@ class branch_multicut {
     measurements msm;
     FlowType last_sent_flow;
     std::atomic<double> log_timer;
+    bool finished;
 
 #ifdef USE_GUROBI
     ilp_model ilp;

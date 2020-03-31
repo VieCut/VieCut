@@ -491,24 +491,26 @@ class branch_multicut {
             std::vector<NodeID> contractVertices(problem->graph->n(),
                                                  UNDEFINED_NODE);
 
-            auto best_solution = pm.getBestSolution();
-            for (size_t i = 0; i < best_solution.size(); ++i) {
-                NodeID map = problem->mapped(i);
-                NodeID cp = problem->graph->getCurrentPosition(map);
-                if (best_solution[i] != lightest_oid) {
-                    contractVertices[cp] = best_solution[i];
-                } else {
-                    if (contractVertices[cp] != UNDEFINED_NODE) {
-                        problem->removeFinishedPair(
-                            lightest_oid, contractVertices[cp],
-                            original_terminals.size());
+            if (pm.isBestSolutionInitialized()) {
+                auto best_solution = pm.getBestSolution();
+                for (size_t i = 0; i < best_solution.size(); ++i) {
+                    NodeID map = problem->mapped(i);
+                    NodeID cp = problem->graph->getCurrentPosition(map);
+                    if (best_solution[i] != lightest_oid) {
+                        contractVertices[cp] = best_solution[i];
+                    } else {
+                        if (contractVertices[cp] != UNDEFINED_NODE) {
+                            problem->removeFinishedPair(
+                                lightest_oid, contractVertices[cp],
+                                original_terminals.size());
+                        }
                     }
                 }
-            }
 
-            for (size_t i = 0; i < contractVertices.size(); ++i) {
-                if (contractVertices[i] == UNDEFINED_NODE) {
-                    contractIntoTerminal.insert(i);
+                for (size_t i = 0; i < contractVertices.size(); ++i) {
+                    if (contractVertices[i] == UNDEFINED_NODE) {
+                        contractIntoTerminal.insert(i);
+                    }
                 }
             }
 

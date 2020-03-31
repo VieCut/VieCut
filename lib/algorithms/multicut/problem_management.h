@@ -372,6 +372,10 @@ class problem_management {
         bestSolutionInitialized = true;
     }
 
+    bool isBestSolutionInitialized() {
+        return bestSolutionInitialized;
+    }
+
     void notifyAllThreads() {
         for (size_t i = 0; i < num_threads; ++i) {
             notifyThread(i);

@@ -8,6 +8,7 @@
 # Adapted from https://github.com/COMBINE-lab/quark/blob/master/cmake/Modules/FindTcmalloc.cmake
 
 find_path(Tcmalloc_INCLUDE_DIR google/tcmalloc.h NO_DEFAULT_PATH PATHS
+  $ENV{HOME}/.local/include
   /usr/include
   /opt/local/include
   /usr/local/include
@@ -17,7 +18,12 @@ set(Tcmalloc_NAMES "")
 
 find_library(Tcmalloc_LIBRARY
   NAMES tcmalloc libtcmalloc libtcmalloc_and_profiler libtcmalloc_minimal
-  PATHS /lib /usr/lib /usr/local/lib /opt/local/lib /usr/lib/x86_84-linux-gnu
+  PATHS $ENV{HOME}/.local/lib
+        /lib
+        /usr/lib
+        /usr/local/lib
+        /opt/local/lib
+        /usr/lib/x86_84-linux-gnu
 )
 
 if (Tcmalloc_INCLUDE_DIR AND Tcmalloc_LIBRARY)

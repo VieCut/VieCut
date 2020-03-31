@@ -8,6 +8,7 @@
 # Adapted from https://github.com/COMBINE-lab/quark/blob/master/cmake/Modules/FindTcmalloc.cmake
 
 find_path(Profiler_INCLUDE_DIR google/tcmalloc.h NO_DEFAULT_PATH PATHS
+  $ENV{HOME}/.local/include
   /usr/include
   /opt/local/include
   /usr/local/include
@@ -16,8 +17,13 @@ find_path(Profiler_INCLUDE_DIR google/tcmalloc.h NO_DEFAULT_PATH PATHS
 set(Profiler_NAMES "")
 
 find_library(Profiler_LIBRARY
-  NAMES libtcmalloc_and_profiler tcmalloc_and_profiler
-  PATHS /lib /usr/lib /usr/local/lib /opt/local/lib /usr/lib/x86_84-linux-gnu
+  NAMES libtcmalloc_and_profiler tcmalloc_and_profiler NO_DEFAULT_PATH
+  PATHS $ENV{HOME}/.local/lib
+        /lib
+        /usr/lib
+        /usr/local/lib
+        /opt/local/lib
+        /usr/lib/x86_84-linux-gnu
 )
 
 if (Profiler_INCLUDE_DIR AND Profiler_LIBRARY)
@@ -29,7 +35,7 @@ else ()
 endif ()
 
 if (Profiler_FOUND)
-  message(STATUS "Found Profiler: ${Profiler_LIBRARY}")
+  message(STATUS "Found Profiler: ${Profiler_LIBRARY} ${Profiler_INCLUDE_DIR}")
 else ()
   message(STATUS "Not Found Profiler: ${Profiler_LIBRARY}")
   if (Profiler_FIND_REQUIRED)

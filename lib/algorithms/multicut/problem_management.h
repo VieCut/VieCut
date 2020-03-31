@@ -78,7 +78,7 @@ class problem_management {
         best_solution.resize(original_graph.number_of_nodes());
     }
 
-    bool degreeThreeContraction(std::shared_ptr<multicut_problem> problem,
+    bool degreeThreeContraction(problemPointer problem,
                                 NodeID b_vtx, EdgeID b_edge) {
         auto& g = problem->graph;
         auto c = g->getEdgeWeight(b_vtx, b_edge);
@@ -112,12 +112,12 @@ class problem_management {
         return true;
     }
 
-    std::optional<std::shared_ptr<multicut_problem> > pullProblem(
+    std::optional<problemPointer> pullProblem(
         size_t thread_id, bool send) {
         return problems.pullProblem(thread_id, send);
     }
 
-    void branch(std::shared_ptr<multicut_problem> problem, size_t thread_id) {
+    void branch(problemPointer problem, size_t thread_id) {
         if (configuration::getConfig()->multibranch) {
             multiBranch(problem, thread_id);
         } else {
@@ -135,7 +135,7 @@ class problem_management {
         return ret;
     }
 
-    void multiBranch(std::shared_ptr<multicut_problem> problem,
+    void multiBranch(problemPointer problem,
                      size_t thread_id) {
         auto [vertex, terminal_ids] = findEdgeMultiBranch(problem);
         std::unordered_set<NodeID> terminals;
@@ -145,7 +145,7 @@ class problem_management {
 
         for (size_t i = 0; i < terminal_ids.size(); ++i) {
             NodeID ctr_terminal = terminal_ids[i];
-            std::shared_ptr<multicut_problem> new_p;
+            problemPointer new_p;
             if (i < terminal_ids.size() - 1) {
                 new_p = std::make_shared<multicut_problem>();
                 new_p->graph = std::make_shared<mutable_graph>(*problem->graph);
@@ -200,7 +200,7 @@ class problem_management {
     }
 
     std::optional<FlowType> processNewProblem(
-        std::shared_ptr<multicut_problem> new_p, size_t thread_id) {
+        problemPointer new_p, size_t thread_id) {
         size_t numTerminals = new_p->terminals.size();
         if (numTerminals < 2 && runLocalSearch(new_p)) {
             auto sol = msm.getSolution(new_p);
@@ -273,7 +273,7 @@ class problem_management {
         return std::nullopt;
     }
 
-    void singleBranch(std::shared_ptr<multicut_problem> problem,
+    void singleBranch(problemPointer problem,
                       size_t thread_id) {
         auto [b_vtx, b_edge] = findEdgeSingleBranch(problem);
         NodeID target_terminal_id = UNDEFINED_NODE;
@@ -343,16 +343,16 @@ class problem_management {
         problems.prepareQueue(thread_id, global_upper_bound);
     }
 
-    void addProblem(std::shared_ptr<multicut_problem> p,
+    void addProblem(problemPointer p,
                     size_t thread_id, bool preferLocal) {
         problems.addProblem(p, thread_id, preferLocal);
     }
 
-    bool checkProblem(std::shared_ptr<multicut_problem> problem) {
+    bool checkProblem(problemPointer problem) {
         return problem->lower_bound < global_upper_bound;
     }
 
-    bool runLocalSearch(std::shared_ptr<multicut_problem> problem) {
+    bool runLocalSearch(problemPointer problem) {
         return problem->upper_bound < beforeLSGUB[problem->terminals.size()];
     }
 

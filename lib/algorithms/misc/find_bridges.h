@@ -23,7 +23,7 @@
 
 class find_bridges {
  public:
-    explicit find_bridges(std::shared_ptr<mutable_graph> G)
+    explicit find_bridges(mutableGraphPtr G)
         : G(G),
           visited(G->n(), false),
           discovered(G->n(), UNDEFINED_NODE),
@@ -181,7 +181,7 @@ class find_bridges {
         }
     }
 
-    std::shared_ptr<mutable_graph> G;
+    mutableGraphPtr G;
     std::vector<bool> visited;
     std::vector<NodeID> discovered;
     std::vector<NodeID> parent;

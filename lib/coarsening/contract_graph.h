@@ -177,8 +177,8 @@ class contraction {
         return contracted;
     }
 
-    static std::shared_ptr<mutable_graph> fromUnionFind(
-        std::shared_ptr<mutable_graph> G,
+    static mutableGraphPtr fromUnionFind(
+        mutableGraphPtr G,
         union_find* uf) {
         if (uf->n() == G->n()) {
             // no contraction

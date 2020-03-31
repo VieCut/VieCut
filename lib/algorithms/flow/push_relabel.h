@@ -36,7 +36,7 @@ class push_relabel {
     virtual ~push_relabel() { }
 
  private:
-    void init(std::shared_ptr<mutable_graph> G,
+    void init(mutableGraphPtr G,
               std::vector<NodeID> sources,
               NodeID source) {
         m_Q = std::queue<NodeID>();
@@ -276,7 +276,7 @@ class push_relabel {
     }
 
  public:
-    std::vector<NodeID> callable_max_flow(std::shared_ptr<mutable_graph> G,
+    std::vector<NodeID> callable_max_flow(mutableGraphPtr G,
                                           std::vector<NodeID> sources,
                                           NodeID curr_source,
                                           bool compute_source_set) {
@@ -288,7 +288,7 @@ class push_relabel {
     }
 
     std::pair<FlowType, std::vector<NodeID> > solve_max_flow_min_cut(
-        std::shared_ptr<mutable_graph> G,
+        mutableGraphPtr G,
         std::vector<NodeID> sources,
         NodeID curr_source,
         bool compute_source_set,
@@ -381,7 +381,7 @@ class push_relabel {
     int m_global_updates;
     int m_pushes;
     int m_work;
-    std::shared_ptr<mutable_graph> m_G;
+    mutableGraphPtr m_G;
     static const bool extended_logs = false;
     bool m_parallel_flows;
 };

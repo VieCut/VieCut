@@ -26,7 +26,7 @@ class graph_contraction {
     ~graph_contraction() { }
 
     static void contractIsolatingBlocks(
-        std::shared_ptr<multicut_problem> mcp,
+        problemPointer mcp,
         const std::vector<std::vector<NodeID> >& isolating_blocks) {
         bool contracted = false;
         std::vector<std::vector<NodeID> > contraction_base;
@@ -68,7 +68,7 @@ class graph_contraction {
     }
 
     static void deleteTermEdges(
-        std::shared_ptr<multicut_problem> mcp,
+        problemPointer mcp,
         const std::vector<NodeID>& original_terminals) {
         // Setting edge weights to 0 and adding their weight
         // to the deleted weight. As edges connecting terminals are always
@@ -110,7 +110,7 @@ class graph_contraction {
         setTerminals(mcp, original_terminals);
     }
 
-    static void setTerminals(std::shared_ptr<multicut_problem> problem,
+    static void setTerminals(problemPointer problem,
                              const std::vector<NodeID>& original_terminals) {
         std::unordered_map<NodeID, bool> invalid_flows;
 

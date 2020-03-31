@@ -27,7 +27,7 @@ class heavy_edges {
     explicit heavy_edges(EdgeWeight mincut) : mincut(mincut) { }
 
     std::vector<std::tuple<NodeID, std::vector<NodeID> > > removeHeavyEdges(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > cactusEdge;
         std::unordered_map<NodeID, std::vector<NodeID> > contract;
         std::vector<NodeID> markForCactus;
@@ -93,7 +93,7 @@ class heavy_edges {
     }
 
     std::vector<std::tuple<std::pair<NodeID, NodeID>, std::vector<NodeID> > >
-    contractCycleEdges(std::shared_ptr<mutable_graph> G) {
+    contractCycleEdges(mutableGraphPtr G) {
         std::vector<std::tuple<std::pair<NodeID, NodeID>,
                                std::vector<NodeID> > > cycleEdges;
         // as we contract edges, we use basic for loop so G->n() can update
@@ -147,7 +147,7 @@ class heavy_edges {
     }
 
     void reInsertCycles(
-        std::shared_ptr<mutable_graph> G,
+        mutableGraphPtr G,
         std::vector<std::tuple<std::pair<NodeID, NodeID>,
                                std::vector<NodeID> > > toInsert) {
         for (size_t i = toInsert.size(); i-- > 0; ) {
@@ -192,7 +192,7 @@ class heavy_edges {
     }
 
     void reInsertVertices(
-        std::shared_ptr<mutable_graph> G,
+        mutableGraphPtr G,
         std::vector<std::tuple<NodeID, std::vector<NodeID> > > toInsert) {
         for (size_t i = toInsert.size(); i-- > 0; ) {
             const auto& [t, cont] = toInsert[i];

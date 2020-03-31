@@ -193,9 +193,9 @@ class noi_minimum_cut : public minimum_cut {
     }
 
     // Terrible code duplication, but differences are too big for reuse
-    union_find modified_capforest(std::shared_ptr<multicut_problem> mcp,
+    union_find modified_capforest(problemPointer mcp,
                                   EdgeWeight mincut) {
-        std::shared_ptr<mutable_graph> G = mcp->graph;
+        mutableGraphPtr G = mcp->graph;
         std::unordered_set<NodeID> terminal_set;
 
         for (const auto& t : mcp->terminals) {

@@ -111,7 +111,7 @@ TEST(Mutable_Graph_Test, FromFileThroughGraphAccess) {
     std::shared_ptr<graph_access> GA = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
 
-    std::shared_ptr<mutable_graph> G =
+    mutableGraphPtr G =
         mutable_graph::from_graph_access(GA);
 
     ASSERT_EQ(G->number_of_nodes(), 8);
@@ -245,7 +245,7 @@ TEST(Mutable_Graph_Test, ContractEdgesWeighted) {
 
 TEST(Mutable_Graph_Test, LargerGraph) {
     for (size_t size : { 5, 10, 50, 100 }) {
-        std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+        mutableGraphPtr G = std::make_shared<mutable_graph>();
         G->start_construction(size);
         for (size_t i = 0; i < size; ++i) {
             for (size_t j = 0; j < size; ++j) {
@@ -288,7 +288,7 @@ TEST(Mutable_Graph_Test, LargerGraph) {
 
 TEST(Mutable_Graph_Test, DeleteVertices) {
     for (size_t size : { 5, 10, 50, 100 }) {
-        std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+        mutableGraphPtr G = std::make_shared<mutable_graph>();
         G->start_construction(size);
         for (size_t i = 0; i < size; ++i) {
             for (size_t j = 0; j < size; ++j) {

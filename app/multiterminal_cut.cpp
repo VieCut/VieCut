@@ -88,7 +88,7 @@ int main(int argn, char** argv) {
 
     std::vector<NodeID> terminals;
 
-    std::shared_ptr<mutable_graph> G;
+    mutableGraphPtr G;
     FlowType flow;
     timer t;
     try {

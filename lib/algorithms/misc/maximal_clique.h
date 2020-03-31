@@ -26,7 +26,7 @@ class maximal_clique {
     maximal_clique() { }
 
     std::vector<std::vector<NodeID> > findCliques(
-        std::shared_ptr<mutable_graph> graph) {
+        mutableGraphPtr graph) {
         for (NodeID n : graph->nodes()) {
             std::vector<std::pair<NodeID, EdgeWeight> > P;
             std::vector<NodeID> R = { n };
@@ -122,7 +122,7 @@ class maximal_clique {
                                external_weight, new_lightest);
     }
 
-    bool bronKerbosch(std::shared_ptr<mutable_graph> graph,
+    bool bronKerbosch(mutableGraphPtr graph,
                       std::vector<std::pair<NodeID, EdgeWeight> >* P,
                       std::vector<NodeID>* R,
                       std::vector<std::pair<NodeID, EdgeWeight> >* X,
@@ -218,7 +218,7 @@ class maximal_clique {
     }
 
     union_find contractSemiIsolatedCliques(
-        std::shared_ptr<multicut_problem> problem) {
+        problemPointer problem) {
         std::unordered_set<NodeID> terms;
         union_find uf(problem->graph->n());
         for (const auto& t : problem->terminals) {

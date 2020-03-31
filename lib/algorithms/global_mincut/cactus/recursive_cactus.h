@@ -59,9 +59,9 @@ class recursive_cactus {
         mincut = mc;
     }
 
-    std::shared_ptr<mutable_graph> flowMincut(
+    mutableGraphPtr flowMincut(
         const std::vector<std::shared_ptr<graph_access> >& graphs) {
-        std::vector<std::shared_ptr<mutable_graph> > flow_graphs;
+        std::vector<mutableGraphPtr> flow_graphs;
         auto in_graph = mutable_graph::from_graph_access(graphs.back());
         auto out_graph = recursiveCactus(in_graph, 0);
         VIECUT_ASSERT_TRUE(graph_modification::isCNCR(out_graph, mincut));
@@ -71,8 +71,8 @@ class recursive_cactus {
     }
 
  private:
-    std::shared_ptr<mutable_graph> recursiveCactus(
-        std::shared_ptr<mutable_graph> G, size_t depth) {
+    mutableGraphPtr recursiveCactus(
+        mutableGraphPtr G, size_t depth) {
         heavy_edges he(mincut);
         auto cactusEdges = he.removeHeavyEdges(G);
         auto cycleEdges = he.contractCycleEdges(G);
@@ -82,8 +82,8 @@ class recursive_cactus {
         return G;
     }
 
-    std::shared_ptr<mutable_graph> internalRecursiveCactus(
-        std::shared_ptr<mutable_graph> G, size_t depth) {
+    mutableGraphPtr internalRecursiveCactus(
+        mutableGraphPtr G, size_t depth) {
         if (depth % 100 == 0) {
             LOGC(configuration::getConfig()->verbose) << "depth " << depth
                                                       << " G n " << G->n()
@@ -197,14 +197,14 @@ class recursive_cactus {
         }
     }
 
-    std::shared_ptr<mutable_graph> mergeCactusWithComponent(
-        std::shared_ptr<mutable_graph> STCactus,
-        std::shared_ptr<mutable_graph> G,
+    mutableGraphPtr mergeCactusWithComponent(
+        mutableGraphPtr STCactus,
+        mutableGraphPtr G,
         size_t depth, int component,
         const std::vector<int>& scc_result, size_t blocksize) {
         NodeID uncontracted_base_vertex = UNDEFINED_NODE;
         NodeID contracted_base_vertex = UNDEFINED_NODE;
-        std::shared_ptr<mutable_graph> graph;
+        mutableGraphPtr graph;
         if (static_cast<double>(blocksize) <=
             (static_cast<double>(G->n()) / 2.0)) {
             graph = std::make_shared<mutable_graph>();
@@ -294,8 +294,8 @@ class recursive_cactus {
         return STCactus;
     }
 
-    std::shared_ptr<mutable_graph> findSTCactus(
-        const std::vector<int>& v, std::shared_ptr<mutable_graph> G,
+    mutableGraphPtr findSTCactus(
+        const std::vector<int>& v, mutableGraphPtr G,
         NodeID s, int num_comp) {
         auto contract = std::make_shared<mutable_graph>();
         contract->start_construction(num_comp);
@@ -463,7 +463,7 @@ class recursive_cactus {
     }
 
     std::tuple<NodeID, EdgeID, NodeID> centralFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         NodeID random_vtx = random_functions::nextInt(0, G->n() - 1);
         NodeID v1 = std::get<2>(graph_algorithms::bfsDistances(G, random_vtx));
         auto [parent, distance, v2] = graph_algorithms::bfsDistances(G, v1);
@@ -487,7 +487,7 @@ class recursive_cactus {
     }
 
     std::tuple<NodeID, EdgeID, NodeID> maximumFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         NodeWeight max_degree = 0;
         NodeID s = UNDEFINED_NODE;
 
@@ -521,7 +521,7 @@ class recursive_cactus {
     }
 
     std::tuple<NodeID, EdgeID, NodeID> maximumWeightedFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         NodeWeight max_degree = 0;
         NodeID s = UNDEFINED_NODE;
 
@@ -555,7 +555,7 @@ class recursive_cactus {
     }
 
     std::tuple<NodeID, EdgeID, NodeID> findFlowEdge(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         NodeID s = random_functions::nextInt(0, G->n() - 1);
         NodeID tgt = 0;
         NodeID max_edge = G->get_first_invalid_edge(s) - 1;

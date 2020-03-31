@@ -39,9 +39,9 @@ class equal_neighborhood {
     equal_neighborhood() { }
 
     void findEqualNeighborhoodsNonNeighbors(
-        std::shared_ptr<multicut_problem> problem,
+        problemPointer problem,
         const std::vector<bool>& active, union_find* uf) {
-        std::shared_ptr<mutable_graph> G = problem->graph;
+        mutableGraphPtr G = problem->graph;
 
         std::unordered_set<NodeID> terminals;
         for (const auto& t : problem->terminals) {
@@ -115,9 +115,9 @@ class equal_neighborhood {
     }
 
     void findEqualNeighborhoodsNeighbors(
-        std::shared_ptr<multicut_problem> problem,
+        problemPointer problem,
         const std::vector<bool>& active, union_find* uf) {
-        std::shared_ptr<mutable_graph> G = problem->graph;
+        mutableGraphPtr G = problem->graph;
         std::unordered_set<NodeID> terminals;
         for (const auto& t : problem->terminals) {
             terminals.emplace(t.position);
@@ -181,7 +181,7 @@ class equal_neighborhood {
     }
 
     union_find findEqualNeighborhoods(
-        std::shared_ptr<multicut_problem> problem,
+        problemPointer problem,
         const std::vector<bool>& active) {
         union_find uf(problem->graph->n());
         findEqualNeighborhoodsNonNeighbors(problem, active, &uf);

@@ -682,9 +682,9 @@ class mutable_graph {
     }
 
     // Graph class translation
-    static std::shared_ptr<mutable_graph> from_graph_access(
+    static mutableGraphPtr from_graph_access(
         std::shared_ptr<graph_access> G) {
-        std::shared_ptr<mutable_graph> m_G = std::make_shared<mutable_graph>();
+        mutableGraphPtr m_G = std::make_shared<mutable_graph>();
         std::vector<NodeID> last_incident(G->number_of_nodes(), UNDEFINED_NODE);
         m_G->start_construction(G->number_of_nodes());
         for (NodeID n : G->nodes()) {
@@ -726,8 +726,8 @@ class mutable_graph {
         return G;
     }
 
-    static std::shared_ptr<mutable_graph> deserialize(std::vector<uint64_t> v) {
-        std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    static mutableGraphPtr deserialize(std::vector<uint64_t> v) {
+        mutableGraphPtr G = std::make_shared<mutable_graph>();
         uint64_t num_nodes = v[0];
         size_t num_edges = v[1];
         uint64_t original_nodes = v[3];
@@ -799,8 +799,8 @@ class mutable_graph {
         return serial;
     }
 
-    std::shared_ptr<mutable_graph> simplify() {
-        std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    mutableGraphPtr simplify() {
+        mutableGraphPtr G = std::make_shared<mutable_graph>();
         G->start_construction(number_of_nodes());
         for (NodeID n : G->nodes()) {
             G->new_node();
@@ -847,7 +847,7 @@ class mutable_graph {
 };
 
 [[maybe_unused]] static std::string toStringUnweighted(
-    std::shared_ptr<mutable_graph> G) {
+    mutableGraphPtr G) {
     std::ostringstream oss;
 
     for (NodeID n : G->nodes()) {
@@ -864,7 +864,7 @@ class mutable_graph {
 }
 
 [[maybe_unused]] static std::string toStringCompact(
-    std::shared_ptr<mutable_graph> G) {
+    mutableGraphPtr G) {
     std::ostringstream oss;
 
     for (NodeID n : G->nodes()) {
@@ -881,7 +881,7 @@ class mutable_graph {
 }
 
 [[maybe_unused]] static std::string toStringWeighted(
-    std::shared_ptr<mutable_graph> G) {
+    mutableGraphPtr G) {
     std::ostringstream oss;
 
     oss << "Graph n " << G->n() << " m " << G->m() << "\n";
@@ -900,7 +900,7 @@ class mutable_graph {
 }
 
 [[maybe_unused]] static std::string toStringContains(
-    std::shared_ptr<mutable_graph> G) {
+    mutableGraphPtr G) {
     std::ostringstream oss;
 
     for (NodeID n : G->nodes()) {
@@ -915,7 +915,7 @@ class mutable_graph {
 }
 
 [[maybe_unused]] static std::ostream& operator << (
-    std::ostream& os, std::shared_ptr<mutable_graph> G) {
+    std::ostream& os, mutableGraphPtr G) {
     // return os << toStringUnweighted(G);
     return os << toStringWeighted(G);
     // return os << toStringCompact(G);

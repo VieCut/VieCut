@@ -26,8 +26,6 @@
 
 class per_thread_problem_queue {
  public:
-    typedef std::shared_ptr<multicut_problem> problemPointer;
-
     per_thread_problem_queue(size_t threads, std::string pq_type)
         : num_threads(threads),
           haveSendProblem(false),
@@ -180,7 +178,7 @@ class per_thread_problem_queue {
         if (sendProblemWeight > p->lower_bound) {
             send_problem_mutex.lock();
             if (haveSendProblem) {
-                std::shared_ptr<multicut_problem> mcp = sendProblem;
+                problemPointer mcp = sendProblem;
                 pq[min_index].push(mcp);
                 sendProblem = p;
                 sendProblemWeight = sendProblem->lower_bound;

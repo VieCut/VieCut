@@ -55,14 +55,14 @@ class cactus_mincut : public minimum_cut {
         return std::get<0>(findAllMincuts(G));
     }
 
-    std::tuple<EdgeWeight, std::shared_ptr<mutable_graph>,
+    std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
         std::shared_ptr<graph_access> G) {
         std::vector<std::shared_ptr<graph_access> > v = { G };
         return findAllMincuts(v);
     }
 
-    std::tuple<EdgeWeight, std::shared_ptr<mutable_graph>,
+    std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
         std::vector<std::shared_ptr<graph_access> > graphs) {
         recursive_cactus rc;

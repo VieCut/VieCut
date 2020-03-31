@@ -28,13 +28,13 @@
 class ilp_model {
  public:
     std::tuple<std::vector<NodeID>, EdgeWeight, bool> computeIlp(
-        std::shared_ptr<multicut_problem> problem,
+        problemPointer problem,
         const std::vector<NodeID>& presets,
         size_t num_terminals,
         bool parallel,
         size_t thread_id) {
         try {
-            std::shared_ptr<mutable_graph> graph = problem->graph;
+            mutableGraphPtr graph = problem->graph;
             timer ilp_timer;
             LOG1 << "starting ilp on graph with " << graph->n() << " vertices "
                  << "and " << graph->m() << " edges!";

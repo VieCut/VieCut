@@ -43,10 +43,10 @@ struct terminal {
 struct multicut_problem {
     multicut_problem() { }
 
-    explicit multicut_problem(std::shared_ptr<mutable_graph> G)
+    explicit multicut_problem(mutableGraphPtr G)
         : multicut_problem(G, std::vector<terminal>()) { }
 
-    multicut_problem(std::shared_ptr<mutable_graph> G,
+    multicut_problem(mutableGraphPtr G,
                      std::vector<terminal> term)
         : multicut_problem(G,
                            term,
@@ -58,7 +58,7 @@ struct multicut_problem {
                            { UNDEFINED_NODE, UNDEFINED_EDGE },
                            std::unordered_set<NodeID>()) { }
 
-    multicut_problem(std::shared_ptr<mutable_graph> G,
+    multicut_problem(mutableGraphPtr G,
                      std::vector<terminal> term,
                      std::vector<std::shared_ptr<std::vector<NodeID> > >
                      mappings,
@@ -120,9 +120,9 @@ struct multicut_problem {
         return (finished_blockpairs.count(combined) > 0);
     }
 
-    static void writeGraph(std::shared_ptr<multicut_problem> problem,
+    static void writeGraph(problemPointer problem,
                            std::string path) {
-        std::shared_ptr<mutable_graph> g = std::make_shared<mutable_graph>();
+        mutableGraphPtr g = std::make_shared<mutable_graph>();
 
         LOG1 << problem->graph->n() << " nodes and "
              << problem->graph->m() << " edges";
@@ -190,7 +190,7 @@ struct multicut_problem {
         LOG1 << "...done!";
     }
 
-    std::shared_ptr<mutable_graph>                      graph;
+    mutableGraphPtr                                     graph;
     std::vector<terminal>                               terminals;
     std::vector<std::shared_ptr<std::vector<NodeID> > > mappings;
     FlowType                                            lower_bound;

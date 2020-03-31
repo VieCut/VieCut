@@ -65,9 +65,9 @@ class graph_extractor {
         return std::make_pair(extracted_block, reverse_mapping);
     }
 
-    std::tuple<std::shared_ptr<mutable_graph>, std::vector<NodeID>,
+    std::tuple<mutableGraphPtr, std::vector<NodeID>,
                std::vector<NodeID> > extract_block(
-        std::shared_ptr<mutable_graph> G,
+        mutableGraphPtr G,
         PartitionID block,
         const std::vector<int>& components) {
         auto extracted_block = std::make_shared<mutable_graph>();

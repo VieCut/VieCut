@@ -51,7 +51,7 @@ static void augmentMostBalancedCut(std::shared_ptr<graph_access> original_graph,
 }
 
 static void augmentCutEdges(std::shared_ptr<graph_access> original_graph,
-                            std::shared_ptr<mutable_graph> mg,
+                            mutableGraphPtr mg,
                             NodeID largest_id) {
     std::vector<std::vector<EdgeID> > interblock_edges;
     for (NodeID n : mg->nodes()) {

@@ -24,7 +24,7 @@
 
 class find_articulation_points {
  public:
-    explicit find_articulation_points(std::shared_ptr<mutable_graph> G)
+    explicit find_articulation_points(mutableGraphPtr G)
         : G(G),
           visited(G->n(), false),
           discovered(G->n(), UNDEFINED_NODE),
@@ -213,7 +213,7 @@ class find_articulation_points {
         // different contraction mechanism
     }
 
-    std::shared_ptr<mutable_graph> G;
+    mutableGraphPtr G;
     std::vector<bool> visited;
     std::vector<NodeID> discovered;
     std::vector<NodeID> parent;

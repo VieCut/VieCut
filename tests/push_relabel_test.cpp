@@ -21,7 +21,7 @@
 
 TEST(PushRelabelTest, EmptyGraph) {
     std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
-    std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
 
     push_relabel pr;
     std::vector<NodeID> src;
@@ -39,7 +39,7 @@ TEST(PushRelabelTest, TooLargeSrc) {
         G->new_node();
     G->finish_construction();
 
-    std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
 
     push_relabel pr;
     std::vector<NodeID> src;
@@ -57,7 +57,7 @@ TEST(PushRelabelTest, NoEdges) {
         G->new_node();
     G->finish_construction();
 
-    std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
 
     push_relabel pr;
     std::vector<NodeID> src;
@@ -94,7 +94,7 @@ TEST(PushRelabelTest, DisconnectedCliques) {
         src.push_back(distribution(eng));
         src.push_back(10 + distribution(eng));
 
-        std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] = pr.solve_max_flow_min_cut(
@@ -133,7 +133,7 @@ TEST(PushRelabelTest, CliqueSingleSink) {
 
         src.push_back(tgt);
 
-        std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] = pr.solve_max_flow_min_cut(
@@ -173,7 +173,7 @@ TEST(PushRelabelTest, CliqueMultipleSinks) {
             src.push_back(tgt);
         }
 
-        std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 4; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -200,7 +200,7 @@ TEST(PushRelabelTest, UnweightedGraphOneSink) {
         src.push_back(distribution(eng));
         src.push_back(distribution(eng) + 4);
 
-        std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -236,7 +236,7 @@ TEST(PushRelabelTest, WeightedGraphOneSink) {
         src.push_back(distribution(eng));
         src.push_back(distribution(eng) + 4);
 
-        std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -266,7 +266,7 @@ TEST(PushRelabelTest, UnweightedGraphMultipleSinks) {
     src.push_back(4);
     src.push_back(7);
 
-    std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
     for (size_t src_v = 0; src_v < 4; ++src_v) {
         push_relabel pr;
         auto [f, src_block] = pr.solve_max_flow_min_cut(fG, src, src_v, true);
@@ -286,7 +286,7 @@ TEST(PushRelabelTest, WeightedGraphMultipleSinks) {
     src.push_back(4);
     src.push_back(7);
 
-    std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
     for (size_t src_v = 0; src_v < 4; ++src_v) {
         push_relabel pr;
         auto [f, src_block] = pr.solve_max_flow_min_cut(fG, src, src_v, true);
@@ -352,7 +352,7 @@ TEST(PushRelabelTest, BlocksOnMulticutUnequalGraph) {
             terminals.emplace_back((2 * i) * cluster_size + distribution(eng));
         }
 
-        std::shared_ptr<mutable_graph> fG = mutable_graph::from_graph_access(G);
+        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 3; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -365,7 +365,7 @@ TEST(PushRelabelTest, BlocksOnMulticutUnequalGraph) {
 }
 
 TEST(PushRelabelTest, ReInit) {
-    std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    mutableGraphPtr G = std::make_shared<mutable_graph>();
     G->start_construction(3);
     G->new_edge(0, 1, 1);
     G->new_edge(1, 2, 2);
@@ -382,7 +382,7 @@ TEST(PushRelabelTest, ReInit) {
 }
 
 TEST(PushRelabelTest, ContractSrcBlock) {
-    std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    mutableGraphPtr G = std::make_shared<mutable_graph>();
     G->start_construction(20);
 
     for (NodeID cl = 0; cl < 2; ++cl) {

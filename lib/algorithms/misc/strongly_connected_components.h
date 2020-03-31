@@ -31,7 +31,7 @@ class strongly_connected_components {
     virtual ~strongly_connected_components() { }
 
     std::tuple<std::vector<int>, size_t, std::vector<size_t> >
-    strong_components(std::shared_ptr<mutable_graph> G) {
+    strong_components(mutableGraphPtr G) {
         m_dfsnum.resize(G->number_of_nodes());
         m_comp_num.resize(G->number_of_nodes());
         m_dfscount = 0;
@@ -78,7 +78,7 @@ class strongly_connected_components {
         return m_comp_count;
     }
 
-    void explicit_scc_dfs(NodeID node, std::shared_ptr<mutable_graph> G) {
+    void explicit_scc_dfs(NodeID node, mutableGraphPtr G) {
         iteration_stack.push(
             std::pair<NodeID, EdgeID>(node, G->get_first_edge(node)));
 

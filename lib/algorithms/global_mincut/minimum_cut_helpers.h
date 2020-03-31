@@ -162,7 +162,7 @@ class minimum_cut_helpers {
     }
 
     static void setVertexLocations(
-        std::shared_ptr<mutable_graph> out_graph,
+        mutableGraphPtr out_graph,
         const std::vector<std::shared_ptr<graph_access> >& graphs,
         const std::vector<size_t>& ge_ids,
         const std::vector<std::vector<std::pair<NodeID, NodeID> > >& g_edges,

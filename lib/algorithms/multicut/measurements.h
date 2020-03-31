@@ -32,7 +32,7 @@ class measurements {
         : original_graph(original_graph),
           original_terminals(original_terminals) { }
 
-    std::vector<NodeID> getSolution(std::shared_ptr<multicut_problem> problem) {
+    std::vector<NodeID> getSolution(problemPointer problem) {
         std::vector<NodeID> current_solution(original_graph.n(), 0);
         std::vector<size_t> blocksize(original_terminals.size(), 0);
         for (NodeID n = 0; n < current_solution.size(); ++n) {

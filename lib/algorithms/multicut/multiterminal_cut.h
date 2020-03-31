@@ -33,7 +33,7 @@ class multiterminal_cut {
     static constexpr bool debug = false;
     multiterminal_cut() { }
 
-    std::vector<NodeID> setOriginalTerminals(std::shared_ptr<mutable_graph> G) {
+    std::vector<NodeID> setOriginalTerminals(mutableGraphPtr G) {
         auto config = configuration::getConfig();
         std::vector<NodeID> terminalMapping;
         if (config->partition_file.empty()) {
@@ -89,7 +89,7 @@ class multiterminal_cut {
         }
     }
 
-    size_t multicut(std::shared_ptr<mutable_graph> G,
+    size_t multicut(mutableGraphPtr G,
                     std::vector<NodeID> terminals, NodeID num_terminals) {
         auto cfg = configuration::getConfig();
         cfg->num_terminals = num_terminals;
@@ -166,7 +166,7 @@ class multiterminal_cut {
 
  private:
     static std::vector<NodeID> addSurroundingAreaToTerminals(
-        std::shared_ptr<mutable_graph> graph,
+        mutableGraphPtr graph,
         std::vector<NodeID> terminals) {
         auto config = configuration::getConfig();
         std::vector<NodeID> terminalMapping(graph->n(), UNDEFINED_NODE);
@@ -208,7 +208,7 @@ class multiterminal_cut {
                       std::vector<NodeID>,
                       std::vector<std::vector<NodeID> >,
                       std::vector<std::vector<bool> > >
-    splitConnectedComponents(std::shared_ptr<mutable_graph> G,
+    splitConnectedComponents(mutableGraphPtr G,
                              const std::vector<NodeID>& terminalMapping) {
         std::vector<multicut_problem> problems;
         std::vector<mutable_graph> originalGraphs;
@@ -296,7 +296,7 @@ class multiterminal_cut {
                                fixedVertex);
     }
 
-    std::vector<NodeID> topKTerminals(std::shared_ptr<mutable_graph> G) {
+    std::vector<NodeID> topKTerminals(mutableGraphPtr G) {
         auto v = graph_algorithms::top_k_degrees(
             G, configuration::getConfig()->top_k);
         std::vector<NodeID> terminals;
@@ -306,7 +306,7 @@ class multiterminal_cut {
         return terminals;
     }
 
-    std::vector<NodeID> randomTerminals(std::shared_ptr<mutable_graph> G) {
+    std::vector<NodeID> randomTerminals(mutableGraphPtr G) {
         std::vector<NodeID> terminals;
         for (int i = 0; i < configuration::getConfig()->random_k; ++i) {
             terminals.emplace_back(random_functions::nextInt(0, G->n() - 1));
@@ -315,7 +315,7 @@ class multiterminal_cut {
         return terminals;
     }
 
-    std::vector<NodeID> distantTerminals(std::shared_ptr<mutable_graph> G) {
+    std::vector<NodeID> distantTerminals(mutableGraphPtr G) {
         std::vector<NodeID> terminals;
         size_t r = random_functions::nextInt(0, G->n() - 1);
         int dt = configuration::getConfig()->distant_terminals;
@@ -350,7 +350,7 @@ class multiterminal_cut {
         return terminals;
     }
 
-    std::vector<NodeID> terminalsByID(std::shared_ptr<mutable_graph> G) {
+    std::vector<NodeID> terminalsByID(mutableGraphPtr G) {
         std::vector<NodeID> terminals;
         for (auto term : configuration::getConfig()->term_strings) {
             try {
@@ -367,7 +367,7 @@ class multiterminal_cut {
         return terminals;
     }
 
-    std::vector<NodeID> presetFileTerminals(std::shared_ptr<mutable_graph>) {
+    std::vector<NodeID> presetFileTerminals(mutableGraphPtr) {
         auto config = configuration::getConfig();
         auto v = graph_io::readVector<NodeID>(config->partition_file);
         std::vector<NodeID> terminalMapping;
@@ -383,7 +383,7 @@ class multiterminal_cut {
         return terminalMapping;
     }
 
-    std::vector<NodeID> orderFileTerminals(std::shared_ptr<mutable_graph> G) {
+    std::vector<NodeID> orderFileTerminals(mutableGraphPtr G) {
         auto config = configuration::getConfig();
         auto v = graph_io::readVector<NodeID>(config->partition_file);
         auto o = graph_io::readVector<NodeID>(config->partition_file + ".pos");

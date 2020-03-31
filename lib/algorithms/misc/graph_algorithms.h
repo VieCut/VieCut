@@ -36,7 +36,7 @@ class graph_algorithms {
     }
 
     static std::vector<NodeID> top_k_degrees(
-        std::shared_ptr<mutable_graph> G, size_t k) {
+        mutableGraphPtr G, size_t k) {
         std::vector<std::pair<NodeID, EdgeWeight> > all_degrees;
         for (NodeID n : G->nodes()) {
             all_degrees.emplace_back(n, G->getWeightedNodeDegree(n));
@@ -101,7 +101,7 @@ class graph_algorithms {
         LOG1 << "Graph is valid!";
     }
 
-    static void checkGraphValidity(std::shared_ptr<mutable_graph> G) {
+    static void checkGraphValidity(mutableGraphPtr G) {
         size_t edges = 0;
         for (NodeID n : G->nodes()) {
             for (NodeID v : G->containedVertices(n)) {
@@ -180,7 +180,7 @@ class graph_algorithms {
     }
 
     static std::tuple<std::vector<NodeID>, std::vector<uint32_t>, NodeID>
-    bfsDistances(std::shared_ptr<mutable_graph> G, NodeID start) {
+    bfsDistances(mutableGraphPtr G, NodeID start) {
         std::queue<NodeID> q;
         std::vector<NodeID> parent(G->n(), UNDEFINED_NODE);
         std::vector<uint32_t> distance(G->n(), 0);

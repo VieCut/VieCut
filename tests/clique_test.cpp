@@ -18,7 +18,7 @@
 #include "tools/random_functions.h"
 
 TEST(CliqueCutTest, SingleClique) {
-    std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    mutableGraphPtr G = std::make_shared<mutable_graph>();
 
     G->start_construction(4);
 
@@ -39,7 +39,7 @@ TEST(CliqueCutTest, SingleClique) {
 }
 
 TEST(CliqueTest, MultipleCliques) {
-    std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    mutableGraphPtr G = std::make_shared<mutable_graph>();
 
     G->start_construction(16);
 
@@ -64,7 +64,7 @@ TEST(CliqueTest, MultipleCliques) {
 }
 
 TEST(CliqueTest, CliqueWithTriangleEars) {
-    std::shared_ptr<mutable_graph> G = std::make_shared<mutable_graph>();
+    mutableGraphPtr G = std::make_shared<mutable_graph>();
 
     G->start_construction(6);
 

@@ -23,7 +23,7 @@
 #include "tools/random_functions.h"
 
 [[maybe_unused]] static std::tuple<NodeID, EdgeID> findHeavyEdge(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     EdgeWeight max_wgt = 0;
     NodeID max_id_t = 0;
     EdgeID max_id_e = 0;
@@ -43,7 +43,7 @@
 }
 
 [[maybe_unused]] static std::tuple<NodeID, EdgeID> findVertexWithHighDistance(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     EdgeWeight max_wgt = 0;
     NodeID max_id_t = 0;
     EdgeID max_id_e = 0;
@@ -64,7 +64,7 @@
 }
 
 [[maybe_unused]] static std::tuple<NodeID, EdgeID> findHeavyVertex(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     EdgeWeight max_wgt = 0;
     NodeID max_id_t = 0;
     EdgeID max_id_e = 0;
@@ -90,7 +90,7 @@
 }
 
 [[maybe_unused]] static std::tuple<NodeID, EdgeID> findGlobalHeaviestEdge(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     EdgeWeight max_wgt = 0;
     NodeID max_id_t = 0;
     EdgeID max_id_e = 0;
@@ -108,7 +108,7 @@
 }
 
 [[maybe_unused]] static std::tuple<NodeID, EdgeID> findEdgeWithManyTerminals(
-    const std::shared_ptr<multicut_problem> problem) {
+    const problemPointer problem) {
     std::unordered_map<NodeID, uint16_t> terms;
     NodeID max_num = 0;
     NodeID max_ngbr = 0;
@@ -148,7 +148,7 @@
 }
 
 [[maybe_unused]] static std::tuple<NodeID, EdgeID> findRandomEdge(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     std::vector<EdgeWeight> prefixsum(problem->terminals.size() + 1, 0);
     EdgeWeight s = 0;
     for (size_t i = 0; i < prefixsum.size() - 1; ++i) {
@@ -179,7 +179,7 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
                };
 
 [[maybe_unused]] static NodeID mostTerminalNeighbours(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     std::vector<std::pair<size_t, size_t> > neighbours(problem->graph->n(),
                                                        { 0, 0 });
     std::pair<size_t, size_t> maxPair = { 0, 0 };
@@ -202,7 +202,7 @@ auto compare = [](const std::pair<size_t, size_t>& p1,
 }
 
 static std::tuple<NodeID, std::vector<size_t> >
-findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
+findEdgeMultiBranch(problemPointer problem) {
     // NodeID vtx = mostTerminalNeighbours(problem);
     auto [n, e] = findHeavyVertex(problem);
     NodeID vtx = problem->graph->getEdgeTarget(n, e);
@@ -259,7 +259,7 @@ findEdgeMultiBranch(std::shared_ptr<multicut_problem> problem) {
 }
 
 static std::tuple<NodeID, EdgeID> findEdgeSingleBranch(
-    std::shared_ptr<multicut_problem> problem) {
+    problemPointer problem) {
     std::string edge_selection = configuration::getConfig()->edge_selection;
     std::pair<NodeID, EdgeID> undefined = { UNDEFINED_NODE, UNDEFINED_EDGE };
 

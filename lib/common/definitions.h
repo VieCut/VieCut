@@ -14,22 +14,17 @@
 #pragma once
 
 #include <limits>
+#include <memory>
 #include <queue>
 #include <vector>
 
 #include "tools/macros_assertions.h"
 
-// allows us to disable most of the output during partitioning
-#ifdef KAFFPAOUTPUT
-        #define PRINT(x) x
-#else
-        #define PRINT(x) do { } while (false);
-#endif
-
 /**********************************************
  * Constants
  * ********************************************/
 // Types needed for the graph ds
+
 typedef uint32_t NodeID;
 typedef double EdgeRatingType;
 typedef uint64_t EdgeID;
@@ -60,3 +55,8 @@ typedef enum {
 } DFSVertexStatus;
 
 enum MessageStatus { needProblem, haveProblem, emptyAsWell, allEmpty };
+
+struct multicut_problem;
+typedef std::shared_ptr<multicut_problem> problemPointer;
+class mutable_graph;
+typedef std::shared_ptr<mutable_graph> mutableGraphPtr;

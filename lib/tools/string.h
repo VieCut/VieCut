@@ -86,7 +86,7 @@ class string {
     }
 
     [[maybe_unused]] static std::string graphToString(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         std::ostringstream oss;
 
         for (NodeID n : G->nodes()) {
@@ -120,7 +120,7 @@ class string {
     }
 
     [[maybe_unused]] static std::string weightedGraphToString(
-        std::shared_ptr<mutable_graph> G) {
+        mutableGraphPtr G) {
         std::ostringstream oss;
 
         for (NodeID n : G->nodes()) {

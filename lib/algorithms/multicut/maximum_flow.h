@@ -29,7 +29,7 @@ class maximum_flow {
         : original_terminals(o),
           num_threads(configuration::getConfig()->threads) { }
 
-    void maximumSTFlow(std::shared_ptr<multicut_problem> problem) {
+    void maximumSTFlow(problemPointer problem) {
         push_relabel pr;
         auto G = problem->graph;
 
@@ -62,7 +62,7 @@ class maximum_flow {
     }
 
     std::vector<NodeID> highDistanceVertices(
-        std::shared_ptr<multicut_problem> problem) {
+        problemPointer problem) {
         std::queue<NodeID> Q;
         std::vector<bool> found(problem->graph->n(), false);
         std::vector<NodeID> order;
@@ -89,7 +89,7 @@ class maximum_flow {
         return order;
     }
 
-    union_find nonTerminalFlow(std::shared_ptr<multicut_problem> problem,
+    union_find nonTerminalFlow(problemPointer problem,
                                bool parallel,
                                const std::vector<bool>& active) {
         union_find uf(problem->graph->n());
@@ -197,7 +197,7 @@ class maximum_flow {
         return uf;
     }
 
-    void maximumIsolatingFlow(std::shared_ptr<multicut_problem> problem,
+    void maximumIsolatingFlow(problemPointer problem,
                               size_t thread_id, bool parallel) {
         graph_contraction::setTerminals(problem, original_terminals);
         std::vector<std::vector<NodeID> > maxVolIsoBlock;

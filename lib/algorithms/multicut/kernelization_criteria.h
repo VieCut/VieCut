@@ -44,7 +44,7 @@ class kernelization_criteria {
     // performs kernelization.
     // if we find a bridge that separates terminal set, return it to branch on
     std::optional<std::pair<NodeID, EdgeID> > kernelization(
-        std::shared_ptr<multicut_problem> problem,
+        problemPointer problem,
         size_t global_upper_bound, bool parallel) {
         NodeID num_vtcs = problem->graph->n();
         std::vector<bool> active_c(problem->graph->getOriginalNodes(), true);
@@ -100,7 +100,8 @@ class kernelization_criteria {
                 if (find_aps.findAllArticulationPoints()) {
                     auto uf = find_aps.terminalsOnBothSides(problem->terminals);
                     if (uf.has_value()) {
-                        contractIfImproved(&uf.value(), problem, "aps", &active_n);
+                        contractIfImproved(
+                            &uf.value(), problem, "aps", &active_n);
                     }
                 }
             }
@@ -112,7 +113,7 @@ class kernelization_criteria {
             }
 
             if (k_variant >= 7) {
-                union_find uf_mf = mf.nonTerminalFlow(problem, parallel, active_c);
+                auto uf_mf = mf.nonTerminalFlow(problem, parallel, active_c);
                 contractIfImproved(&uf_mf, problem, "flow", &active_n);
             }
 
@@ -124,7 +125,7 @@ class kernelization_criteria {
 
  private:
     void contractIfImproved(union_find* uf,
-                            std::shared_ptr<multicut_problem> problem,
+                            problemPointer problem,
                             const std::string& str,
                             std::vector<bool>* active_vertices) {
         std::vector<bool>& active = *active_vertices;
@@ -183,7 +184,7 @@ class kernelization_criteria {
         }
     }
 
-    union_find lowDegreeContraction(std::shared_ptr<multicut_problem> problem) {
+    union_find lowDegreeContraction(problemPointer problem) {
         auto graph = problem->graph;
         union_find uf(graph->number_of_nodes());
         graph_contraction::setTerminals(problem, original_terminals);
@@ -226,7 +227,7 @@ class kernelization_criteria {
         return uf;
     }
 
-    union_find highDegreeContraction(std::shared_ptr<multicut_problem> problem,
+    union_find highDegreeContraction(problemPointer problem,
                                      const std::vector<bool>& active) {
         graph_contraction::setTerminals(problem, original_terminals);
         union_find uf(problem->graph->number_of_nodes());
@@ -292,7 +293,7 @@ class kernelization_criteria {
         return uf;
     }
 
-    union_find triangleDetection(std::shared_ptr<multicut_problem> problem,
+    union_find triangleDetection(problemPointer problem,
                                  const std::vector<bool>& active) {
         auto graph = problem->graph;
 

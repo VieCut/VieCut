@@ -27,7 +27,7 @@
 
 class all_cut_local_red {
  public:
-    static union_find allCutsPrTests12(std::shared_ptr<mutable_graph> G,
+    static union_find allCutsPrTests12(mutableGraphPtr G,
                                        EdgeWeight limit) {
         union_find uf(G->number_of_nodes());
         std::vector<EdgeWeight> degrees;
@@ -61,7 +61,7 @@ class all_cut_local_red {
         return uf;
     }
 
-    static union_find allCutsPrTests34(std::shared_ptr<mutable_graph> G,
+    static union_find allCutsPrTests34(mutableGraphPtr G,
                                        EdgeWeight weight_limit) {
         union_find uf(G->number_of_nodes());
         std::vector<EdgeID> marked(G->number_of_nodes(), UNDEFINED_EDGE);

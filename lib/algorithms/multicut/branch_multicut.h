@@ -91,7 +91,7 @@ class branch_multicut {
     ~branch_multicut() { }
 
     std::pair<std::vector<NodeID>, size_t> find_multiterminal_cut(
-        std::shared_ptr<multicut_problem> problem) {
+        problemPointer problem) {
         std::vector<NodeID> sol;
         size_t numTerminals = problem->terminals.size();
         if (mpi_rank == 0) {
@@ -284,7 +284,7 @@ class branch_multicut {
         }
     }
 
-    void solveProblem(std::shared_ptr<multicut_problem> problem,
+    void solveProblem(problemPointer problem,
                       size_t thread_id) {
         auto c = configuration::getConfig();
         if (problem == NULL) {
@@ -404,7 +404,7 @@ class branch_multicut {
         }
     }
 
-    void contractHeaviestTerminal(std::shared_ptr<multicut_problem> problem) {
+    void contractHeaviestTerminal(problemPointer problem) {
         auto c = configuration::getConfig();
         NodeID heaviest_t = 0;
         EdgeWeight heaviest_weight = 0;
@@ -452,7 +452,7 @@ class branch_multicut {
         }
     }
 
-    void deleteLowestDegTerminals(std::shared_ptr<multicut_problem> problem) {
+    void deleteLowestDegTerminals(problemPointer problem) {
         size_t lowestTerminals =
             std::ceil(
                 static_cast<double>(problem->terminals.size()) *
@@ -548,7 +548,7 @@ class branch_multicut {
         print_index++;
     }
 
-    void branchOnEdge(std::shared_ptr<multicut_problem> problem,
+    void branchOnEdge(problemPointer problem,
                       size_t thread_id) {
         graph_contraction::deleteTermEdges(problem, original_terminals);
         if (!problem->graph->number_of_edges()) {
@@ -560,7 +560,7 @@ class branch_multicut {
         pm.branch(problem, thread_id);
     }
 
-    void nonBranchingContraction(std::shared_ptr<multicut_problem> problem) {
+    void nonBranchingContraction(problemPointer problem) {
         auto pe = kc.kernelization(problem, pm.bestCut(),
                                    pm.numProblems() == 0
                                    && configuration::getConfig()->threads > 1);
@@ -570,7 +570,7 @@ class branch_multicut {
     }
 
 #ifdef USE_GUROBI
-    void solve_with_ilp(std::shared_ptr<multicut_problem> problem,
+    void solve_with_ilp(problemPointer problem,
                         size_t thread_id) {
         graph_contraction::deleteTermEdges(problem, original_terminals);
         std::vector<NodeID> presets(problem->graph->n(),
@@ -602,7 +602,7 @@ class branch_multicut {
         }
     }
 #else
-    void solve_with_ilp(std::shared_ptr<multicut_problem>, size_t) {
+    void solve_with_ilp(problemPointer, size_t) {
         LOG1 << "Error: Code not compiled with option -DUSE_GUROBI,"
              << " but called ILP solver. Exiting!";
         exit(1);

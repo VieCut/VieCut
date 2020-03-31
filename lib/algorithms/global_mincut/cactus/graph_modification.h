@@ -26,9 +26,9 @@
 
 class graph_modification {
  public:
-    static std::shared_ptr<mutable_graph> mergeGraphs(
-        std::shared_ptr<mutable_graph> G1, NodeID v1,
-        std::shared_ptr<mutable_graph> G2, NodeID v2, EdgeWeight mincut) {
+    static mutableGraphPtr mergeGraphs(
+        mutableGraphPtr G1, NodeID v1,
+        mutableGraphPtr G2, NodeID v2, EdgeWeight mincut) {
         NodeID v1_n = G1->number_of_nodes();
         if (G2->number_of_nodes() == 1) {
             return G1;
@@ -73,7 +73,7 @@ class graph_modification {
         return G1;
     }
 
-    static bool canonizeCactus(std::shared_ptr<mutable_graph> cactus,
+    static bool canonizeCactus(mutableGraphPtr cactus,
                                NodeID vertex, EdgeWeight mincut) {
         size_t junctions = 0;
         std::vector<std::tuple<NodeID, EdgeID, EdgeID> > neighbors_tree;
@@ -170,7 +170,7 @@ class graph_modification {
         return false;
     }
 
-    static bool isCNCR(std::shared_ptr<mutable_graph> G, EdgeWeight mincut) {
+    static bool isCNCR(mutableGraphPtr G, EdgeWeight mincut) {
         for (NodeID n : G->nodes()) {
             if (G->isEmpty(n)) {
                 EdgeWeight deg = 0;

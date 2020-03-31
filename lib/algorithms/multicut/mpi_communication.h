@@ -66,7 +66,7 @@ class mpi_communication {
         }
     }
 
-    void sendProblem(std::shared_ptr<multicut_problem> problem, size_t tgt) {
+    void sendProblem(problemPointer problem, size_t tgt) {
         LOG1 << mpi_rank << " sends problem to " << tgt;
         std::vector<uint64_t> data;
         data.emplace_back(problem->lower_bound);
@@ -96,7 +96,7 @@ class mpi_communication {
         MPI_Send(&data.front(), datasize, MPI_LONG, tgt, 1020, MPI_COMM_WORLD);
     }
 
-    std::shared_ptr<multicut_problem> recvProblem(size_t src) {
+    problemPointer recvProblem(size_t src) {
         size_t datasize = 0;
         MPI_Recv(&datasize, 1, MPI_LONG, src, 1010,
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);

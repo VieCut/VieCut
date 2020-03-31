@@ -72,8 +72,8 @@ MESSAGE(STATUS "Option: USE_TCMALLOC " ${USE_TCMALLOC})
 MESSAGE(STATUS "Option: USE_PROFILER " ${USE_PROFILER})
 MESSAGE(STATUS "Option: USE_GUROBI " ${USE_GUROBI})
 
-MESSAGE(STATUS ${GUROBI_INCLUDE_DIR})
-
+MESSAGE(STATUS "GUROBI INCLUDE ${GUROBI_INCLUDE_DIR}")
+MESSAGE(STATUS "TCMALLOC INCLUDE ${Tcmalloc_INCLUDE_DIR}")
 add_subdirectory(extlib/tlx)
 
 include_directories(
@@ -83,6 +83,7 @@ include_directories(
     extlib/growt
     extlib/tlx
     ${GUROBI_INCLUDE_DIR}
+    ${Tcmalloc_INCLUDE_DIR}
 )
 
 

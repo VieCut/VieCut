@@ -513,11 +513,14 @@ class branch_multicut {
                         contractIntoTerminal.insert(i);
                     }
                 }
+                NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
+                LOG1 << "CONTRACT " << contractIntoTerminal << " of "
+                     << problem->graph->n() << " VERTICES";
+                problem->graph->contractVertexSet(contractIntoTerminal);
+                lightest_t = problem->graph->getCurrentPosition(invtx);
+                problem->graph->setPartitionIndex(lightest_t, lightest_oid);
             }
 
-            NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
-            problem->graph->contractVertexSet(contractIntoTerminal);
-            lightest_t = problem->graph->getCurrentPosition(invtx);
             graph_contraction::deleteTermEdges(problem, original_terminals);
             EdgeID e1 = problem->graph->get_first_invalid_edge(lightest_t);
 

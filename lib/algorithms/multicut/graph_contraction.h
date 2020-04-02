@@ -87,9 +87,8 @@ class graph_contraction {
                 do {
                     NodeID tgt = mcp->graph->getEdgeTarget(term, e);
                     if (terminal_set.count(tgt) > 0) {
-                        FlowType wgt =
-                            static_cast<FlowType>(
-                                mcp->graph->getEdgeWeight(term, e));
+                        FlowType wgt = static_cast<FlowType>(
+                            mcp->graph->getEdgeWeight(term, e));
                         del_weight += wgt;
                         mcp->graph->deleteEdge(term, e);
 

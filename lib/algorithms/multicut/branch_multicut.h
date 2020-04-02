@@ -514,7 +514,7 @@ class branch_multicut {
                     }
                 }
                 NodeID invtx = problem->graph->containedVertices(lightest_t)[0];
-                LOG1 << "CONTRACT " << contractIntoTerminal << " of "
+                LOG1 << "CONTRACT " << contractIntoTerminal.size() << " of "
                      << problem->graph->n() << " VERTICES";
                 problem->graph->contractVertexSet(contractIntoTerminal);
                 lightest_t = problem->graph->getCurrentPosition(invtx);

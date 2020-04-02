@@ -78,7 +78,9 @@ class ilp_model {
                 }
             }
             model.set(GRB_IntParam_PoolSearchMode, 0);
-            model.set(GRB_DoubleParam_TimeLimit, 3600.0);
+
+            // TODO(anoe): time limit lowered, change this back (possibly)
+            model.set(GRB_DoubleParam_TimeLimit, 60.0);
             // Set decision variables for nodes
             for (size_t q = 0; q < num_terminals; q++) {
                 GRBLinExpr nodeTot = 0;
@@ -168,17 +170,18 @@ class ilp_model {
                 LOG1 << "ILP Timeout - Re-introducing problem to queue!";
                 reIntroduce = true;
             }
-
             EdgeWeight wgt = std::lround(model.get(GRB_DoubleAttr_ObjVal));
 
-            LOG1 << "SOLUTION time=" << ilp_timer.elapsed()
-                 << " graph=" << configuration::getConfig()->graph_filename
-                 << " n=" << graph->n()
-                 << " m=" << graph->m()
-                 << " wgt=" << wgt
-                 << " total=" << wgt + problem->deleted_weight
-                 << " original_terminals=" << num_terminals
-                 << " current_terminals=" << problem->terminals.size();
+            if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL) {
+                LOG1 << "SOLUTION time=" << ilp_timer.elapsed()
+                     << " graph=" << configuration::getConfig()->graph_filename
+                     << " n=" << graph->n()
+                     << " m=" << graph->m()
+                     << " wgt=" << wgt
+                     << " total=" << wgt + problem->deleted_weight
+                     << " original_terminals=" << num_terminals
+                     << " current_terminals=" << problem->terminals.size();
+            }
 
             if (parallel) {
                 if (!configuration::getConfig()->disable_cpu_affinity) {

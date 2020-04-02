@@ -381,8 +381,9 @@ class branch_multicut {
 
         bool branchOnCurrentInstance = true;
 #ifdef USE_GUROBI
+        size_t ilpLimit = random_functions::nextInt(0, 200000);
         branchOnCurrentInstance =
-            problem->graph->n() > 1000 || (!c->use_ilp);
+            problem->graph->m() > ilpLimit || (!c->use_ilp);
         if (!c->differences_set) {
             c->bound_difference = problem->upper_bound
                                   - problem->lower_bound;

@@ -59,9 +59,9 @@ class ilp_model {
 
             model.set(GRB_StringAttr_ModelName, "Partition");
             model.set(GRB_DoubleParam_MIPGap, 0);
+            model.set(GRB_IntParam_LogToConsole, 0);
             if (!parallel) {
                 model.set(GRB_IntParam_Threads, 1);
-                model.set(GRB_IntParam_LogToConsole, 0);
             } else {
                 size_t threads = configuration::getConfig()->threads;
                 model.set(GRB_IntParam_Threads, threads);
@@ -172,7 +172,10 @@ class ilp_model {
             }
             EdgeWeight wgt = std::lround(model.get(GRB_DoubleAttr_ObjVal));
 
-            if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL) {
+            if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL ||
+                model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+                bool optimal = (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL);
+
                 LOG1 << "SOLUTION time=" << ilp_timer.elapsed()
                      << " graph=" << configuration::getConfig()->graph_filename
                      << " n=" << graph->n()
@@ -180,7 +183,8 @@ class ilp_model {
                      << " wgt=" << wgt
                      << " total=" << wgt + problem->deleted_weight
                      << " original_terminals=" << num_terminals
-                     << " current_terminals=" << problem->terminals.size();
+                     << " current_terminals=" << problem->terminals.size()
+                     << " optimal_finish=" << optimal;
             }
 
             if (parallel) {

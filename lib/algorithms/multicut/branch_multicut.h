@@ -381,7 +381,7 @@ class branch_multicut {
 
         bool branchOnCurrentInstance = true;
 #ifdef USE_GUROBI
-        size_t ilpLimit = random_functions::nextInt(0, 200000);
+        size_t ilpLimit = 50000;
         branchOnCurrentInstance =
             problem->graph->m() > ilpLimit || (!c->use_ilp);
         if (!c->differences_set) {
@@ -397,11 +397,6 @@ class branch_multicut {
         if (path != "") {
             multicut_problem::writeGraph(problem, path);
             exit(1);
-        }
-
-        if (c->inexact) {
-            deleteLowestDegTerminals(problem);
-            contractHeaviestTerminal(problem);
         }
 
         if (branchOnCurrentInstance) {
@@ -560,6 +555,12 @@ class branch_multicut {
 
     void branchOnEdge(problemPointer problem,
                       size_t thread_id) {
+        
+        if (configuration::getConfig()->inexact) {
+            deleteLowestDegTerminals(problem);
+            contractHeaviestTerminal(problem);
+        }
+
         graph_contraction::deleteTermEdges(problem, original_terminals);
         if (!problem->graph->number_of_edges()) {
             problem->upper_bound = problem->deleted_weight;

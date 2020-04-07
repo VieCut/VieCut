@@ -608,7 +608,7 @@ class branch_multicut {
         }
 
         if (reIntroduce) {
-            pm.addProblem(problem, thread_id, !pm.runLocalSearch(problem));
+            branchOnEdge(problem, thread_id);
         }
     }
 #else

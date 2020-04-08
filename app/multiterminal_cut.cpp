@@ -141,6 +141,7 @@ int main(int argn, char** argv) {
               << " contract_m=" << config->m
               << " processes=" << config->threads
               << " inexact=" << config->inexact
+              << " old=" << config->old
               << " seed=" << config->seed << std::endl;
     MPI_Finalize();
 }

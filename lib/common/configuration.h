@@ -56,11 +56,13 @@ class configuration {
     size_t random_flows = 5;
     double removeTerminalsBeforeBranch = 0.1;
     size_t contractionDepthAroundTerminal = 1;
-    size_t maximumBranchingFactor = 3;
+    size_t maximumBranchingFactor = 5;
     bool multibranch = true;
     bool inexact = false;
+    bool old = false;
 
-    size_t kernelization_variant = 0;
+    size_t kernelization_variant = 7;
+    bool disable_local_search = false;
     bool endBeforeBranch = false;
     NodeID orign;
     EdgeID origm;

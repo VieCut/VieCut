@@ -67,6 +67,7 @@ int main(int argn, char** argv) {
                     "percentag of vertices that are preset");
     cmdl.add_string('o', "first_branch_path", config->first_branch_path,
                     "Print graph at time of first branching, then terminate.");
+    cmdl.add_bool('O', "old", config->old, "Run version from first version");
     cmdl.add_size_t('p', "proc", config->threads, "number of threads");
     cmdl.add_string('q', "queue_type", config->queue_type,
                     "Type of priority queue used");
@@ -83,6 +84,16 @@ int main(int argn, char** argv) {
 
     if (!cmdl.process(argn, argv))
         return -1;
+
+    if (config->old) {
+        LOG1 << "Runnign old version - disabling updates!";
+        config->inexact = false;
+        config->use_ilp = false;
+        config->kernelization_variant = 4;
+        config->multibranch = false;
+        config->disable_local_search = true;
+
+    }
 
     random_functions::setSeed(config->seed);
 

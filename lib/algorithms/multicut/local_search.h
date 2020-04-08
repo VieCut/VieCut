@@ -310,6 +310,9 @@ class local_search {
 
  public:
     FlowType improveSolution() {
+        if (configuration::getConfig()->disable_local_search) {
+            return 0;
+        }
         FlowType total_improvement = 0;
         bool change_found = true;
         while (change_found) {

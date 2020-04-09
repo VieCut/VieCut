@@ -92,7 +92,6 @@ int main(int argn, char** argv) {
         config->kernelization_variant = 4;
         config->multibranch = false;
         config->disable_local_search = true;
-
     }
 
     random_functions::setSeed(config->seed);

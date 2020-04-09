@@ -566,7 +566,6 @@ class branch_multicut {
 
     void branchOnEdge(problemPointer problem,
                       size_t thread_id) {
-        
         if (configuration::getConfig()->inexact) {
             deleteLowestDegTerminals(problem);
             contractHeaviestTerminal(problem);

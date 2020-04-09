@@ -285,6 +285,22 @@ class branch_multicut {
         }
     }
 
+    bool outOfMemory() {
+#ifdef USE_TCMALLOC
+        uint64_t heapsize = 0;
+        MallocExtension::instance()->GetNumericProperty(
+            "generic.heap_size", &heapsize);
+
+        uint64_t max_size = 32UL * 1024UL * 1024UL * 1024UL;
+        if (heapsize > max_size) {
+            LOG1 << "RESULT Memoryout";
+            finished = true;
+            return true;
+        }
+#endif
+        return false;
+    }
+
     void solveProblem(problemPointer problem,
                       size_t thread_id) {
         if (finished)
@@ -314,18 +330,8 @@ class branch_multicut {
             return;
         }
 
-#ifdef USE_TCMALLOC
-        uint64_t heapsize = 0;
-        MallocExtension::instance()->GetNumericProperty(
-            "generic.heap_size", &heapsize);
-
-        uint64_t max_size = 50UL * 1024UL * 1024UL * 1024UL;
-        if (heapsize > max_size) {
-            LOG1 << "RESULT Memoryout";
-            finished = true;
+        if (outOfMemory())
             return;
-        }
-#endif
 
         if (total_time.elapsed() > 3600) {
             LOG1 << "RESULT Timeout!";
@@ -360,6 +366,8 @@ class branch_multicut {
         }
         graph_contraction::setTerminals(problem, original_terminals);
         nonBranchingContraction(problem);
+        if (outOfMemory())
+            return;
 
         if (c->endBeforeBranch) {
             LOG1 << "RESULT graph=" << c->graph_filename
@@ -398,6 +406,9 @@ class branch_multicut {
             multicut_problem::writeGraph(problem, path);
             exit(1);
         }
+
+        if (outOfMemory())
+            return;
 
         if (branchOnCurrentInstance) {
             branchOnEdge(problem, thread_id);
@@ -568,7 +579,13 @@ class branch_multicut {
             updateBestSolution(&sol, problem->terminals.size());
             return;
         }
+
+        if (outOfMemory())
+            return;
         pm.branch(problem, thread_id);
+
+        if (outOfMemory())
+            return;
     }
 
     void nonBranchingContraction(problemPointer problem) {

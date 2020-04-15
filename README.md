@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.com/alexnoe/VieCut.svg?branch=master)](https://travis-ci.com/alexnoe/VieCut)
 
+If you have any questions, find any errors or would like to use this library but are unsure how, feel free to send me a message. I would be very happy to help you out!
+
 This is the code repository to accompany our papers:
 
 *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms. arXiv preprint [arXiv:1708.06127.](https://arxiv.org/abs/1708.06127)*

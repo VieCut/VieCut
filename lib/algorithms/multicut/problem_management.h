@@ -54,6 +54,7 @@ class problem_management {
     std::vector<NodeID> best_solution;
     bool bestSolutionInitialized;
     measurements msm;
+    timer t;
 
  public:
     problem_management(const mutable_graph& original_graph,
@@ -250,6 +251,17 @@ class problem_management {
         FlowType prev_gub = msm.flowValue(false, *current_solution);
         if (prev_gub > beforeLSGUB[numTerminals])
             return std::nullopt;
+
+        if (prev_gub < global_upper_bound) {
+            global_upper_bound = prev_gub;
+            LOG1 << "Improvement after " << t.elapsed() << " to " << prev_gub << " (beforehand)";
+            bestsol_mutex.lock();
+            for (size_t i = 0; i < current_solution->size(); ++i) {
+                best_solution[i] = (*current_solution)[i];
+            }
+            initalizeBestSolution();
+            bestsol_mutex.unlock();
+        }
         FlowType total_improvement = ls.improveSolution();
         FlowType ls_bound = prev_gub - total_improvement;
 
@@ -260,6 +272,7 @@ class problem_management {
 
         if (ls_bound <= global_upper_bound) {
             global_upper_bound = ls_bound;
+            LOG1 << "Improvement after " << t.elapsed() << " to " << ls_bound;
 
             bestsol_mutex.lock();
             for (size_t i = 0; i < current_solution->size(); ++i) {

@@ -293,7 +293,7 @@ class branch_multicut {
 
         uint64_t max_size = 32UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
-            LOG1 << "RESULT Memoryout";
+            LOG1 << "Memoryout!";
             finished = true;
             return true;
         }
@@ -333,8 +333,8 @@ class branch_multicut {
         if (outOfMemory())
             return;
 
-        if (total_time.elapsed() > 3600) {
-            LOG1 << "RESULT Timeout!";
+        if (total_time.elapsed() > 600) {
+            LOG1 << "Timeout!";
             finished = true;
             return;
         }

@@ -52,8 +52,9 @@ class matula_approx : public minimum_cut {
             std::vector<std::pair<NodeID, NodeID> > contractable;
             timer time;
             noi_minimum_cut noi;
-            auto uf = noi.modified_capforest(graphs.back(),
-                                             std::max(mincut / 2, 1UL));
+            auto uf = noi.modified_capforest(
+                graphs.back(),
+                std::max(mincut / 2, static_cast<EdgeWeight>(1)));
             graphs.emplace_back(contraction::fromUnionFind(graphs.back(), &uf));
             mincut = minimum_cut_helpers::updateCut(graphs, mincut);
         }

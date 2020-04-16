@@ -234,7 +234,8 @@ class mutable_graph {
     EdgeID getMaxUnweightedDegree() {
         EdgeID max_size = 0;
         for (NodeID n : nodes()) {
-            max_size = std::max(max_size, vertices[n].size());
+            EdgeID curr_size = vertices[n].size();
+            max_size = std::max(max_size, curr_size);
         }
         return max_size;
     }

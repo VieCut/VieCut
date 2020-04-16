@@ -67,7 +67,7 @@ jobs:
             - openmpi-bin
 
 # clang++-6, Release
-    - env: CMAKE_CC="clang-8" CMAKE_CXX="clang++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0 && OMP_NUM_THREADS=4"
+    - env: CMAKE_CC="clang-8" CMAKE_CXX="clang++-8" BUILD_TYPE="Release" MATRIX_EVAL="CC=clang-8 && CXX=clang++-8 && OMP_NUM_THREADS=4"
       os: linux
       addons:
         apt:

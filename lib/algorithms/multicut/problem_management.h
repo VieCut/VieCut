@@ -270,7 +270,7 @@ class problem_management {
             beforeLSGUB[numTerminals] = prev_gub;
         }
 
-        if (ls_bound <= global_upper_bound) {
+        if (ls_bound < global_upper_bound || !bestSolutionInitialized) {
             global_upper_bound = ls_bound;
             LOG1 << "Improvement after " << t.elapsed() << " to " << ls_bound;
 

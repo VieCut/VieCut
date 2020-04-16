@@ -317,7 +317,7 @@ class local_search {
             change_found = false;
             auto impGain = gainLocalSearch();
             total_improvement += impGain;
-            LOG1 << "gain " << t.elapsed() << "s impro " << impGain;
+            LOG0 << "gain " << t.elapsed() << "s impro " << impGain;
 
             if (impGain > 0)
                 change_found = true;
@@ -334,7 +334,7 @@ class local_search {
             if (impFlow > 0)
                 change_found = true;
 
-            LOG1 << "flow " << t.elapsed() << "s impro " << impFlow;
+            LOG0 << "flow " << t.elapsed() << "s impro " << impFlow;
         }
 
         change_found = true;
@@ -344,7 +344,7 @@ class local_search {
             change_found = false;
             auto impGain = gainLocalSearch();
             total_improvement += impGain;
-            LOG1 << "gain " << t.elapsed() << "s impro " << impGain;
+            LOG0 << "gain " << t.elapsed() << "s impro " << impGain;
 
             if (impGain > 0)
                 change_found = true;

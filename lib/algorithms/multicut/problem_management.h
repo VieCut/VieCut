@@ -263,7 +263,7 @@ class problem_management {
             initalizeBestSolution();
             bestsol_mutex.unlock();
         }
-        FlowType total_improvement = ls.improveSolution();
+        FlowType total_improvement = ls.improveSolution(t);
         FlowType ls_bound = prev_gub - total_improvement;
 
         if (ls_bound <= terminalGUB[numTerminals]) {

@@ -333,7 +333,7 @@ class branch_multicut {
         if (outOfMemory())
             return;
 
-        if (total_time.elapsed() > 600) {
+        if (total_time.elapsed() > configuration::getConfig()->timeoutSeconds) {
             LOG1 << "Timeout!";
             finished = true;
             return;

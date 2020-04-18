@@ -60,6 +60,7 @@ class configuration {
     bool multibranch = true;
     bool inexact = false;
     bool old = false;
+    size_t timeoutSeconds = 600;
 
     size_t kernelization_variant = 7;
     bool disable_local_search = false;

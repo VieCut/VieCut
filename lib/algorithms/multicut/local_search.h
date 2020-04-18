@@ -158,7 +158,11 @@ class local_search {
         return std::make_tuple(improvement, f);
     }
 
-    EdgeWeight flowLocalSearch() {
+    EdgeWeight flowLocalSearch(const timer& t) {
+        size_t timeoutSecs = configuration::getConfig()->timeoutSeconds;
+        if (t.elapsed() > timeoutSecs) {
+            return 0;
+        }
         std::vector<NodeID>& solution = *sol;
         std::vector<std::vector<FlowType> >
         blockConnectivity(original_terminals.size());
@@ -200,6 +204,9 @@ class local_search {
             });*/
 
         for (auto [a, b, c] : neighboringBlocks) {
+            if (t.elapsed() > timeoutSecs) {
+                break;
+            }
             auto [impr, connect] = flowBetweenBlocks(a, b);
             improvement += impr;
             sLOG0 << "out" << a << b << c << impr << connect;
@@ -309,7 +316,7 @@ class local_search {
     }
 
  public:
-    FlowType improveSolution() {
+    FlowType improveSolution(const timer& time) {
         if (configuration::getConfig()->disable_local_search) {
             return 0;
         }
@@ -331,7 +338,7 @@ class local_search {
         while (change_found) {
             timer t;
             change_found = false;
-            auto impFlow = flowLocalSearch();
+            auto impFlow = flowLocalSearch(time);
             total_improvement += impFlow;
 
             if (impFlow > 0)

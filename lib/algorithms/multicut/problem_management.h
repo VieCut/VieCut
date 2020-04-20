@@ -255,7 +255,8 @@ class problem_management {
 
         if (prev_gub < global_upper_bound) {
             global_upper_bound = prev_gub;
-            LOG1 << "Improvement after " << t.elapsed() << " to " << prev_gub << " (beforehand)";
+            LOG1 << "Improvement after " << t.elapsed()
+                 << " to " << prev_gub << " (beforehand)";
             bestsol_mutex.lock();
             for (size_t i = 0; i < current_solution->size(); ++i) {
                 best_solution[i] = (*current_solution)[i];

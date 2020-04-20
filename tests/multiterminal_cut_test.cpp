@@ -168,6 +168,7 @@ TEST_F(MultiterminalCutTest, FourClustersMinCutUnequal) {
 
 TEST_F(MultiterminalCutTest, TotallyDisconnected) {
     std::vector<size_t> sizes = { 1, 5, 10, 50, 100 };
+    configuration::getConfig()->write_solution = true;
     for (size_t cluster_size : sizes) {
         std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
 

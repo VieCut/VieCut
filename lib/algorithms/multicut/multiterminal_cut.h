@@ -94,10 +94,9 @@ class multiterminal_cut {
         auto cfg = configuration::getConfig();
         cfg->num_terminals = num_terminals;
 
-        // todo: use orig_graph here so we can actually have correct map
         auto [problems, originalGraphs, nodeProblemMapping, positionInProblem,
-              globalTerminalIndex, fixedVertex] = splitConnectedComponents(
-            G, terminals);
+              globalTerminalIndex, fixedVertex, connectedComponent, oneTermID]
+            = splitConnectedComponents(G, terminals);
 
         NodeID maxID = 0;
         NodeID maxNumNodes = 0;
@@ -145,8 +144,14 @@ class multiterminal_cut {
             std::vector<NodeID> blocksize(cfg->num_terminals, 0);
             for (NodeID i = 0; i < G->n(); ++i) {
                 if (nodeProblemMapping[i] == UNDEFINED_NODE) {
-                    globalSolution.emplace_back(0);
-                    blocksize[0]++;
+                    NodeID block = oneTermID[connectedComponent[i]];
+                    if (block == UNDEFINED_NODE) {
+                        globalSolution.emplace_back(0);
+                        blocksize[0]++;
+                    } else {
+                        globalSolution.emplace_back(block);
+                        blocksize[block]++;
+                    }
                 } else {
                     NodeID pr = nodeProblemMapping[i];
                     NodeID localId = positionInProblem[i];
@@ -207,7 +212,9 @@ class multiterminal_cut {
                       std::vector<NodeID>,
                       std::vector<NodeID>,
                       std::vector<std::vector<NodeID> >,
-                      std::vector<std::vector<bool> > >
+                      std::vector<std::vector<bool> >,
+                      std::vector<int>,
+                      std::vector<NodeID> >
     splitConnectedComponents(mutableGraphPtr G,
                              const std::vector<NodeID>& terminalMapping) {
         std::vector<multicut_problem> problems;
@@ -242,11 +249,22 @@ class multiterminal_cut {
 
         std::vector<NodeID> ctr(num_comp, 0);
         std::vector<NodeID> num_terminals(num_comp, 0);
+        std::vector<NodeID> oneTermIDs(num_comp, UNDEFINED_NODE);
 
         std::vector<std::vector<NodeID> > globalTerminalIndex;
 
         for (size_t problem = 0; problem < num_comp; problem++) {
-            if (numTerminalsInProblem[problem] >= 1) {
+            if (numTerminalsInProblem[problem] == 1) {
+                NodeID t = UNDEFINED_NODE;
+                for (size_t i = 0; i < terminalInProblem[problem].size(); ++i) {
+                    if (terminalInProblem[problem][i] == true) {
+                        t = i;
+                    }
+                }
+                oneTermIDs[problem] = t;
+            }
+
+            if (numTerminalsInProblem[problem] >= 2) {
                 globalTerminalIndex.emplace_back();
                 graph_extractor ge;
                 auto [G_out, mapping, reverse_mapping] =
@@ -293,7 +311,9 @@ class multiterminal_cut {
                                nodeProblemMapping,
                                positionInProblem,
                                globalTerminalIndex,
-                               fixedVertex);
+                               fixedVertex,
+                               components,
+                               oneTermIDs);
     }
 
     std::vector<NodeID> topKTerminals(mutableGraphPtr G) {

@@ -6,11 +6,15 @@ If you have any questions, find any errors or would like to use this library but
 
 This is the code repository to accompany our papers:
 
-  - *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms. arXiv preprint [arXiv:1708.06127.](https://arxiv.org/abs/1708.06127)*
+- *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2018. Practical Minimum Cut Algorithms. arXiv preprint [arXiv:1708.06127.](https://arxiv.org/abs/1708.06127)*
 
-  - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
+- *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
 
-  - *Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
+- *Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
+
+- *Henzinger, M, Noe, A., Schulz, C. and Strash, D., 2020. Finding All Global Minimum Cuts in Practice. arXiv preprint [arxiv:2002.06948](https://arxiv.org/abs/2002/06948)*
+
+- *Henzinger, M, Noe, A. and Schulz, C. Faster Parallel Multiterminal Cuts. arXiv preprint [arxiv:2004.11666](https://arxiv.org/abs/2004/11666)*
 
 The instances used for the third paper can be found on the [website](http://viecut.taa.univie.ac.at) for VieCut.
 
@@ -38,6 +42,18 @@ If you use this code in the context of an academic publication, we ask that you 
   title={Shared-Memory Branch-and-Reduce for Multiterminal Cuts},
   author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
   journal={2020 Proceedings of the 22nd Workshop on Algorithm Engineering and Experiments (ALENEX)},
+  year={2020}
+}
+
+@article{henzinger2020finding,
+  title={Finding All Global Minimum Cuts in Practice},
+  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian and Strash, Darren},
+  year={2020}
+}
+
+@article{henzinger2020faster,
+  title={Faster Parallel Minimum Cuts},
+  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
   year={2020}
 }
 ```
@@ -105,28 +121,28 @@ Run any minimum cut algorithm using the following command
 
 For <algorithm> use one of the following:
 
-  - `vc` - `VieCut` \[HNSS'18]
-  - `noi` - Algorithm of Nagamochi et al. \[NOI'94]
-  - `ks` - Algorithm of Karger and Stein \[KS'96]
-  - `matula` - Approximation Algorithm of Matula \[Matula'93]
-  - `pr` - Repeated application of Padberg-Rinaldi contraction rules \[PR'91]
-  - `cactus` - Find _all_ minimum cuts and give the cactus that represents them. \[HNSS'20]
+- `vc` - `VieCut` \[HNSS'18]
+- `noi` - Algorithm of Nagamochi et al. \[NOI'94]
+- `ks` - Algorithm of Karger and Stein \[KS'96]
+- `matula` - Approximation Algorithm of Matula \[Matula'93]
+- `pr` - Repeated application of Padberg-Rinaldi contraction rules \[PR'91]
+- `cactus` - Find _all_ minimum cuts and give the cactus that represents them. \[HNSS'20]
 
 when parallelism is enabled, use one of the following:
 
-  - `inexact` - shared-memory parallel version of `VieCut` \[HNSS'18]
-  - `exact` - exact shared-memory parallel minimum cut \[HNS'19a]
-  - `cactus` - Find _all_ minimum cuts and give the cactus that represents them. \[HNSS'20]
+- `inexact` - shared-memory parallel version of `VieCut` \[HNSS'18]
+- `exact` - exact shared-memory parallel minimum cut \[HNS'19a]
+- `cactus` - Find _all_ minimum cuts and give the cactus that represents them. \[HNSS'20]
 
 #### (Optional) Program Options:
 
-  - `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see \[HNS'19a] for details)
-  - `-i` - Number of iterations (default: 1)
-  - `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see [HNS'19a])
-  - `-p` - \[Only for `mincut_parallel`] Use `p` processors (multiple values possible)
-  - `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
-  - `-o` - \[`-s` needs to be enabled as well] Path of output file. If this is set, we print the minimum cut to file.
-  - `-b` - \[Only for algorithm `cactus`, `-s` needs to be enabled as well] Find most balanced minimum cut and print its balance.
+- `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see \[HNS'19a] for details)
+- `-i` - Number of iterations (default: 1)
+- `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see \[HNS'19a])
+- `-p` - \[Only for `mincut_parallel`] Use `p` processors (multiple values possible)
+- `-s` - Compute and save minimum cut. The cut will be written to disk in a file which contains one line per node, either `0` or `1` depending on which side of the cut the node is.
+- `-o` - \[`-s` needs to be enabled as well] Path of output file. If this is set, we print the minimum cut to file.
+- `-b` - \[Only for algorithm `cactus`, `-s` needs to be enabled as well] Find most balanced minimum cut and print its balance.
 
 The following command
 
@@ -151,12 +167,12 @@ We solve the problem using a branch-and-reduce approach which finds a hard kerne
 ```
 
 #### (Optional) Program Options:
-  - `-f` - Path to partition file. This file has one line for each vertex. A value of 0 to |T|-1 indicates which terminal a vertex belongs to, otherwise a value of |T| indicates that the vertex does not belong to a terminal.
-  - `-t` - Add vertex `t` as a terminal.
-  - `-k` - Find multiterminal cut between `k` vertices with highest vertex degree.
-  - `-r` - Find multiterminal cut between `r` random vertices.
-  - `-b` - Run BFS around each terminal and add up to `b` vertices discovered first to each terminal.
-  - `-p` - Number of threads (default: OMP_NUM_THREADS, which defaults to the number of hardware threads).
+- `-f` - Path to partition file. This file has one line for each vertex. A value of 0 to |T|-1 indicates which terminal a vertex belongs to, otherwise a value of |T| indicates that the vertex does not belong to a terminal.
+- `-t` - Add vertex `t` as a terminal.
+- `-k` - Find multiterminal cut between `k` vertices with highest vertex degree.
+- `-r` - Find multiterminal cut between `r` random vertices.
+- `-b` - Run BFS around each terminal and add up to `b` vertices discovered first to each terminal.
+- `-p` - Number of threads (default: OMP_NUM_THREADS, which defaults to the number of hardware threads).
 
 
 The following command
@@ -190,9 +206,9 @@ If the minimum cut is not equal to the minimum degree, the k-core graph is writt
 
 with following options:
 
-  - `-l` - search for the lowest value of k where the minimum cut of the k-core is not equal to the minimum degree
-  - `-c` - disable testing for the minimum cut, just compute cores decomposition and write k-core graphs to disk
-  - `-k` - compute k-core for k
+- `-l` - search for the lowest value of k where the minimum cut of the k-core is not equal to the minimum degree
+- `-c` - disable testing for the minimum cut, just compute cores decomposition and write k-core graphs to disk
+- `-k` - compute k-core for k
 
 For example, to compute the 5- and 10-cores of a graph without minimum cut testing, use the following command
 
@@ -214,12 +230,12 @@ Usage is similar to mincut and can be combined with any minimum cut algorithm.
 
 #### Program Options:
 
-  - `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see \[HNS'19a] for details)
-  - `-i` - Number of iterations (default: 1)
-  - `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see \[HNS'19a])
-  - `-p` - Use `p` processors (multiple values possible)
-  - `-c` - Contraction factor: we contract until only n*(1-c) vertices are left.
-  - `-s` - Compute and save minimum cut.
+- `-q` - Priority queue implementation ('`bqueue`, `bstack`, `heap`, see \[HNS'19a] for details)
+- `-i` - Number of iterations (default: 1)
+- `-l` - Disable limiting of values in priority queue (only relevant for `noi` and `exact`, see \[HNS'19a])
+- `-p` - Use `p` processors (multiple values possible)
+- `-c` - Contraction factor: we contract until only n*(1-c) vertices are left.
+- `-s` - Compute and save minimum cut.
 
 ### `mincut_recursive`
 
@@ -234,7 +250,7 @@ This can be used to create subgraphs of a graph that have different minimum cuts
 
 #### Program Options:
 
-  - `-o` - Write all graphs to disk (DIMACS and METIS format) where the minimum cut is larger than the minimum cut of the previous graph.
+- `-o` - Write all graphs to disk (DIMACS and METIS format) where the minimum cut is larger than the minimum cut of the previous graph.
 
 ## References
 

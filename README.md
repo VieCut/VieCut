@@ -10,11 +10,11 @@ This is the code repository to accompany our papers:
 
 - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
 
-- *Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908/04141)*
+- *Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908.04141)*
 
-- *Henzinger, M, Noe, A., Schulz, C. and Strash, D., 2020. Finding All Global Minimum Cuts in Practice. arXiv preprint [arxiv:2002.06948](https://arxiv.org/abs/2002/06948)*
+- *Henzinger, M, Noe, A., Schulz, C. and Strash, D., 2020. Finding All Global Minimum Cuts in Practice. arXiv preprint [arxiv:2002.06948](https://arxiv.org/abs/2002.06948)*
 
-- *Henzinger, M, Noe, A. and Schulz, C. Faster Parallel Multiterminal Cuts. arXiv preprint [arxiv:2004.11666](https://arxiv.org/abs/2004/11666)*
+- *Henzinger, M, Noe, A. and Schulz, C. Faster Parallel Multiterminal Cuts. arXiv preprint [arxiv:2004.11666](https://arxiv.org/abs/2004.11666)*
 
 The instances used for the third paper can be found on the [website](http://viecut.taa.univie.ac.at) for VieCut.
 

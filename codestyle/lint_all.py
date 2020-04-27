@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 import glob
-import subprocess
+import os
 
 for folder in ['../app','../lib','../tests']:
     files = glob.glob(folder+'/**/*', recursive=True)
@@ -9,7 +9,9 @@ for folder in ['../app','../lib','../tests']:
         if (filename.endswith(".cpp") or filename.endswith(".hpp") or filename.endswith(".h")):
             try:
                 print("Linting file " + filename)
-                out = subprocess.check_output(["./cpplint.py", "--filter=-build/c++11,-build/namespaces", filename])
+                cmdlint = "./cpplint.py --filter=-build/c++11,-build/namespaces " + filename
+                process = os.popen(cmdlint)
+                output = process.read()
                 print("No errors!")
             except:
                 print("ERRORS!")

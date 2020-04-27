@@ -7,11 +7,6 @@ for folder in ['../app','../lib','../tests']:
 
     for filename in files:
         if (filename.endswith(".cpp") or filename.endswith(".hpp") or filename.endswith(".h")):
-            try:
-                print("Linting file " + filename)
-                cmdlint = "./cpplint.py --filter=-build/c++11,-build/namespaces " + filename
-                process = os.popen(cmdlint)
-                output = process.read()
-                print("No errors!")
-            except:
-                print("ERRORS!")
+            print("Linting file " + filename)
+            process = os.popen("./cpplint.py --filter=-build/c++11,-build/namespaces " + filename)
+            output = process.read()

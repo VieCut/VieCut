@@ -49,73 +49,58 @@ class kernelization_criteria {
         NodeID num_vtcs = problem->graph->n();
         std::vector<bool> active_c(problem->graph->getOriginalNodes(), true);
         std::vector<bool> active_n(problem->graph->getOriginalNodes(), false);
-        size_t k_variant = configuration::getConfig()->kernelization_variant;
         do {
             num_vtcs = problem->graph->n();
-            if (k_variant >= 1) {
-                auto uf_lowdegree = lowDegreeContraction(problem);
-                contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
+            auto uf_lowdegree = lowDegreeContraction(problem);
+            contractIfImproved(&uf_lowdegree, problem, "lowdeg", &active_n);
+
+            union_find uf_high = highDegreeContraction(problem, active_c);
+            contractIfImproved(&uf_high, problem, "high_degree", &active_n);
+
+            auto uf_tri = triangleDetection(problem, active_c);
+            contractIfImproved(&uf_tri, problem, "triangle", &active_n);
+
+            std::vector<EdgeWeight> flow_values;
+            EdgeWeight sum = 0;
+            for (size_t i = 0; i < problem->terminals.size(); ++i) {
+                NodeID orig_id = problem->terminals[i].original_id;
+                NodeID term_id = problem->mapped(
+                    original_terminals[orig_id]);
+                NodeID pos = problem->graph->getCurrentPosition(term_id);
+                EdgeWeight deg = problem->graph->getWeightedNodeDegree(pos);
+                flow_values.emplace_back(deg);
+                sum += deg;
             }
 
-            if (k_variant >= 2) {
-                union_find uf_high = highDegreeContraction(problem, active_c);
-                contractIfImproved(&uf_high, problem, "high_degree", &active_n);
-            }
+            std::sort(flow_values.begin(), flow_values.end());
 
-            if (k_variant >= 3) {
-                auto uf_tri = triangleDetection(problem, active_c);
-                contractIfImproved(&uf_tri, problem, "triangle", &active_n);
-            }
+            FlowType contr_flow = 0;
 
-            if (k_variant >= 4) {
-                std::vector<EdgeWeight> flow_values;
-                EdgeWeight sum = 0;
-                for (size_t i = 0; i < problem->terminals.size(); ++i) {
-                    NodeID orig_id = problem->terminals[i].original_id;
-                    NodeID term_id = problem->mapped(
-                        original_terminals[orig_id]);
-                    NodeID pos = problem->graph->getCurrentPosition(term_id);
-                    EdgeWeight deg = problem->graph->getWeightedNodeDegree(pos);
-                    flow_values.emplace_back(deg);
-                    sum += deg;
-                }
+            if (flow_values.size() >= 2)
+                contr_flow = sum - flow_values[flow_values.size() - 1]
+                             - flow_values[flow_values.size() - 2];
+            noi_minimum_cut noi;
+            EdgeWeight noi_limit = global_upper_bound
+                                   - problem->deleted_weight
+                                   - tlx::div_ceil(contr_flow, 4);
+            auto uf_noi = noi.modified_capforest(problem, noi_limit);
+            contractIfImproved(&uf_noi, problem, "noi", &active_n);
 
-                std::sort(flow_values.begin(), flow_values.end());
-
-                FlowType contr_flow = 0;
-
-                if (flow_values.size() >= 2)
-                    contr_flow = sum - flow_values[flow_values.size() - 1]
-                                 - flow_values[flow_values.size() - 2];
-                noi_minimum_cut noi;
-                EdgeWeight noi_limit = global_upper_bound
-                                       - problem->deleted_weight
-                                       - tlx::div_ceil(contr_flow, 4);
-                auto uf_noi = noi.modified_capforest(problem, noi_limit);
-                contractIfImproved(&uf_noi, problem, "noi", &active_n);
-            }
-
-            if (k_variant >= 5) {
-                find_articulation_points find_aps(problem->graph);
-                if (find_aps.findAllArticulationPoints()) {
-                    auto uf = find_aps.terminalsOnBothSides(problem->terminals);
-                    if (uf.has_value()) {
-                        contractIfImproved(
-                            &uf.value(), problem, "aps", &active_n);
-                    }
+            find_articulation_points find_aps(problem->graph);
+            if (find_aps.findAllArticulationPoints()) {
+                auto uf = find_aps.terminalsOnBothSides(problem->terminals);
+                if (uf.has_value()) {
+                    contractIfImproved(
+                        &uf.value(), problem, "aps", &active_n);
                 }
             }
 
-            if (k_variant >= 6) {
-                equal_neighborhood en;
-                union_find uf_en = en.findEqualNeighborhoods(problem, active_c);
-                contractIfImproved(&uf_en, problem, "equal_nbrhd", &active_n);
-            }
+            equal_neighborhood en;
+            union_find uf_en = en.findEqualNeighborhoods(problem, active_c);
+            contractIfImproved(&uf_en, problem, "equal_nbrhd", &active_n);
 
-            if (k_variant >= 7) {
-                auto uf_mf = mf.nonTerminalFlow(problem, parallel, active_c);
-                contractIfImproved(&uf_mf, problem, "flow", &active_n);
-            }
+            auto uf_mf = mf.nonTerminalFlow(problem, parallel, active_c);
+            contractIfImproved(&uf_mf, problem, "flow", &active_n);
 
             active_n.swap(active_c);
             std::fill(active_n.begin(), active_n.end(), false);

@@ -98,25 +98,11 @@ class multiterminal_cut {
               globalTerminalIndex, fixedVertex, connectedComponent, oneTermID]
             = splitConnectedComponents(G, terminals);
 
-        NodeID maxID = 0;
-        NodeID maxNumNodes = 0;
-        if (cfg->endBeforeBranch) {
-            for (size_t i = 0; i < originalGraphs.size(); ++i) {
-                if (originalGraphs[i].n() > maxNumNodes) {
-                    maxNumNodes = originalGraphs[i].n();
-                    maxID = i;
-                }
-            }
-        }
-
         std::vector<std::vector<NodeID> > solutions;
         std::vector<NodeID> globalSolution;
 
         FlowType flow_sum = 0;
         for (size_t p = 0; p < problems.size(); ++p) {
-            if (cfg->endBeforeBranch) {
-                p = maxID;
-            }
             auto& problem = problems[p];
             if (debug) {
                 graph_algorithms::checkGraphValidity(problem.graph);

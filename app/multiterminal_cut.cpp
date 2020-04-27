@@ -53,8 +53,6 @@ int main(int argn, char** argv) {
                  "Use terminals with high distance from each other");
     cmdl.add_string('e', "edge_selection", config->edge_selection,
                     "edge selection rule");
-    cmdl.add_bool('E', "endBeforeBranch", config->endBeforeBranch,
-                  "End before first branch, print graph stats");
     cmdl.add_string('f', "partition_file", config->partition_file,
                     "Partition file");
     cmdl.add_flag('i', "use_ilp", config->use_ilp, "Use ILP");
@@ -67,7 +65,6 @@ int main(int argn, char** argv) {
                     "percentag of vertices that are preset");
     cmdl.add_string('o', "first_branch_path", config->first_branch_path,
                     "Print graph at time of first branching, then terminate.");
-    cmdl.add_bool('O', "old", config->old, "Run version from first version");
     cmdl.add_size_t('p', "proc", config->threads, "number of threads");
     cmdl.add_string('q', "queue_type", config->queue_type,
                     "Type of priority queue used");
@@ -76,23 +73,12 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('s', "seed", config->seed, "random seed");
     cmdl.add_stringlist('t', "terminal", config->term_strings,
                         "add terminal vertex");
-    cmdl.add_size_t('v', "kernelization_variant", config->kernelization_variant,
-                    "enable / disable kernelization functions (0-7)");
     cmdl.add_flag('w', "write_solution", config->write_solution,
                   "Print best solution");
     cmdl.add_flag('X', "inexact", config->inexact, "Apply inexact heuristics");
 
     if (!cmdl.process(argn, argv))
         return -1;
-
-    if (config->old) {
-        LOG1 << "Runnign old version - disabling updates!";
-        config->inexact = false;
-        config->use_ilp = false;
-        config->kernelization_variant = 4;
-        config->multibranch = false;
-        config->disable_local_search = true;
-    }
 
     random_functions::setSeed(config->seed);
 
@@ -135,12 +121,8 @@ int main(int argn, char** argv) {
               << " n=" << G->number_of_nodes()
               << " m=" << G->number_of_edges() / 2
               << " use_ilp=" << config->use_ilp
-              << " difference=" << config->bound_difference
-              << " contract_n=" << config->n
-              << " contract_m=" << config->m
               << " processes=" << config->threads
               << " inexact=" << config->inexact
-              << " old=" << config->old
               << " seed=" << config->seed << std::endl;
     MPI_Finalize();
 }

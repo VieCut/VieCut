@@ -59,12 +59,7 @@ class configuration {
     size_t maximumBranchingFactor = 5;
     bool multibranch = true;
     bool inexact = false;
-    bool old = false;
     size_t timeoutSeconds = 600;
-
-    size_t kernelization_variant = 7;
-    bool disable_local_search = false;
-    bool endBeforeBranch = false;
     NodeID orign;
     EdgeID origm;
 
@@ -85,11 +80,6 @@ class configuration {
     size_t optimal = 0;
 
     bool use_ilp = false;
-    // this is not what the configuration should be used for - but it's quick
-    bool differences_set = false;
-    EdgeWeight bound_difference = 0;
-    NodeID n = 0;
-    NodeID m = 0;
 
  private:
     configuration() { }

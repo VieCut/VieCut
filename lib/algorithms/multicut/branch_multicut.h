@@ -115,7 +115,7 @@ class branch_multicut {
             }
         }
 
-        if (mpi_rank == 0 && !configuration::getConfig()->endBeforeBranch) {
+        if (mpi_rank == 0) {
             updateBestSolution(&sol, numTerminals);
         }
 
@@ -313,20 +313,6 @@ class branch_multicut {
         }
 
         if (!pm.checkProblem(problem)) {
-            if (c->endBeforeBranch) {
-                LOG1 << "RESULT graph=" << c->graph_filename
-                     << " time=" << total_time.elapsed()
-                     << " variant=" << c->kernelization_variant
-                     << " n=" << problem->graph->n()
-                     << " orign=" << c->orign
-                     << " m=" << problem->graph->m()
-                     << " origm=" << c->origm
-                     << " term=" << c->num_terminals
-                     << " contr=" << c->preset_percentage
-                     << " seed=" << c->seed;
-
-                exit(0);
-            }
             return;
         }
 
@@ -369,36 +355,14 @@ class branch_multicut {
         if (outOfMemory())
             return;
 
-        if (c->endBeforeBranch) {
-            LOG1 << "RESULT graph=" << c->graph_filename
-                 << " time=" << total_time.elapsed()
-                 << " variant=" << c->kernelization_variant
-                 << " n=" << problem->graph->n()
-                 << " orign=" << c->orign
-                 << " m=" << problem->graph->m()
-                 << " origm=" << c->origm
-                 << " term=" << c->num_terminals
-                 << " contr=" << c->preset_percentage
-                 << " seed=" << c->seed;
-
-            exit(0);
-        }
         if (problem->deleted_weight > static_cast<EdgeWeight>(pm.bestCut())) {
             return;
         }
 
-        bool branchOnCurrentInstance = true;
+        bool branchHere = true;
 #ifdef USE_GUROBI
         size_t ilpLimit = 50000;
-        branchOnCurrentInstance =
-            problem->graph->m() > ilpLimit || (!c->use_ilp);
-        if (!c->differences_set) {
-            c->bound_difference = problem->upper_bound
-                                  - problem->lower_bound;
-            c->n = problem->graph->n();
-            c->m = problem->graph->m();
-            c->differences_set = true;
-        }
+        branchHere = problem->graph->m() > ilpLimit || (!c->use_ilp);
 #endif
 
         auto path = c->first_branch_path;
@@ -410,7 +374,7 @@ class branch_multicut {
         if (outOfMemory())
             return;
 
-        if (branchOnCurrentInstance) {
+        if (branchHere) {
             branchOnEdge(problem, thread_id);
         } else {
             solve_with_ilp(problem, thread_id);

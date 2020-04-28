@@ -162,7 +162,13 @@ class branch_multicut {
         size_t global_bcast_id = local_bcast_id;
         MPI_Allreduce(&local_bcast_id, &global_bcast_id, 1, MPI_LONG,
                       MPI_MIN, MPI_COMM_WORLD);
-        auto best_solution = pm.getBestSolution();
+
+        std::vector<NodeID> best_solution;
+        if (mpi_rank == static_cast<int>(global_bcast_id)) {
+            best_solution = pm.getBestSolution();
+        } else {
+            best_solution = std::vector<NodeID>(original_graph.n());
+        }
 
         size_t bsize = best_solution.size();
 

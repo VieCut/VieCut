@@ -60,7 +60,7 @@ class recursive_cactus {
     }
 
     mutableGraphPtr flowMincut(
-        const std::vector<std::shared_ptr<graph_access> >& graphs) {
+        const std::vector<graphAccessPtr>& graphs) {
         std::vector<mutableGraphPtr> flow_graphs;
         auto in_graph = mutable_graph::from_graph_access(graphs.back());
         auto out_graph = recursiveCactus(in_graph, 0);

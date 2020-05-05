@@ -56,7 +56,7 @@ int main(int argn, char** argv) {
         return -1;
 
     random_functions::setSeed(seed);
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
 
     // blocks * blocks gnp graphs with vertices vertices each
     size_t blocks = blocks_per_dimension * blocks_per_dimension;

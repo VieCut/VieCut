@@ -28,8 +28,8 @@ class graph_extractor {
     graph_extractor() { }
     virtual ~graph_extractor() { }
 
-    std::pair<std::shared_ptr<graph_access>, std::vector<NodeID> >
-    extract_block(std::shared_ptr<graph_access> G,
+    std::pair<graphAccessPtr, std::vector<NodeID> >
+    extract_block(graphAccessPtr G,
                   PartitionID block) {
         auto extracted_block = std::make_shared<graph_access>();
         // build reverse mapping

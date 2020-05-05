@@ -37,7 +37,7 @@ class core_decomposition {
  public:
 // Implementation of k-core decomposition global_mincut
 // of Batagelj and Zaversnik (https://arxiv.org/abs/cs/0310049)
-    static k_cores batagelj_zaversnik(std::shared_ptr<graph_access> G) {
+    static k_cores batagelj_zaversnik(graphAccessPtr G) {
         k_cores kCores(G->number_of_nodes());
 
         EdgeWeight max_degree = 0;
@@ -96,8 +96,8 @@ class core_decomposition {
         return kCores;
     }
 
-    static std::shared_ptr<graph_access> createCoreGraph(
-        k_cores kCores, NodeID k, std::shared_ptr<graph_access> G) {
+    static graphAccessPtr createCoreGraph(
+        k_cores kCores, NodeID k, graphAccessPtr G) {
         size_t min_degree = kCores.degrees[kCores.vertices[kCores.buckets[k]]];
         std::vector<NodeID> reverse(G->number_of_nodes(), G->number_of_nodes());
         std::vector<NodeID> core;

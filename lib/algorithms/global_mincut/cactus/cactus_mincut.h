@@ -48,7 +48,7 @@ class cactus_mincut : public minimum_cut {
 
     bool timing = configuration::getConfig()->verbose;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         // compatibility with min cut interface
@@ -57,14 +57,14 @@ class cactus_mincut : public minimum_cut {
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
-        std::shared_ptr<graph_access> G) {
-        std::vector<std::shared_ptr<graph_access> > v = { G };
+        graphAccessPtr G) {
+        std::vector<graphAccessPtr> v = { G };
         return findAllMincuts(v);
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
-        std::vector<std::shared_ptr<graph_access> > graphs) {
+        std::vector<graphAccessPtr> graphs) {
         recursive_cactus rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;

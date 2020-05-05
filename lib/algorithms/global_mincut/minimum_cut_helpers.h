@@ -25,7 +25,7 @@ class minimum_cut_helpers {
  private:
     static constexpr bool debug = false;
     // Get index of minimum degree vertex
-    static size_t minimumIndex(std::shared_ptr<graph_access> G) {
+    static size_t minimumIndex(graphAccessPtr G) {
         size_t minimum_index = 0;
         for (NodeID n : G->nodes()) {
             if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
@@ -37,7 +37,7 @@ class minimum_cut_helpers {
     }
 
  public:
-    static bool graphValid(std::shared_ptr<graph_access> G) {
+    static bool graphValid(graphAccessPtr G) {
         // graph does not exist
         if (!G.use_count())
             return false;
@@ -56,7 +56,7 @@ class minimum_cut_helpers {
     // set minimum cut to initial value (one minimum degree vertex)
     // - this cut will be updated later in the global_mincut
     static void setInitialCutValues(
-        const std::vector<std::shared_ptr<graph_access> >& graphs) {
+        const std::vector<graphAccessPtr>& graphs) {
         if (configuration::getConfig()->save_cut) {
             size_t minimum_index = minimumIndex(graphs.back());
 
@@ -71,10 +71,10 @@ class minimum_cut_helpers {
     }
 
     static EdgeWeight updateCut(
-        const std::vector<std::shared_ptr<graph_access> >& graphs,
+        const std::vector<graphAccessPtr>& graphs,
         EdgeWeight previous_mincut) {
         if (configuration::getConfig()->save_cut) {
-            std::shared_ptr<graph_access> new_graph = graphs.back();
+            graphAccessPtr new_graph = graphs.back();
             if (new_graph->number_of_nodes() > 1) {
                 if (new_graph->getMinDegree() < previous_mincut) {
                     size_t minimum_index = minimumIndex(graphs.back());
@@ -101,8 +101,8 @@ class minimum_cut_helpers {
     }
 
     static void retrieveMinimumCut(
-        std::vector<std::shared_ptr<graph_access> > graphs) {
-        std::shared_ptr<graph_access> G = graphs[0];
+        std::vector<graphAccessPtr> graphs) {
+        graphAccessPtr G = graphs[0];
         size_t inside = 0, outside = 0;
         for (NodeID n : G->nodes()) {
             if (G->getNodeInCut(n)) {
@@ -131,7 +131,7 @@ class minimum_cut_helpers {
 
     static std::pair<std::vector<NodeID>,
                      std::vector<std::vector<NodeID> > > remap_cluster(
-        std::shared_ptr<graph_access> G,
+        graphAccessPtr G,
         const std::vector<NodeID>& cluster_id) {
         std::vector<NodeID> mapping;
         std::vector<std::vector<NodeID> > reverse_mapping;
@@ -163,7 +163,7 @@ class minimum_cut_helpers {
 
     static void setVertexLocations(
         mutableGraphPtr out_graph,
-        const std::vector<std::shared_ptr<graph_access> >& graphs,
+        const std::vector<graphAccessPtr>& graphs,
         const std::vector<size_t>& ge_ids,
         const std::vector<std::vector<std::pair<NodeID, NodeID> > >& g_edges,
         const EdgeWeight mincut) {

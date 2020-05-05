@@ -21,8 +21,8 @@
 
 class sparsify {
  public:
-    std::shared_ptr<graph_access> one_ks(
-        std::shared_ptr<graph_access> G_in) {
+    graphAccessPtr one_ks(
+        graphAccessPtr G_in) {
         double contraction = configuration::getConfig()->contraction_factor;
         size_t iteration = configuration::getConfig()->seed;
         union_find uf(G_in->number_of_nodes());
@@ -48,9 +48,9 @@ class sparsify {
         return G2;
     }
 
-    std::shared_ptr<graph_access> random_matching(
-        std::shared_ptr<graph_access> G_in) {
-        std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
+    graphAccessPtr random_matching(
+        graphAccessPtr G_in) {
+        graphAccessPtr G_out = std::make_shared<graph_access>();
 
         const size_t MAX_TRIES = 50;
         size_t no_of_coarse_vertices = 0;
@@ -167,12 +167,12 @@ class sparsify {
         return G_out;
     }
 
-    std::shared_ptr<graph_access> remove_heavy_vertices(
-        std::shared_ptr<graph_access> G_in, double percentile,
+    graphAccessPtr remove_heavy_vertices(
+        graphAccessPtr G_in, double percentile,
         std::vector<NodeID>* p) {
         std::vector<NodeID>& prefixsum = *p;
 
-        std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
+        graphAccessPtr G_out = std::make_shared<graph_access>();
 
         EdgeWeight bound_deg = G_in->getPercentile(percentile);
 

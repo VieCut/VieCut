@@ -47,7 +47,7 @@ const FlowType UNDEFINED_FLOW = std::numeric_limits<FlowType>::max();
 const int NOTINQUEUE = std::numeric_limits<int>::max();
 const int ROOT = 0;
 
-typedef enum {
+typedef enum {    
     UNDISCOVERED,
     ACTIVE,
     CYCLE,
@@ -60,3 +60,5 @@ struct multicut_problem;
 typedef std::shared_ptr<multicut_problem> problemPointer;
 class mutable_graph;
 typedef std::shared_ptr<mutable_graph> mutableGraphPtr;
+class graph_access;
+typedef std::shared_ptr<graph_access> graphAccessPtr;

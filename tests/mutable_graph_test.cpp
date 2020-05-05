@@ -108,7 +108,7 @@ TEST(Mutable_Graph_Test, Loops) {
 }
 
 TEST(Mutable_Graph_Test, FromFileThroughGraphAccess) {
-    std::shared_ptr<graph_access> GA = graph_io::readGraphWeighted(
+    graphAccessPtr GA = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
 
     mutableGraphPtr G =

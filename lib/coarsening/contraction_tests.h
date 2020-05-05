@@ -53,7 +53,7 @@ class tests {
     }
 
  public:
-    static union_find prTests12(std::shared_ptr<graph_access> G,
+    static union_find prTests12(graphAccessPtr G,
                                 EdgeWeight limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
@@ -95,7 +95,7 @@ class tests {
         return uf;
     }
 
-    static union_find prTests34(std::shared_ptr<graph_access> G,
+    static union_find prTests34(graphAccessPtr G,
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
@@ -178,7 +178,7 @@ class tests {
         return uf;
     }
 
-    static void findHeavyEdges(std::shared_ptr<graph_access> G,
+    static void findHeavyEdges(graphAccessPtr G,
                                union_find* uf,
                                EdgeWeight weight_limit) {
         for (NodeID n : G->nodes()) {
@@ -190,7 +190,7 @@ class tests {
         }
     }
 
-    static void findHeavyTriangles(std::shared_ptr<graph_access> G,
+    static void findHeavyTriangles(graphAccessPtr G,
                                    union_find* uf,
                                    EdgeWeight weight_limit) {
         std::vector<bool> marked(G->number_of_nodes(), false);

@@ -26,7 +26,7 @@ class most_balanced_minimum_cut {
  public:
     std::unordered_set<EdgeID> findCutFromCactus(
         mutableGraphPtr G, EdgeWeight mincut,
-        std::shared_ptr<graph_access> original_graph) {
+        graphAccessPtr original_graph) {
         if (!configuration::getConfig()->save_cut) {
             LOG1 << "Error: can't find most balanced minimum cut "
                  << "when save_cut is not set";

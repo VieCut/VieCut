@@ -689,7 +689,7 @@ class mutable_graph {
 
     // Graph class translation
     static mutableGraphPtr from_graph_access(
-        std::shared_ptr<graph_access> G) {
+        graphAccessPtr G) {
         mutableGraphPtr m_G = std::make_shared<mutable_graph>();
         std::vector<NodeID> last_incident(G->number_of_nodes(), UNDEFINED_NODE);
         m_G->start_construction(G->number_of_nodes());
@@ -718,8 +718,8 @@ class mutable_graph {
         return m_G;
     }
 
-    std::shared_ptr<graph_access> to_graph_access() {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr to_graph_access() {
+        graphAccessPtr G = std::make_shared<graph_access>();
         G->start_construction(number_of_nodes(), number_of_edges());
         for (NodeID n : G->nodes()) {
             G->new_node();

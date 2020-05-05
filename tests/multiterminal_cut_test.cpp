@@ -30,7 +30,7 @@ class MultiterminalCutTest : public ::testing::Test {
 TEST_F(MultiterminalCutTest, FourClusters) {
     std::vector<size_t> sizes = { 5, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(4 * cluster_size,
                               2 * cluster_size * (cluster_size - 1) * 4 + 12);
@@ -72,7 +72,7 @@ TEST_F(MultiterminalCutTest, FourClusters) {
 TEST_F(MultiterminalCutTest, FourClustersWeighted) {
     std::vector<size_t> sizes = { 20, 50, 100 };
     for (size_t cluster_size : sizes) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(4 * cluster_size,
                               2 * cluster_size * (cluster_size - 1) * 4 + 12);
@@ -118,7 +118,7 @@ TEST_F(MultiterminalCutTest, FourClustersWeighted) {
 TEST_F(MultiterminalCutTest, FourClustersMinCutUnequal) {
     std::vector<size_t> sizes = { 1, 4, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(8 * cluster_size,
                               2 * cluster_size * (cluster_size - 1) * 8 + 40);
@@ -170,7 +170,7 @@ TEST_F(MultiterminalCutTest, TotallyDisconnected) {
     std::vector<size_t> sizes = { 1, 5, 10, 50, 100 };
     configuration::getConfig()->write_solution = true;
     for (size_t cluster_size : sizes) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(4 * cluster_size,
                               2 * cluster_size * (cluster_size - 1) * 4);
@@ -207,7 +207,7 @@ TEST_F(MultiterminalCutTest, TotallyDisconnected) {
 TEST_F(MultiterminalCutTest, PartiallyDisconnected) {
     std::vector<size_t> sizes = { 1, 5, 10, 50, 100 };
     for (size_t cluster_size : sizes) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(4 * cluster_size,
                               2 * cluster_size * (cluster_size - 1) * 4 + 4);

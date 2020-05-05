@@ -38,7 +38,7 @@ class label_propagation {
     label_propagation() { }
     virtual ~label_propagation() { }
 
-    std::vector<NodeID> propagate_labels(std::shared_ptr<graph_access> G) {
+    std::vector<NodeID> propagate_labels(graphAccessPtr G) {
         timer t_start;
         std::vector<uint32_t> cluster_mapping;
 
@@ -103,7 +103,7 @@ class label_propagation {
     }
 
     std::pair<std::vector<NodeID>, std::vector<std::vector<NodeID> > >
-    remap_cluster(std::shared_ptr<graph_access> G,
+    remap_cluster(graphAccessPtr G,
                   const std::vector<NodeID>& cluster_mapping,
                   bool save_cut) {
         PartitionID cur_no_clusters = 0;
@@ -131,7 +131,7 @@ class label_propagation {
     }
 
     void certify_clusters(
-        std::shared_ptr<graph_access> G,
+        graphAccessPtr G,
         std::vector<NodeID>* cid,
         std::vector<std::vector<NodeID> >* rm) {
         std::vector<NodeID>& cluster_id = *cid;

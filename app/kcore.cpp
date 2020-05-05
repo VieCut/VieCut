@@ -46,7 +46,7 @@ int main(int argn, char** argv) {
         return -1;
 
     timer t;
-    std::shared_ptr<graph_access> G =
+    graphAccessPtr G =
         graph_io::readGraphWeighted(graph_filename);
 
     LOG << "io time: " << t.elapsed();

@@ -49,16 +49,16 @@ class viecut : public minimum_cut {
 
     virtual ~viecut() { }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
         return perform_minimum_cut(G, false);
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
+    EdgeWeight perform_minimum_cut(graphAccessPtr G,
                                    bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         EdgeWeight cut = G->getMinDegree();
-        std::vector<std::shared_ptr<graph_access> > graphs;
+        std::vector<graphAccessPtr> graphs;
         graphs.push_back(G);
 
         minimum_cut_helpers::setInitialCutValues(graphs);

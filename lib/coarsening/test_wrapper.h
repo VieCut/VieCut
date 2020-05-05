@@ -32,8 +32,8 @@ class test_wrapper {
     static constexpr bool timing = false;
     static constexpr bool debug = false;
 
-    static std::pair<std::shared_ptr<graph_access>, EdgeWeight> run_pr_12(
-        std::vector<std::shared_ptr<graph_access> > graphs, EdgeWeight mincut) {
+    static std::pair<graphAccessPtr, EdgeWeight> run_pr_12(
+        std::vector<graphAccessPtr> graphs, EdgeWeight mincut) {
         timer t;
         auto uf = tests::prTests12(graphs.back(), mincut);
         auto G_out = contraction::fromUnionFind(graphs.back(), &uf);
@@ -45,8 +45,8 @@ class test_wrapper {
         return std::make_pair(G_out, mincut);
     }
 
-    static std::shared_ptr<graph_access> run_pr_34(
-        std::vector<std::shared_ptr<graph_access> > graphs, EdgeWeight mincut) {
+    static graphAccessPtr run_pr_34(
+        std::vector<graphAccessPtr> graphs, EdgeWeight mincut) {
         timer t;
         auto uf = tests::prTests34(graphs.back(), mincut);
         auto G_out = contraction::fromUnionFind(graphs.back(), &uf);

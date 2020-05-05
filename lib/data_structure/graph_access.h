@@ -734,7 +734,7 @@ inline graph_access graph_access::copy() {
 }
 
 [[maybe_unused]] static std::string toStringWeighted(
-    std::shared_ptr<graph_access> G) {
+    graphAccessPtr G) {
     std::ostringstream oss;
 
     for (NodeID n : G->nodes()) {
@@ -751,7 +751,7 @@ inline graph_access graph_access::copy() {
 }
 
 [[maybe_unused]] static std::ostream& operator << (
-    std::ostream& os, std::shared_ptr<graph_access> G) {
+    std::ostream& os, graphAccessPtr G) {
     // return os << toStringUnweighted(G);
     return os << toStringWeighted(G);
     // return os << toStringCompact(G);

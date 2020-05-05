@@ -133,7 +133,7 @@ class graph_io {
         return G;
     }
 
-    static int writeGraphWeighted(std::shared_ptr<graph_access> G,
+    static int writeGraphWeighted(graphAccessPtr G,
                                   std::string filename) {
         std::ofstream f(filename.c_str());
         f << G->number_of_nodes() << " "
@@ -152,7 +152,7 @@ class graph_io {
     }
 
     static
-    int writeGraph(std::shared_ptr<graph_access> G, std::string filename) {
+    int writeGraph(graphAccessPtr G, std::string filename) {
         std::ofstream f(filename.c_str());
         f << G->number_of_nodes() << " "
           << G->number_of_edges() / 2 << " 0" << std::endl;
@@ -169,7 +169,7 @@ class graph_io {
     }
 
     static
-    int writeGraphDimacsKS(std::shared_ptr<graph_access> G,
+    int writeGraphDimacsKS(graphAccessPtr G,
                            std::string filename,
                            std::string format = "FORMAT") {
         std::ofstream f(filename.c_str());
@@ -189,7 +189,7 @@ class graph_io {
         return 0;
     }
 
-    static void writeCut(std::shared_ptr<graph_access> G,
+    static void writeCut(graphAccessPtr G,
                          std::string filename) {
         std::ofstream f(filename.c_str());
         LOG1 << "writing partition to " << filename << " ... ";
@@ -202,7 +202,7 @@ class graph_io {
     }
 
     static std::shared_ptr<flow_graph> createFlowGraph(
-        std::shared_ptr<graph_access> G) {
+        graphAccessPtr G) {
         std::shared_ptr<flow_graph> fg = std::make_shared<flow_graph>();
         fg->start_construction(G->number_of_nodes());
 

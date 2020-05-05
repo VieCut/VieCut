@@ -26,13 +26,13 @@
 
 class sparsify {
  private:
-    NodeID elementsToReduce(std::shared_ptr<graph_access> G) {
+    NodeID elementsToReduce(graphAccessPtr G) {
         return static_cast<NodeID>(
             static_cast<double>(G->number_of_nodes())
             * configuration::getConfig()->contraction_factor);
     }
 
-    auto createMappings(std::shared_ptr<graph_access> G,
+    auto createMappings(graphAccessPtr G,
                         union_find* uf) {
         timer t;
         std::vector<NodeID> mapping(G->number_of_nodes());
@@ -51,7 +51,7 @@ class sparsify {
     }
 
  public:
-    NodeID sample_contractible_weighted(std::shared_ptr<graph_access> G,
+    NodeID sample_contractible_weighted(graphAccessPtr G,
                                         union_find* uf) {
         NodeID n_reduce;
         timer t;
@@ -135,7 +135,7 @@ class sparsify {
         return G->number_of_nodes() - n_reduce * num_threads;
     }
 
-    NodeID sample_contractible_separate(std::shared_ptr<graph_access> G,
+    NodeID sample_contractible_separate(graphAccessPtr G,
                                         union_find* uf) {
         NodeID to_reduce = elementsToReduce(G);
         std::atomic<NodeID> reduced = 0;
@@ -170,7 +170,7 @@ class sparsify {
         return G->number_of_nodes() - reduced;
     }
 
-    NodeID sample_geometric(std::shared_ptr<graph_access> G,
+    NodeID sample_geometric(graphAccessPtr G,
                             union_find* uf) {
         timer t;
     #pragma omp parallel
@@ -213,7 +213,7 @@ class sparsify {
         return uf->n();
     }
 
-    NodeID sample_contractible(std::shared_ptr<graph_access> G,
+    NodeID sample_contractible(graphAccessPtr G,
                                union_find* uf) {
         timer t;
         NodeID to_reduce = elementsToReduce(G);
@@ -250,8 +250,8 @@ class sparsify {
         return uf->n();
     }
 
-    std::shared_ptr<graph_access> one_ks(
-        std::shared_ptr<graph_access> G_in) {
+    graphAccessPtr one_ks(
+        graphAccessPtr G_in) {
         union_find uf(G_in->number_of_nodes());
         timer t;
 
@@ -271,7 +271,7 @@ class sparsify {
 
         auto [map, rev_map] = createMappings(G_in, &uf);
 
-        std::shared_ptr<graph_access> G2 =
+        graphAccessPtr G2 =
             contraction::contractGraph(G_in, map, rev_map);
 
         LOG1 << "t " << t.elapsed() << " for contraction from "
@@ -279,9 +279,9 @@ class sparsify {
         return G2;
     }
 
-    std::shared_ptr<graph_access> random_matching(
-        std::shared_ptr<graph_access> G_in) {
-        std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
+    graphAccessPtr random_matching(
+        graphAccessPtr G_in) {
+        graphAccessPtr G_out = std::make_shared<graph_access>();
         const size_t MAX_TRIES = 50;
         size_t no_of_coarse_vertices = 0;
         std::vector<NodeID> edge_matching(G_in->number_of_nodes());
@@ -406,12 +406,12 @@ class sparsify {
         return G_out;
     }
 
-    std::shared_ptr<graph_access> remove_heavy_vertices(
-        std::shared_ptr<graph_access> G_in, double percentile,
+    graphAccessPtr remove_heavy_vertices(
+        graphAccessPtr G_in, double percentile,
         std::vector<NodeID>* ps) {
         std::vector<NodeID>& prefixsum = *ps;
 
-        std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
+        graphAccessPtr G_out = std::make_shared<graph_access>();
 
         EdgeWeight bound_deg = G_in->getPercentile(percentile);
 

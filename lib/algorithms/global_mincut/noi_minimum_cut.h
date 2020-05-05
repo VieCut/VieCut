@@ -52,16 +52,16 @@ class noi_minimum_cut : public minimum_cut {
     static constexpr bool debug = false;
     static constexpr bool timing = true;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
         return perform_minimum_cut(G, false);
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
+    EdgeWeight perform_minimum_cut(graphAccessPtr G,
                                    bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
 
-        std::vector<std::shared_ptr<graph_access> > graphs;
+        std::vector<graphAccessPtr> graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();
         graphs.push_back(G);
@@ -79,7 +79,7 @@ class noi_minimum_cut : public minimum_cut {
         return mincut;
     }
 
-    static priority_queue_interface * selectPq(std::shared_ptr<graph_access> G,
+    static priority_queue_interface * selectPq(graphAccessPtr G,
                                                EdgeWeight mincut) {
         priority_queue_interface* pq;
 
@@ -117,7 +117,7 @@ class noi_minimum_cut : public minimum_cut {
         return pq;
     }
 
-    union_find modified_capforest(std::shared_ptr<graph_access> G,
+    union_find modified_capforest(graphAccessPtr G,
                                   EdgeWeight mincut) {
         union_find uf(G->number_of_nodes());
 

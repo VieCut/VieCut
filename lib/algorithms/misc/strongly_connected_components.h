@@ -51,7 +51,7 @@ class strongly_connected_components {
         return std::make_tuple(m_comp_num, m_comp_count, m_blocksizes);
     }
 
-    size_t strong_components(std::shared_ptr<graph_access> G,
+    size_t strong_components(graphAccessPtr G,
                              std::vector<int>* cn) {
         std::vector<int>& comp_num = *cn;
         m_dfsnum.resize(G->number_of_nodes());
@@ -135,7 +135,7 @@ class strongly_connected_components {
         }
     }
 
-    void explicit_scc_dfs(NodeID node, std::shared_ptr<graph_access> G) {
+    void explicit_scc_dfs(NodeID node, graphAccessPtr G) {
         iteration_stack.push(std::pair<NodeID, EdgeID>(
                                  node, G->get_first_edge(node)));
         // make node a tentative scc of its own
@@ -184,7 +184,7 @@ class strongly_connected_components {
         }
     }
 
-    std::shared_ptr<graph_access> largest_scc(std::shared_ptr<graph_access> G) {
+    graphAccessPtr largest_scc(graphAccessPtr G) {
         std::vector<int32_t> components(G->number_of_nodes());
         auto ct = strong_components(G, &components);
         LOG << "count of connected components: " << ct;

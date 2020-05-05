@@ -46,7 +46,7 @@ class ks_minimum_cut : public minimum_cut {
 
     ~ks_minimum_cut() { }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
 
@@ -81,7 +81,7 @@ class ks_minimum_cut : public minimum_cut {
         return mincut;
     }
 
-    NodeID sample_contractible(std::shared_ptr<graph_access> G,
+    NodeID sample_contractible(graphAccessPtr G,
                                NodeID currentN,
                                union_find* uf,
                                double reduction,
@@ -107,7 +107,7 @@ class ks_minimum_cut : public minimum_cut {
         return G->number_of_nodes() - reduced;
     }
 
-    NodeID sample_contractible_weighted(std::shared_ptr<graph_access> G,
+    NodeID sample_contractible_weighted(graphAccessPtr G,
                                         NodeID currentN,
                                         union_find* uf,
                                         double reduction,
@@ -156,7 +156,7 @@ class ks_minimum_cut : public minimum_cut {
 
     std::pair<EdgeWeight, size_t> recurse(size_t current,
                                           size_t iteration) {
-        std::shared_ptr<graph_access> G = graphs[current];
+        graphAccessPtr G = graphs[current];
 
         NodeID currentN = G->number_of_nodes();
 
@@ -189,7 +189,7 @@ class ks_minimum_cut : public minimum_cut {
         // sample_contractible_weighted(G, currentN, uf, 0.4, iteration);
         LOG << "Contracted to " << uf.n();
 
-        std::shared_ptr<graph_access> G2 = contraction::fromUnionFind(G, &uf);
+        graphAccessPtr G2 = contraction::fromUnionFind(G, &uf);
 
         graphs.push_back(G2);
         size_t current_position = graphs.size() - 1;
@@ -228,5 +228,5 @@ class ks_minimum_cut : public minimum_cut {
     }
 
  private:
-    std::vector<std::shared_ptr<graph_access> > graphs;
+    std::vector<graphAccessPtr> graphs;
 };

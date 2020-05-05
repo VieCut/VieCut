@@ -26,7 +26,7 @@
 class graph_algorithms {
  public:
     static std::vector<NodeID> top_k_degrees(
-        std::shared_ptr<graph_access> G, size_t k) {
+        graphAccessPtr G, size_t k) {
         std::vector<std::pair<NodeID, EdgeWeight> > all_degrees;
         for (NodeID n : G->nodes()) {
             all_degrees.emplace_back(n, G->getUnweightedNodeDegree(n));
@@ -46,7 +46,7 @@ class graph_algorithms {
     }
 
     static std::vector<NodeID> weighted_top_k_degrees(
-        std::shared_ptr<graph_access> G, size_t k) {
+        graphAccessPtr G, size_t k) {
         std::vector<std::pair<NodeID, EdgeWeight> > all_degrees;
         for (NodeID n : G->nodes()) {
             all_degrees.emplace_back(n, G->getWeightedNodeDegree(n));
@@ -55,7 +55,7 @@ class graph_algorithms {
         return find_top_k(all_degrees, k);
     }
 
-    static void checkGraphValidity(std::shared_ptr<graph_access> G) {
+    static void checkGraphValidity(graphAccessPtr G) {
         std::unordered_map<uint64_t, EdgeWeight> weights;
         size_t reverse_found = 0;
         for (NodeID n : G->nodes()) {

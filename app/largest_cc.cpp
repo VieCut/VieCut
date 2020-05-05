@@ -41,7 +41,7 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
-    std::shared_ptr<graph_access> G =
+    graphAccessPtr G =
         graph_io::readGraphWeighted(path);
 
     strongly_connected_components scc;

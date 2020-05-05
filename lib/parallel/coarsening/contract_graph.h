@@ -32,14 +32,14 @@ class contraction {
  public:
     static constexpr bool debug = false;
 
-    static std::shared_ptr<graph_access> deleteEdge(
-        std::shared_ptr<graph_access>, EdgeID) {
+    static graphAccessPtr deleteEdge(
+        graphAccessPtr, EdgeID) {
         LOG1 << "DELETE EDGE NOT IMPLEMENTED YET";
         exit(2);
     }
 
-    static std::pair<std::shared_ptr<graph_access>, std::vector<NodeID> >
-    contractEdge(std::shared_ptr<graph_access>,
+    static std::pair<graphAccessPtr, std::vector<NodeID> >
+    contractEdge(graphAccessPtr,
                  std::vector<NodeID>,
                  EdgeID) {
         LOG1 << "CONTRACT EDGE NOT IMPLEMENTED YET";
@@ -61,7 +61,7 @@ class contraction {
         return std::make_pair(first, second);
     }
 
-    static void findTrivialCuts(std::shared_ptr<graph_access> G,
+    static void findTrivialCuts(graphAccessPtr G,
                                 std::vector<NodeID>* m,
                                 std::vector<std::vector<NodeID> >* rm,
                                 NodeWeight target_mindeg) {
@@ -116,8 +116,8 @@ class contraction {
 
     // contraction global_mincut for small number of nodes in constructed graph,
     // we assume a full mesh and remove nonexistent edges afterwards.
-    static std::shared_ptr<graph_access> contractGraphFullMesh(
-        std::shared_ptr<graph_access> G,
+    static graphAccessPtr contractGraphFullMesh(
+        graphAccessPtr G,
         const std::vector<NodeID>& mapping,
         size_t num_nodes) {
         auto contracted = std::make_shared<graph_access>();
@@ -207,8 +207,8 @@ class contraction {
         return G;
     }
 
-    static std::shared_ptr<graph_access> fromUnionFind(
-        std::shared_ptr<graph_access> G,
+    static graphAccessPtr fromUnionFind(
+        graphAccessPtr G,
         union_find* uf) {
         std::vector<std::vector<NodeID> > rev_mapping;
         const bool save_cut = configuration::getConfig()->save_cut;
@@ -233,8 +233,8 @@ class contraction {
         return contractGraph(G, mapping, rev_mapping.size());
     }
 
-    static std::shared_ptr<graph_access>
-    contractGraph(std::shared_ptr<graph_access> G,
+    static graphAccessPtr
+    contractGraph(graphAccessPtr G,
                   const std::vector<NodeID>& mapping,
                   size_t num_nodes,
                   const std::vector<std::vector<NodeID> >& = { }) {
@@ -248,8 +248,8 @@ class contraction {
     }
 
     // altered version of KaHiPs matching contraction
-    static std::shared_ptr<graph_access>
-    contractGraphSparse(std::shared_ptr<graph_access> G,
+    static graphAccessPtr
+    contractGraphSparse(graphAccessPtr G,
                         const std::vector<NodeID>& mapping,
                         size_t num_nodes) {
         // contested edge (both incident vertices have at least V/5 vertices)
@@ -399,8 +399,8 @@ class contraction {
         return coarser;
     }
 
-    static std::shared_ptr<graph_access>
-    contractGraphSparseNoHash(std::shared_ptr<graph_access> G,
+    static graphAccessPtr
+    contractGraphSparseNoHash(graphAccessPtr G,
                               const std::vector<NodeID>& mapping,
                               size_t num_nodes) {
         std::vector<std::vector<NodeID> > rev_map;

@@ -108,7 +108,7 @@ TEST(Graph_Test, Loops) {
 }
 
 TEST(Graph_Test, GraphFromFile) {
-    std::shared_ptr<graph_access> G =
+    graphAccessPtr G =
         graph_io::readGraphWeighted(std::string(VIECUT_PATH)
                                     + "/graphs/small.metis");
 
@@ -119,11 +119,11 @@ TEST(Graph_Test, GraphFromFile) {
 }
 
 TEST(Graph_Test, HackyGraphCreation) {
-    std::shared_ptr<graph_access> G1 =
+    graphAccessPtr G1 =
         graph_io::readGraphWeighted(std::string(VIECUT_PATH)
                                     + "/graphs/small.metis");
 
-    std::shared_ptr<graph_access> G2 = std::make_shared<graph_access>();
+    graphAccessPtr G2 = std::make_shared<graph_access>();
 
     G2->start_construction(8, 28);
     G2->resize_m(28);
@@ -168,11 +168,11 @@ TEST(Graph_Test, ReadWriteEqual) {
         std::string copystr = (std::string(VIECUT_PATH)
                                + "/graphs/copy" + graph + ".metis");
 
-        std::shared_ptr<graph_access> G1 =
+        graphAccessPtr G1 =
             graph_io::readGraphWeighted(std::string(VIECUT_PATH)
                                         + "/graphs/small" + graph + ".metis");
         graph_io::writeGraphWeighted(G1, copystr);
-        std::shared_ptr<graph_access> G2 = graph_io::readGraphWeighted(copystr);
+        graphAccessPtr G2 = graph_io::readGraphWeighted(copystr);
         remove(copystr.c_str());
 
         for (NodeID n : G1->nodes()) {
@@ -188,7 +188,7 @@ TEST(Graph_Test, ReadWriteEqual) {
 }
 
 TEST(Graph_Test, ReadWeighted) {
-    std::shared_ptr<graph_access> G =
+    graphAccessPtr G =
         graph_io::readGraphWeighted(std::string(VIECUT_PATH)
                                     + "/graphs/small-wgt.metis");
 

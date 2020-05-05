@@ -70,7 +70,7 @@ int main(int argn, char** argv) {
         return -1;
 
     timer t;
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    graphAccessPtr G = graph_io::readGraphWeighted(
         configuration::getConfig()->graph_filename);
 
     if (G->getMinDegree() == 0) {

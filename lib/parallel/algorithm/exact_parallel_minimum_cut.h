@@ -56,15 +56,15 @@ class exact_parallel_minimum_cut : public minimum_cut {
     static constexpr bool debug = false;
     bool timing = configuration::getConfig()->verbose;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
         return perform_minimum_cut(G, false);
     }
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G,
+    EdgeWeight perform_minimum_cut(graphAccessPtr G,
                                    bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
-        std::vector<std::shared_ptr<graph_access> > graphs;
+        std::vector<graphAccessPtr> graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();
 #ifdef PARALLEL
@@ -83,7 +83,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
 #endif
 
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
-            std::shared_ptr<graph_access> curr_g = graphs.back();
+            graphAccessPtr curr_g = graphs.back();
             timer ts;
 #ifdef PARALLEL
 
@@ -136,7 +136,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
         return mincut;
     }
 
-    std::vector<NodeID> randomStartNodes(std::shared_ptr<graph_access> G) {
+    std::vector<NodeID> randomStartNodes(graphAccessPtr G) {
         std::vector<NodeID> start_nodes;
         for (int i = 0; i < omp_get_max_threads(); ++i)
             start_nodes.push_back(
@@ -145,7 +145,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
         return start_nodes;
     }
 
-    std::vector<NodeID> bfsStartNodes(std::shared_ptr<graph_access> G) {
+    std::vector<NodeID> bfsStartNodes(graphAccessPtr G) {
         NodeID starting_node = random_functions::next() % G->number_of_nodes();
         std::vector<NodeID> start_nodes;
         start_nodes.push_back(starting_node);
@@ -181,7 +181,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
     }
 
     union_find parallel_modified_capforest(
-        std::shared_ptr<graph_access> G,
+        graphAccessPtr G,
         const EdgeWeight mincut,
         const bool disable_blacklist = false) {
         union_find uf(G->number_of_nodes());

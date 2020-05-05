@@ -30,7 +30,7 @@ TEST(CactusCutTest, UnweightedGraphFromFile) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        graphAccessPtr G = graph_io::readGraphWeighted(
             std::string(VIECUT_PATH) + "/graphs/small.metis");
 #ifdef PARALLEL
         parallel_cactus mc;
@@ -54,7 +54,7 @@ TEST(CactusCutTest, WeightedGraphFromFile) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        graphAccessPtr G = graph_io::readGraphWeighted(
             std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
 #ifdef PARALLEL
         parallel_cactus mc;
@@ -79,7 +79,7 @@ TEST(CactusCutTest, SmallClique) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + (i * 623412));
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(4, 16);
 
@@ -115,7 +115,7 @@ TEST(CactusCutTest, RingOfVerySmallCliques) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         NodeID num_cliques = 4;
 
@@ -167,7 +167,7 @@ TEST(CactusCutTest, SimplePath) {
     configuration::getConfig()->save_cut = true;
     std::vector<size_t> weights = { 1, 10, 1000 };
     for (auto wgt : weights) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
         size_t length = 10;
         G->start_construction(length, 2 * length);
         for (size_t i = 0; i < length - 1; ++i) {
@@ -194,7 +194,7 @@ TEST(CactusCutTest, RingOfSmallCliques) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         NodeID num_cliques = 3;
 
@@ -246,7 +246,7 @@ TEST(CactusCutTest, MultipleMincuts) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        graphAccessPtr G = graph_io::readGraphWeighted(
             std::string(VIECUT_PATH) + "/graphs/small.metis");
 
         G->setEdgeWeight(3, 2);
@@ -278,7 +278,7 @@ TEST(CactusCutTest, LargeClique) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
 
         G->start_construction(10, 100);
 
@@ -317,7 +317,7 @@ TEST(CactusCutTest, GraphFromNKPaper) {
         // Example graph from H. Nagamochi, T. Kameda
         // - Constructing Cactus Representation for all Minimum Cuts
         // - in an Undirected Network
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
         G->start_construction(6, 20);
 
         G->new_edge(0, 1, 3);
@@ -374,7 +374,7 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
     for (size_t i = 0; i < 3; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
 
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+        graphAccessPtr G = std::make_shared<graph_access>();
         G->start_construction(19, 100);
 
         G->new_node();
@@ -552,7 +552,7 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
 }
 
 TEST(CactusCutTest, TwoDTorus) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     size_t dimension = 3;
     size_t num_vertices = dimension * dimension;
     G->start_construction(num_vertices, 4 * num_vertices);

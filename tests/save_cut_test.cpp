@@ -43,7 +43,7 @@ TYPED_TEST_CASE(SaveCutTest, MCAlgTypes);
 
 TYPED_TEST(SaveCutTest, UnweightedGraph) {
     configuration::getConfig()->save_cut = true;
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    graphAccessPtr G = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
     TypeParam mc;
 
@@ -82,7 +82,7 @@ TYPED_TEST(SaveCutTest, UnweightedGraph) {
 
 TYPED_TEST(SaveCutTest, WeightedGraph) {
     configuration::getConfig()->save_cut = true;
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    graphAccessPtr G = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
     TypeParam mc;
 
@@ -121,7 +121,7 @@ TYPED_TEST(SaveCutTest, WeightedGraph) {
 
 TYPED_TEST(SaveCutTest, LargerGraph) {
     configuration::getConfig()->save_cut = true;
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     G->start_construction(200, 0);
 
     for (size_t i = 0; i < 2; ++i) {

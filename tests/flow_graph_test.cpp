@@ -17,7 +17,7 @@
 #include "io/graph_io.h"
 
 TEST(FlowGraphTest, EmptyGraph) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     std::shared_ptr<flow_graph> fG = graph_io::createFlowGraph(G);
 
     ASSERT_EQ(fG->number_of_nodes(), 0);
@@ -25,7 +25,7 @@ TEST(FlowGraphTest, EmptyGraph) {
 }
 
 TEST(FlowGraphTest, NoEdges) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     G->start_construction(10, 0);
     for (size_t i = 0; i < 10; ++i) {
         G->new_node();
@@ -38,7 +38,7 @@ TEST(FlowGraphTest, NoEdges) {
 }
 
 TEST(FlowGraphTest, Clique) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     G->start_construction(10, 0);
     for (size_t i = 0; i < 10; ++i) {
         G->new_node();
@@ -75,7 +75,7 @@ TEST(FlowGraphTest, Clique) {
 }
 
 TEST(FlowGraphTest, SparseGraph) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     G->start_construction(100, 0);
     for (size_t i = 0; i < 100; ++i) {
         G->new_node();

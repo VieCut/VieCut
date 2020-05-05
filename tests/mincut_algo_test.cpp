@@ -38,7 +38,7 @@ typedef testing::Types<viecut, noi_minimum_cut, padberg_rinaldi, matula_approx,
 TYPED_TEST_CASE(MincutAlgoTest, MCAlgTypes);
 
 TYPED_TEST(MincutAlgoTest, NoGraph) {
-    std::shared_ptr<graph_access> G;
+    graphAccessPtr G;
     TypeParam mc;
 
     EdgeWeight cut = mc.perform_minimum_cut(G);
@@ -46,7 +46,7 @@ TYPED_TEST(MincutAlgoTest, NoGraph) {
 }
 
 TYPED_TEST(MincutAlgoTest, EmptyGraph) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    graphAccessPtr G = std::make_shared<graph_access>();
     TypeParam mc;
 
     EdgeWeight cut = mc.perform_minimum_cut(G);
@@ -54,7 +54,7 @@ TYPED_TEST(MincutAlgoTest, EmptyGraph) {
 }
 
 TYPED_TEST(MincutAlgoTest, UnweightedGraphFromFile) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    graphAccessPtr G = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
     TypeParam mc;
     EdgeWeight cut = mc.perform_minimum_cut(G);
@@ -77,7 +77,7 @@ TYPED_TEST(MincutAlgoTest, UnweightedGraphFromFile) {
 }
 
 TYPED_TEST(MincutAlgoTest, WeightedGraphFromFile) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    graphAccessPtr G = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
     TypeParam mc;
     EdgeWeight cut = mc.perform_minimum_cut(G);

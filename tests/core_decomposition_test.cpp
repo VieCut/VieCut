@@ -15,7 +15,7 @@
 #include "io/graph_io.h"
 #include "tlx/logger.hpp"
 
-std::shared_ptr<graph_access> make_G2() {
+graphAccessPtr make_G2() {
     auto G = std::make_shared<graph_access>();
 
     G->start_construction(5, 4);

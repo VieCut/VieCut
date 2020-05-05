@@ -32,7 +32,7 @@
 #include "tools/macros_assertions.h"
 #include "tools/timer.h"
 
-static void augmentMostBalancedCut(std::shared_ptr<graph_access> original_graph,
+static void augmentMostBalancedCut(graphAccessPtr original_graph,
                                    const std::unordered_set<EdgeID>& mb_edges) {
     auto random_it = std::next(std::begin(mb_edges), random_functions::nextInt(
                                    0, mb_edges.size() - 1));
@@ -50,7 +50,7 @@ static void augmentMostBalancedCut(std::shared_ptr<graph_access> original_graph,
     }
 }
 
-static void augmentCutEdges(std::shared_ptr<graph_access> original_graph,
+static void augmentCutEdges(graphAccessPtr original_graph,
                             mutableGraphPtr mg,
                             NodeID largest_id) {
     std::vector<std::vector<EdgeID> > interblock_edges;
@@ -126,7 +126,7 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
-    std::shared_ptr<graph_access> original_graph =
+    graphAccessPtr original_graph =
         graph_io::readGraphWeighted(cfg->graph_filename);
 
 #ifdef PARALLEL
@@ -141,7 +141,7 @@ int main(int argn, char** argv) {
     size_t ct = 0;
 
     auto G = original_graph;
-    std::vector<std::shared_ptr<graph_access> > graph_vec = { original_graph };
+    std::vector<graphAccessPtr> graph_vec = { original_graph };
     union_find uf(original_graph->number_of_nodes());
 
     while (G->number_of_nodes() > 1) {

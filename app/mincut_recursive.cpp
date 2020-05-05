@@ -46,9 +46,9 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
-    std::vector<std::shared_ptr<graph_access> > graphs;
+    std::vector<graphAccessPtr> graphs;
 
-    std::shared_ptr<graph_access> G =
+    graphAccessPtr G =
         graph_io::readGraphWeighted(cfg->graph_filename);
     graphs.push_back(G);
 

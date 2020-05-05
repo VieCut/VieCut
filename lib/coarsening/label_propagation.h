@@ -31,7 +31,7 @@ class label_propagation {
     label_propagation() { }
     virtual ~label_propagation() { }
 
-    std::vector<NodeID> propagate_labels(std::shared_ptr<graph_access> G) {
+    std::vector<NodeID> propagate_labels(graphAccessPtr G) {
         timer t;
         std::vector<NodeID> cluster_id(G->number_of_nodes());
         std::vector<NodeID> permutation(G->number_of_nodes());
@@ -89,7 +89,7 @@ class label_propagation {
     }
 
     void certify_clusters(
-        std::shared_ptr<graph_access> G,
+        graphAccessPtr G,
         const std::vector<NodeID>& cluster_id,
         const std::vector<std::vector<NodeID> >& reverse_mapping) {
         for (size_t p = 0; p < reverse_mapping.size(); ++p) {

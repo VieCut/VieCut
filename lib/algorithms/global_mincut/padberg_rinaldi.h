@@ -37,11 +37,11 @@ class padberg_rinaldi : public minimum_cut {
     virtual ~padberg_rinaldi() { }
     static constexpr bool debug = false;
 
-    EdgeWeight perform_minimum_cut(std::shared_ptr<graph_access> G) {
+    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         EdgeWeight cut = G->getMinDegree();
-        std::vector<std::shared_ptr<graph_access> > graphs;
+        std::vector<graphAccessPtr> graphs;
         graphs.push_back(G);
         NodeID last_nodes = G->number_of_nodes() + 1;
         timer t;

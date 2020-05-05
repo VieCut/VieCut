@@ -25,7 +25,7 @@ TEST(ContractionTest, NoContr) {
 #ifdef PARALLEL
     omp_set_num_threads(4);
 #endif
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    graphAccessPtr G = graph_io::readGraphWeighted(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
 
     std::vector<NodeID> mapping;
@@ -37,7 +37,7 @@ TEST(ContractionTest, NoContr) {
         reverse_mapping.back().emplace_back(n);
     }
 
-    std::shared_ptr<graph_access> cntr = contraction::contractGraph(
+    graphAccessPtr cntr = contraction::contractGraph(
         G, mapping, G->number_of_nodes(), reverse_mapping);
 
     ASSERT_EQ(G->number_of_nodes(), cntr->number_of_nodes());
@@ -50,7 +50,7 @@ TEST(ContractionTest, ContrBlock) {
 #endif
     std::vector<std::string> graphs = { "", "-wgt" };
     for (std::string graph : graphs) {
-        std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+        graphAccessPtr G = graph_io::readGraphWeighted(
             std::string(VIECUT_PATH) + "/graphs/small" + graph + ".metis");
 
         std::vector<NodeID> mapping;
@@ -64,7 +64,7 @@ TEST(ContractionTest, ContrBlock) {
             reverse_mapping[n / 4].emplace_back(n);
         }
 
-        std::shared_ptr<graph_access> cntr = contraction::contractGraph(
+        graphAccessPtr cntr = contraction::contractGraph(
             G, mapping, 2, reverse_mapping);
 
         ASSERT_EQ(cntr->number_of_edges(), 2);

@@ -26,7 +26,7 @@ class balanced_cut_dfs {
     static constexpr bool debug = false;
 
     balanced_cut_dfs() = delete;
-    balanced_cut_dfs(std::shared_ptr<graph_access> original_graph,
+    balanced_cut_dfs(graphAccessPtr original_graph,
                      mutableGraphPtr G, EdgeWeight mincut)
         : original_graph(original_graph),
           G(G),
@@ -204,7 +204,7 @@ class balanced_cut_dfs {
         }
     }
 
-    std::shared_ptr<graph_access> original_graph;
+    graphAccessPtr original_graph;
     mutableGraphPtr G;
     EdgeWeight mincut;
     NodeID start_vertex;

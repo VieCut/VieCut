@@ -66,9 +66,9 @@ class string {
 
 #if __has_cpp_attribute(maybe_unused)
     [[maybe_unused]] static std::string graphToString(
-        std::shared_ptr<graph_access> G) {
+        graphAccessPtr G) {
 #else
-    static std::string graphToString(std::shared_ptr<graph_access> G) {
+    static std::string graphToString(graphAccessPtr G) {
 #endif
         std::ostringstream oss;
 
@@ -103,7 +103,7 @@ class string {
     }
 
     [[maybe_unused]] static std::string weightedGraphToString(
-        std::shared_ptr<graph_access> G) {
+        graphAccessPtr G) {
         std::ostringstream oss;
 
         for (NodeID n : G->nodes()) {

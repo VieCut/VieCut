@@ -32,9 +32,9 @@ class contraction {
  public:
     static constexpr bool debug = false;
 
-    static std::shared_ptr<graph_access> deleteEdge(
-        std::shared_ptr<graph_access> G, EdgeID e_del) {
-        std::shared_ptr<graph_access> G_out = std::make_shared<graph_access>();
+    static graphAccessPtr deleteEdge(
+        graphAccessPtr G, EdgeID e_del) {
+        graphAccessPtr G_out = std::make_shared<graph_access>();
 
         G_out->start_construction(G->number_of_nodes(),
                                   G->number_of_edges() - 2);
@@ -53,8 +53,8 @@ class contraction {
         return G_out;
     }
 
-    static std::pair<std::shared_ptr<graph_access>, std::vector<NodeID> >
-    contractEdge(std::shared_ptr<graph_access> G,
+    static std::pair<graphAccessPtr, std::vector<NodeID> >
+    contractEdge(graphAccessPtr G,
                  std::vector<NodeID> terminals,
                  EdgeID e_ctr) {
         NodeID src = G->getEdgeSource(e_ctr);
@@ -71,7 +71,7 @@ class contraction {
         return std::make_pair(G_out, terminals_out);
     }
 
-    static void findTrivialCuts(std::shared_ptr<graph_access> G,
+    static void findTrivialCuts(graphAccessPtr G,
                                 std::vector<NodeID>* m,
                                 std::vector<std::vector<NodeID> >* rm,
                                 int target_mindeg) {
@@ -128,8 +128,8 @@ class contraction {
 
     // contraction global_mincut for small number of nodes in constructed graph
     // we assume a full mesh and remove nonexistent edges afterwards.
-    static std::shared_ptr<graph_access> contractGraphFullMesh(
-        std::shared_ptr<graph_access> G,
+    static graphAccessPtr contractGraphFullMesh(
+        graphAccessPtr G,
         const std::vector<NodeID>& mapping,
         const std::vector<std::vector<NodeID> >&
         reverse_mapping) {
@@ -213,8 +213,8 @@ class contraction {
         return G;
     }
 
-    static std::shared_ptr<graph_access> fromUnionFind(
-        std::shared_ptr<graph_access> G,
+    static graphAccessPtr fromUnionFind(
+        graphAccessPtr G,
         union_find* uf) {
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
 
@@ -241,8 +241,8 @@ class contraction {
                              reverse_mapping.size(), reverse_mapping);
     }
 
-    static std::shared_ptr<graph_access> contractGraph(
-        std::shared_ptr<graph_access> G,
+    static graphAccessPtr contractGraph(
+        graphAccessPtr G,
         const std::vector<NodeID>& mapping,
         size_t /*num_nodes*/,
         const std::vector<std::vector<NodeID> >& reverse_mapping) {
@@ -254,8 +254,8 @@ class contraction {
     }
 
     // altered version of KaHiPs matching contraction
-    static std::shared_ptr<graph_access> contractGraphSparse(
-        std::shared_ptr<graph_access> G,
+    static graphAccessPtr contractGraphSparse(
+        graphAccessPtr G,
         const std::vector<NodeID>& mapping,
         const std::vector<std::vector<NodeID> >&
         reverse_mapping) {

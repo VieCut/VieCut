@@ -69,7 +69,7 @@ class mutable_graph {
           partition_count(copy.partition_count),
           original_nodes(copy.original_nodes) { }
 
-    void start_construction(NodeID n) {
+    void start_construction(NodeID n, EdgeID = 0) {
         vertices.resize(n);
         weighted_degree.resize(n, 0);
         partition_index.resize(n, 0);
@@ -138,6 +138,11 @@ class mutable_graph {
                 new_edge(target, source, wgt);
             }
         }
+    }
+
+    void computeDegrees() {
+        // do nothing, this exists for compatibility with graph_access in
+        // templates
     }
 
     auto nodes() const {

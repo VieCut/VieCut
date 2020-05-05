@@ -20,8 +20,7 @@
 #include "tools/vector.h"
 
 TEST(PushRelabelTest, EmptyGraph) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
-    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
+    mutableGraphPtr fG = std::make_shared<mutable_graph>();
 
     push_relabel pr;
     std::vector<NodeID> src;
@@ -32,14 +31,12 @@ TEST(PushRelabelTest, EmptyGraph) {
 }
 
 TEST(PushRelabelTest, TooLargeSrc) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    mutableGraphPtr fG = std::make_shared<mutable_graph>();
 
-    G->start_construction(10, 0);
+    fG->start_construction(10, 0);
     for (NodeID i = 0; i < 10; ++i)
-        G->new_node();
-    G->finish_construction();
-
-    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
+        fG->new_node();
+    fG->finish_construction();
 
     push_relabel pr;
     std::vector<NodeID> src;
@@ -50,14 +47,12 @@ TEST(PushRelabelTest, TooLargeSrc) {
 }
 
 TEST(PushRelabelTest, NoEdges) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    mutableGraphPtr fG = std::make_shared<mutable_graph>();
 
-    G->start_construction(10, 0);
+    fG->start_construction(10, 0);
     for (NodeID i = 0; i < 10; ++i)
-        G->new_node();
-    G->finish_construction();
-
-    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
+        fG->new_node();
+    fG->finish_construction();
 
     push_relabel pr;
     std::vector<NodeID> src;
@@ -70,20 +65,20 @@ TEST(PushRelabelTest, NoEdges) {
 }
 
 TEST(PushRelabelTest, DisconnectedCliques) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    mutableGraphPtr fG = std::make_shared<mutable_graph>();
 
-    G->start_construction(20, 0);
+    fG->start_construction(20, 0);
     for (NodeID clique = 0; clique < 2; ++clique) {
         for (NodeID i = 0; i < 10; ++i) {
-            G->new_node();
+            fG->new_node();
             for (NodeID j = 0; j < 10; ++j) {
                 if (i == j)
                     continue;
-                G->new_edge((clique * 10) + i, (clique * 10) + j);
+                fG->new_edge((clique * 10) + i, (clique * 10) + j);
             }
         }
     }
-    G->finish_construction();
+    fG->finish_construction();
 
     std::random_device rd;
     std::mt19937 eng(rd());
@@ -94,7 +89,6 @@ TEST(PushRelabelTest, DisconnectedCliques) {
         src.push_back(distribution(eng));
         src.push_back(10 + distribution(eng));
 
-        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] = pr.solve_max_flow_min_cut(
@@ -106,18 +100,18 @@ TEST(PushRelabelTest, DisconnectedCliques) {
 }
 
 TEST(PushRelabelTest, CliqueSingleSink) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    mutableGraphPtr fG = std::make_shared<mutable_graph>();
 
-    G->start_construction(10, 0);
+    fG->start_construction(10, 0);
     for (NodeID i = 0; i < 10; ++i) {
-        G->new_node();
+        fG->new_node();
         for (NodeID j = 0; j < 10; ++j) {
             if (i == j)
                 continue;
-            G->new_edge(i, j);
+            fG->new_edge(i, j);
         }
     }
-    G->finish_construction();
+    fG->finish_construction();
 
     std::random_device rd;
     std::mt19937 eng(rd());
@@ -133,7 +127,6 @@ TEST(PushRelabelTest, CliqueSingleSink) {
 
         src.push_back(tgt);
 
-        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] = pr.solve_max_flow_min_cut(
@@ -145,18 +138,18 @@ TEST(PushRelabelTest, CliqueSingleSink) {
 }
 
 TEST(PushRelabelTest, CliqueMultipleSinks) {
-    std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    mutableGraphPtr fG = std::make_shared<mutable_graph>();
 
-    G->start_construction(10, 0);
+    fG->start_construction(10, 0);
     for (NodeID i = 0; i < 10; ++i) {
-        G->new_node();
+        fG->new_node();
         for (NodeID j = 0; j < 10; ++j) {
             if (i == j)
                 continue;
-            G->new_edge(i, j);
+            fG->new_edge(i, j);
         }
     }
-    G->finish_construction();
+    fG->finish_construction();
 
     std::random_device rd;
     std::mt19937 eng(rd());
@@ -173,7 +166,6 @@ TEST(PushRelabelTest, CliqueMultipleSinks) {
             src.push_back(tgt);
         }
 
-        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 4; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -186,7 +178,7 @@ TEST(PushRelabelTest, CliqueMultipleSinks) {
 }
 
 TEST(PushRelabelTest, UnweightedGraphOneSink) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    mutableGraphPtr fG = graph_io::readGraphWeighted<mutable_graph>(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
 
     push_relabel pr;
@@ -200,7 +192,6 @@ TEST(PushRelabelTest, UnweightedGraphOneSink) {
         src.push_back(distribution(eng));
         src.push_back(distribution(eng) + 4);
 
-        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -220,10 +211,8 @@ TEST(PushRelabelTest, UnweightedGraphOneSink) {
 }
 
 TEST(PushRelabelTest, WeightedGraphOneSink) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    mutableGraphPtr fG = graph_io::readGraphWeighted<mutable_graph>(
         std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
-
-    std::shared_ptr<flow_graph> fG = graph_io::createFlowGraph(G);
 
     push_relabel pr;
 
@@ -236,7 +225,6 @@ TEST(PushRelabelTest, WeightedGraphOneSink) {
         src.push_back(distribution(eng));
         src.push_back(distribution(eng) + 4);
 
-        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 2; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
@@ -256,7 +244,7 @@ TEST(PushRelabelTest, WeightedGraphOneSink) {
 }
 
 TEST(PushRelabelTest, UnweightedGraphMultipleSinks) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    mutableGraphPtr G = graph_io::readGraphWeighted<mutable_graph>(
         std::string(VIECUT_PATH) + "/graphs/small.metis");
 
     push_relabel pr;
@@ -266,17 +254,16 @@ TEST(PushRelabelTest, UnweightedGraphMultipleSinks) {
     src.push_back(4);
     src.push_back(7);
 
-    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
     for (size_t src_v = 0; src_v < 4; ++src_v) {
         push_relabel pr;
-        auto [f, src_block] = pr.solve_max_flow_min_cut(fG, src, src_v, true);
+        auto [f, src_block] = pr.solve_max_flow_min_cut(G, src, src_v, true);
         ASSERT_EQ(f, 4);
         ASSERT_EQ(src_block.size(), 3);
     }
 }
 
 TEST(PushRelabelTest, WeightedGraphMultipleSinks) {
-    std::shared_ptr<graph_access> G = graph_io::readGraphWeighted(
+    mutableGraphPtr G = graph_io::readGraphWeighted<mutable_graph>(
         std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
 
     push_relabel pr;
@@ -286,10 +273,9 @@ TEST(PushRelabelTest, WeightedGraphMultipleSinks) {
     src.push_back(4);
     src.push_back(7);
 
-    mutableGraphPtr fG = mutable_graph::from_graph_access(G);
     for (size_t src_v = 0; src_v < 4; ++src_v) {
         push_relabel pr;
-        auto [f, src_block] = pr.solve_max_flow_min_cut(fG, src, src_v, true);
+        auto [f, src_block] = pr.solve_max_flow_min_cut(G, src, src_v, true);
         if (src_v == 0) {
             ASSERT_EQ(f, 10);
             ASSERT_EQ(src_block.size(), 1);
@@ -311,30 +297,28 @@ TEST(PushRelabelTest, WeightedGraphMultipleSinks) {
 
 TEST(PushRelabelTest, BlocksOnMulticutUnequalGraph) {
     std::vector<size_t> sizes = { 1, 10, 50, 100 };
-    for (size_t cluster_size : sizes) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    for (size_t csize : sizes) {
+        mutableGraphPtr G = std::make_shared<mutable_graph>();
 
-        G->start_construction(8 * cluster_size,
-                              2 * cluster_size
-                              * (cluster_size - 1) * 8 + 40);
+        G->start_construction(8 * csize,
+                              2 * csize
+                              * (csize - 1) * 8 + 40);
 
         for (size_t i = 0; i < 8; ++i) {
             for (size_t j = 0; j < 8; ++j) {
                 if (i / 2 == j / 2 && i != j && i / 2) {
-                    EdgeID e = G->new_edge(i * cluster_size, j * cluster_size);
-                    G->setEdgeWeight(e, 3);
+                    G->new_edge(i * csize, j * csize, 3);
                 }
 
                 if (i != j && i % 2 == 1 && j % 2 == 1 && i + j != 8) {
-                    EdgeID e = G->new_edge(i * cluster_size, j * cluster_size);
-                    G->setEdgeWeight(e, 2);
+                    G->new_edge(i * csize, j * csize, 2);
                 }
             }
 
-            for (size_t j = 0; j < cluster_size; ++j) {
-                for (size_t k = 0; k < cluster_size; ++k) {
+            for (size_t j = 0; j < csize; ++j) {
+                for (size_t k = 0; k < csize; ++k) {
                     if (j != k) {
-                        NodeID base = cluster_size * i;
+                        NodeID base = csize * i;
                         G->new_edge(base + j, base + k);
                     }
                 }
@@ -347,19 +331,18 @@ TEST(PushRelabelTest, BlocksOnMulticutUnequalGraph) {
 
         std::random_device rd;
         std::mt19937 eng(rd());
-        std::uniform_int_distribution<> distribution(0, cluster_size - 1);
+        std::uniform_int_distribution<> distribution(0, csize - 1);
         for (size_t i = 1; i < 4; ++i) {
-            terminals.emplace_back((2 * i) * cluster_size + distribution(eng));
+            terminals.emplace_back((2 * i) * csize + distribution(eng));
         }
 
-        mutableGraphPtr fG = mutable_graph::from_graph_access(G);
         for (size_t src_v = 0; src_v < 3; ++src_v) {
             push_relabel pr;
             auto [f, src_block] =
-                pr.solve_max_flow_min_cut(fG, terminals, src_v, true);
+                pr.solve_max_flow_min_cut(G, terminals, src_v, true);
 
             ASSERT_EQ(f, (FlowType)3);
-            ASSERT_EQ(src_block.size(), cluster_size);
+            ASSERT_EQ(src_block.size(), csize);
         }
     }
 }

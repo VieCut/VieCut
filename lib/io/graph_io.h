@@ -36,8 +36,9 @@ class graph_io {
 
     virtual ~graph_io() { }
 
-    static std::shared_ptr<graph_access> readGraphWeighted(std::string file) {
-        std::shared_ptr<graph_access> G = std::make_shared<graph_access>();
+    template <class Graph = graph_access>
+    static std::shared_ptr<Graph> readGraphWeighted(std::string file) {
+        std::shared_ptr<Graph> G = std::make_shared<Graph>();
         std::string line;
         // open file for reading
         std::ifstream instream(file.c_str());
@@ -106,9 +107,7 @@ class graph_io {
                     edge_weight = naive(line, &line_ptr);
                 }
                 edge_counter++;
-                EdgeID e = G->new_edge(node, target - 1);
-
-                G->setEdgeWeight(e, edge_weight);
+                G->new_edge(node, target - 1, edge_weight);
             }
 
             if (instream.eof()) {

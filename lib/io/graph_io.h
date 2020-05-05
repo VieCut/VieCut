@@ -23,6 +23,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "common/definitions.h"
@@ -35,6 +36,38 @@ class graph_io {
     graph_io() { }
 
     virtual ~graph_io() { }
+
+    template <class Graph>
+    static std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> >
+    readTemporalGraph(std::string file) {
+        std::vector < std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> edges;
+        std::string line;
+        std::getline(instream, line);
+
+        while (std::getline(instream, line)) {
+            if (line[0] == '%') {     // a comment in the file
+                continue;
+            }
+
+            size_t line_ptr = 0;
+
+            // remove leading whitespaces
+            while (line[line_ptr] == ' ')
+                ++line_ptr;
+
+            NodeID source = fast_atoi(line, &line_ptr) - 1;
+            NodeID target = fast_atoi(line, &line_ptr) - 1;
+            EdgeWeight wgt = 1;
+            uint64_t timestamp = fast_atoi(line, &line_ptr) - 1;
+            edges.emplace_back(source, target, wgt, timestamp);
+
+            if (instream.eof()) {
+                break;
+            }
+        }
+
+        return edges;
+    }
 
     template <class Graph = graph_access>
     static std::shared_ptr<Graph> readGraphWeighted(std::string file) {
@@ -92,7 +125,7 @@ class graph_io {
                 ++line_ptr;
 
             while (line_ptr < line.size()) {
-                NodeID target = naive(line, &line_ptr);
+                NodeID target = fast_atoi(line, &line_ptr);
                 if (!target) break;
                 // check for self-loops
                 if (target - 1 == node) {
@@ -104,7 +137,7 @@ class graph_io {
 
                 EdgeWeight edge_weight = 1;
                 if (read_ew) {
-                    edge_weight = naive(line, &line_ptr);
+                    edge_weight = fast_atoi(line, &line_ptr);
                 }
                 edge_counter++;
                 G->new_edge(node, target - 1, edge_weight);
@@ -258,8 +291,8 @@ class graph_io {
 
  private:
 // orig. from http://tinodidriksen.com/uploads/code/cpp/speed-string-to-int.cpp
-    static int naive(const std::string& str, size_t* line_ptr) {
-        int x = 0;
+    static uint64_t fast_atoi(const std::string& str, size_t* line_ptr) {
+        uint64_t x = 0;
 
         while (str[*line_ptr] >= '0' && str[*line_ptr] <= '9') {
             x = (x * 10) + (str[*line_ptr] - '0');

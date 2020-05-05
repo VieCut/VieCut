@@ -47,7 +47,7 @@ const FlowType UNDEFINED_FLOW = std::numeric_limits<FlowType>::max();
 const int NOTINQUEUE = std::numeric_limits<int>::max();
 const int ROOT = 0;
 
-typedef enum {    
+typedef enum {
     UNDISCOVERED,
     ACTIVE,
     CYCLE,

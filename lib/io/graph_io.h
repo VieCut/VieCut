@@ -40,8 +40,9 @@ class graph_io {
     template <class Graph>
     static std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> >
     readTemporalGraph(std::string file) {
-        std::vector < std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> edges;
+        std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> > edges;
         std::string line;
+        std::ifstream instream(file.c_str());
         std::getline(instream, line);
 
         while (std::getline(instream, line)) {

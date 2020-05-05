@@ -45,6 +45,7 @@
 #include "data_structure/union_find.h"
 #endif
 
+template <class GraphPtr>
 class noi_minimum_cut : public minimum_cut {
  public:
     noi_minimum_cut() { }
@@ -52,16 +53,16 @@ class noi_minimum_cut : public minimum_cut {
     static constexpr bool debug = false;
     static constexpr bool timing = true;
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
         return perform_minimum_cut(G, false);
     }
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G,
+    EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
 
-        std::vector<graphAccessPtr> graphs;
+        std::vector<GraphPtr> graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();
         graphs.push_back(G);
@@ -79,7 +80,7 @@ class noi_minimum_cut : public minimum_cut {
         return mincut;
     }
 
-    static priority_queue_interface * selectPq(graphAccessPtr G,
+    static priority_queue_interface * selectPq(GraphPtr G,
                                                EdgeWeight mincut) {
         priority_queue_interface* pq;
 
@@ -117,7 +118,7 @@ class noi_minimum_cut : public minimum_cut {
         return pq;
     }
 
-    union_find modified_capforest(graphAccessPtr G,
+    union_find modified_capforest(GraphPtr G,
                                   EdgeWeight mincut) {
         union_find uf(G->number_of_nodes());
 
@@ -138,18 +139,19 @@ class noi_minimum_cut : public minimum_cut {
             visited[current_node] = true;
             if (!configuration::getConfig()->disable_limiting) {
                 for (EdgeID e : G->edges_of(current_node)) {
-                    NodeID tgt = G->getEdgeTarget(e);
+                    NodeID tgt = G->getEdgeTarget(current_node, e);
                     if (!visited[tgt]) {
                         bool increase = false;
 
                         if (r_v[tgt] < mincut) {
                             increase = true;
-                            if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
+                            if ((r_v[tgt] + G->getEdgeWeight(
+                                current_node, e)) >= mincut) {
                                 uf.Union(current_node, tgt);
                             }
                         }
 
-                        r_v[tgt] += G->getEdgeWeight(e);
+                        r_v[tgt] += G->getEdgeWeight(current_node, e);
 
                         size_t new_rv = std::min(r_v[tgt], mincut);
 
@@ -165,16 +167,17 @@ class noi_minimum_cut : public minimum_cut {
                 }
             } else {
                 for (EdgeID e : G->edges_of(current_node)) {
-                    NodeID tgt = G->getEdgeTarget(e);
+                    NodeID tgt = G->getEdgeTarget(current_node, e);
 
                     if (!visited[tgt]) {
                         if (r_v[tgt] < mincut) {
-                            if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
+                            if ((r_v[tgt] + G->getEdgeWeight(
+                                current_node, e)) >= mincut) {
                                 uf.Union(current_node, tgt);
                             }
                         }
 
-                        r_v[tgt] += G->getEdgeWeight(e);
+                        r_v[tgt] += G->getEdgeWeight(current_node, e);
 
                         if (seen[tgt]) {
                             if (!visited[tgt]) {
@@ -189,64 +192,6 @@ class noi_minimum_cut : public minimum_cut {
             }
         }
         delete pq;
-        return uf;
-    }
-
-    // Terrible code duplication, but differences are too big for reuse
-    union_find modified_capforest(problemPointer mcp,
-                                  EdgeWeight mincut) {
-        mutableGraphPtr G = mcp->graph;
-        std::unordered_set<NodeID> terminal_set;
-
-        for (const auto& t : mcp->terminals) {
-            terminal_set.insert(t.position);
-        }
-
-        union_find uf(G->n());
-
-        vecMaxNodeHeap pq(G->n());
-        std::vector<bool> visited(G->number_of_nodes(), false);
-        std::vector<bool> seen(G->number_of_nodes(), false);
-        std::vector<EdgeWeight> r_v(G->number_of_nodes(), 0);
-
-        NodeID starting_node = random_functions::next() % G->number_of_nodes();
-        NodeID current_node = starting_node;
-        pq.insert(current_node, 0);
-        timer t;
-
-        while (!pq.empty()) {
-            current_node = pq.deleteMax();
-            visited[current_node] = true;
-            for (EdgeID e : G->edges_of(current_node)) {
-                NodeID tgt = G->getEdgeTarget(current_node, e);
-                if (!visited[tgt]) {
-                    bool increase = false;
-                    if (r_v[tgt] < mincut) {
-                        increase = true;
-                        if ((r_v[tgt] + G->getEdgeWeight(current_node, e)) >=
-                            mincut) {
-                            if (terminal_set.count(tgt) == 0
-                                && terminal_set.count(current_node) == 0) {
-                                uf.Union(current_node, tgt);
-                            }
-                        }
-                    }
-
-                    r_v[tgt] += G->getEdgeWeight(current_node, e);
-
-                    size_t new_rv = std::min(r_v[tgt], mincut);
-
-                    if (seen[tgt]) {
-                        if (increase && !visited[tgt]) {
-                            pq.increaseKey(tgt, new_rv);
-                        }
-                    } else {
-                        seen[tgt] = true;
-                        pq.insert(tgt, new_rv);
-                    }
-                }
-            }
-        }
         return uf;
     }
 };

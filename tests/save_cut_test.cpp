@@ -33,9 +33,13 @@ template <typename T>
 class SaveCutTest : public testing::Test { };
 
 #ifdef PARALLEL
-typedef testing::Types<viecut, exact_parallel_minimum_cut> MCAlgTypes;
+typedef testing::Types<viecut<graphAccessPtr>,
+                       exact_parallel_minimum_cut<graphAccessPtr> > MCAlgTypes;
 #else
-typedef testing::Types<viecut, noi_minimum_cut, matula_approx, ks_minimum_cut>
+typedef testing::Types<viecut<graphAccessPtr>,
+                       noi_minimum_cut<graphAccessPtr>,
+                       matula_approx<graphAccessPtr>,
+                       ks_minimum_cut>
     MCAlgTypes;
 #endif
 
@@ -50,9 +54,13 @@ TYPED_TEST(SaveCutTest, UnweightedGraph) {
     EdgeWeight cut = mc.perform_minimum_cut(G);
 
 #ifdef PARALLEL
-    if (std::is_same<TypeParam, exact_parallel_minimum_cut>::value) {
+    if (std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<mutableGraphPtr> >::value) {
 #else
-    if (std::is_same<TypeParam, noi_minimum_cut>::value) {
+    if (std::is_same<TypeParam, noi_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam, noi_minimum_cut<mutableGraphPtr> >::value) {
 #endif
         ASSERT_EQ(cut, (EdgeWeight)2);
         std::vector<EdgeID> e;
@@ -89,9 +97,13 @@ TYPED_TEST(SaveCutTest, WeightedGraph) {
     EdgeWeight cut = mc.perform_minimum_cut(G);
 
 #ifdef PARALLEL
-    if (std::is_same<TypeParam, exact_parallel_minimum_cut>::value) {
+    if (std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<mutableGraphPtr> >::value) {
 #else
-    if (std::is_same<TypeParam, noi_minimum_cut>::value) {
+    if (std::is_same<TypeParam, noi_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam, noi_minimum_cut<mutableGraphPtr> >::value) {
 #endif
         ASSERT_EQ(cut, (EdgeWeight)3);
         std::vector<EdgeID> e;

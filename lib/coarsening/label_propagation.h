@@ -24,6 +24,7 @@
 #include "tlx/logger.hpp"
 #include "tools/random_functions.h"
 
+template <class GraphPtr>
 class label_propagation {
     static constexpr bool debug = false;
 
@@ -31,7 +32,7 @@ class label_propagation {
     label_propagation() { }
     virtual ~label_propagation() { }
 
-    std::vector<NodeID> propagate_labels(graphAccessPtr G) {
+    std::vector<NodeID> propagate_labels(GraphPtr G) {
         timer t;
         std::vector<NodeID> cluster_id(G->number_of_nodes());
         std::vector<NodeID> permutation(G->number_of_nodes());

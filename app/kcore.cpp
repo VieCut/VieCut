@@ -94,7 +94,7 @@ int main(int argn, char** argv) {
 
             size_t result = 0;
             if (!no_cut) {
-                minimum_cut* mc = new noi_minimum_cut();
+                minimum_cut* mc = new noi_minimum_cut<graphAccessPtr>();
                 result = mc->perform_minimum_cut(connected_graph);
             }
 

@@ -95,11 +95,8 @@ class recursive_cactus {
             // implicit do-while loop
             while (previous > G->n()) {
                 previous = G->n();
-                // create empty multicut problem to run modified_capforest
-                multicut_problem mcp(G);
-                auto problem = std::make_shared<multicut_problem>(mcp);
-                noi_minimum_cut noi;
-                auto uf = noi.modified_capforest(problem, mincut + 1);
+                noi_minimum_cut<mutableGraphPtr> noi;
+                auto uf = noi.modified_capforest(G, mincut + 1);
                 G = contraction::fromUnionFind(G, &uf);
                 auto uf12 = all_cut_local_red::allCutsPrTests12(G, mincut);
                 G = contraction::fromUnionFind(G, &uf12);

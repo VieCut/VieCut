@@ -51,6 +51,7 @@
 #include "data_structure/union_find.h"
 #endif
 
+template <class GraphPtr>
 class parallel_cactus : public minimum_cut {
  public:
     parallel_cactus() { }
@@ -80,9 +81,9 @@ class parallel_cactus : public minimum_cut {
         timer t;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         recursive_cactus rc;
-        exact_parallel_minimum_cut mc;
+        exact_parallel_minimum_cut<GraphPtr> mc;
 #ifdef PARALLEL
-        viecut heuristic_mc;
+        viecut<GraphPtr> heuristic_mc;
         sparsify sf;
         auto G2 = graphs.back();
         if (configuration::getConfig()->contraction_factor > 0.0) {

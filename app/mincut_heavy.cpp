@@ -102,7 +102,7 @@ int main(int argn, char** argv) {
         for (size_t numthread : numthreads) {
             random_functions::setSeed(i);
             t.restart();
-            minimum_cut* mc = selectMincutAlgorithm(
+            minimum_cut* mc = selectMincutAlgorithm<graphAccessPtr>(
                 configuration::getConfig()->algorithm);
             mc->perform_minimum_cut(G2);
             omp_set_num_threads(numthread);

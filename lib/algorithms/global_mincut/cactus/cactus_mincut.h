@@ -40,6 +40,7 @@
 #include "coarsening/contract_graph.h"
 #endif
 
+template <class GraphPtr>
 class cactus_mincut : public minimum_cut {
  public:
     cactus_mincut() { }
@@ -62,18 +63,15 @@ class cactus_mincut : public minimum_cut {
         return findAllMincuts(v);
     }
 
-    std::tuple<EdgeWeight, mutableGraphPtr,
-               std::unordered_set<EdgeID> > findAllMincuts(
-        std::vector<graphAccessPtr> graphs) {
+    std::tuple<EdgeWeight, mutableGraphPtr, std::unordered_set<EdgeID> >
+    findAllMincuts(std::vector<graphAccessPtr> graphs) {
         recursive_cactus rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;
 
-        viecut vc;
+        viecut<GraphPtr> vc;
         mincut = vc.perform_minimum_cut(graphs.back());
-
-        noi_minimum_cut noi;
-
+        noi_minimum_cut<GraphPtr> noi;
         std::vector<std::vector<std::pair<NodeID, NodeID> > > guaranteed_edges;
         std::vector<size_t> ge_ids;
 

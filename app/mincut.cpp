@@ -113,7 +113,7 @@ int main(int argn, char** argv) {
             NodeID n = G->number_of_nodes();
             EdgeID m = G->number_of_edges();
 
-            minimum_cut* mc = selectMincutAlgorithm(cfg->algorithm);
+            auto mc = selectMincutAlgorithm<graphAccessPtr>(cfg->algorithm);
             omp_set_num_threads(numthread);
             cfg->threads = numthread;
 

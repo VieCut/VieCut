@@ -33,6 +33,7 @@
 #include "coarsening/contract_graph.h"
 #endif
 
+template <class GraphPtr>
 class matula_approx : public minimum_cut {
  public:
     matula_approx() { }
@@ -51,7 +52,7 @@ class matula_approx : public minimum_cut {
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
             std::vector<std::pair<NodeID, NodeID> > contractable;
             timer time;
-            noi_minimum_cut noi;
+            noi_minimum_cut<GraphPtr> noi;
             auto uf = noi.modified_capforest(
                 graphs.back(),
                 std::max(mincut / 2, static_cast<EdgeWeight>(1)));

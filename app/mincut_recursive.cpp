@@ -53,9 +53,9 @@ int main(int argn, char** argv) {
     graphs.push_back(G);
 
 #ifdef PARALLEL
-    parallel_cactus mc;
+    parallel_cactus<graphAccessPtr> mc;
 #else
-    cactus_mincut mc;
+    cactus_mincut<graphAccessPtr> mc;
 #endif
     LOG1 << "io time: " << t.elapsed();
 

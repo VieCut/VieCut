@@ -106,7 +106,7 @@ int main(int argn, char** argv) {
         for (size_t numthread : numthreads) {
             random_functions::setSeed(i);
             configuration::getConfig()->seed = i;
-            minimum_cut* mc = selectMincutAlgorithm(
+            minimum_cut* mc = selectMincutAlgorithm<graphAccessPtr>(
                 configuration::getConfig()->algorithm);
             t.restart();
             omp_set_num_threads(numthread);

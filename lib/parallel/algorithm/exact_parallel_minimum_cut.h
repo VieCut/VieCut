@@ -47,6 +47,7 @@
 #include "data_structure/union_find.h"
 #endif
 
+template <class GraphPtr>
 class exact_parallel_minimum_cut : public minimum_cut {
  public:
     exact_parallel_minimum_cut() { }
@@ -56,11 +57,11 @@ class exact_parallel_minimum_cut : public minimum_cut {
     static constexpr bool debug = false;
     bool timing = configuration::getConfig()->verbose;
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
         return perform_minimum_cut(G, false);
     }
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G,
+    EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
@@ -68,7 +69,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
         timer t;
         EdgeWeight mincut = G->getMinDegree();
 #ifdef PARALLEL
-        viecut heuristic_mc;
+        viecut<GraphPtr> heuristic_mc;
         mincut = heuristic_mc.perform_minimum_cut(G, true);
         LOGC(timing) << "VieCut found cut " << mincut
                      << " [Time: " << t.elapsed() << "s]";
@@ -83,11 +84,11 @@ class exact_parallel_minimum_cut : public minimum_cut {
 #endif
 
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
-            graphAccessPtr curr_g = graphs.back();
+            GraphPtr curr_g = graphs.back();
             timer ts;
 #ifdef PARALLEL
 
-            noi_minimum_cut noi;
+            noi_minimum_cut<GraphPtr> noi;
 
             auto uf = parallel_modified_capforest(curr_g, mincut);
             if (uf.n() == curr_g->number_of_nodes()) {

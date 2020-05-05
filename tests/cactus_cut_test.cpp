@@ -26,16 +26,22 @@
 #include "gtest/gtest.h"
 #include "io/graph_io.h"
 
-TEST(CactusCutTest, UnweightedGraphFromFile) {
+template <typename T>
+class CactusCutTest : public testing::Test { };
+
+typedef testing::Types<graph_access> GraphTypes;
+TYPED_TEST_CASE(CactusCutTest, GraphTypes);
+
+TYPED_TEST(CactusCutTest, UnweightedGraphFromFile) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        graphAccessPtr G = graph_io::readGraphWeighted(
+        auto G = graph_io::readGraphWeighted<TypeParam>(
             std::string(VIECUT_PATH) + "/graphs/small.metis");
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
 
@@ -50,16 +56,16 @@ TEST(CactusCutTest, UnweightedGraphFromFile) {
     }
 }
 
-TEST(CactusCutTest, WeightedGraphFromFile) {
+TYPED_TEST(CactusCutTest, WeightedGraphFromFile) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        graphAccessPtr G = graph_io::readGraphWeighted(
+        auto G = graph_io::readGraphWeighted<TypeParam>(
             std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -75,11 +81,11 @@ TEST(CactusCutTest, WeightedGraphFromFile) {
     }
 }
 
-TEST(CactusCutTest, SmallClique) {
+TYPED_TEST(CactusCutTest, SmallClique) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + (i * 623412));
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
 
         G->start_construction(4, 16);
 
@@ -92,9 +98,9 @@ TEST(CactusCutTest, SmallClique) {
         G->finish_construction();
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -111,11 +117,11 @@ TEST(CactusCutTest, SmallClique) {
     }
 }
 
-TEST(CactusCutTest, RingOfVerySmallCliques) {
+TYPED_TEST(CactusCutTest, RingOfVerySmallCliques) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
 
         NodeID num_cliques = 4;
 
@@ -144,9 +150,9 @@ TEST(CactusCutTest, RingOfVerySmallCliques) {
         G->finish_construction();
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -163,11 +169,11 @@ TEST(CactusCutTest, RingOfVerySmallCliques) {
     }
 }
 
-TEST(CactusCutTest, SimplePath) {
+TYPED_TEST(CactusCutTest, SimplePath) {
     configuration::getConfig()->save_cut = true;
     std::vector<size_t> weights = { 1, 10, 1000 };
     for (auto wgt : weights) {
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
         size_t length = 10;
         G->start_construction(length, 2 * length);
         for (size_t i = 0; i < length - 1; ++i) {
@@ -178,9 +184,9 @@ TEST(CactusCutTest, SimplePath) {
         }
         G->finish_construction();
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -190,11 +196,11 @@ TEST(CactusCutTest, SimplePath) {
     }
 }
 
-TEST(CactusCutTest, RingOfSmallCliques) {
+TYPED_TEST(CactusCutTest, RingOfSmallCliques) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
 
         NodeID num_cliques = 3;
 
@@ -223,9 +229,9 @@ TEST(CactusCutTest, RingOfSmallCliques) {
         G->finish_construction();
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -242,22 +248,18 @@ TEST(CactusCutTest, RingOfSmallCliques) {
     }
 }
 
-TEST(CactusCutTest, MultipleMincuts) {
+TYPED_TEST(Disabled_CactusCutTest, MultipleMincuts) {
     configuration::getConfig()->save_cut = true;
+    configuration::getConfig()->verbose = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        graphAccessPtr G = graph_io::readGraphWeighted(
-            std::string(VIECUT_PATH) + "/graphs/small.metis");
-
-        G->setEdgeWeight(3, 2);
-        G->setEdgeWeight(13, 2);
-        G->setEdgeWeight(14, 2);
-        G->setEdgeWeight(24, 2);
+        auto G = graph_io::readGraphWeighted<TypeParam>(
+            std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -274,11 +276,11 @@ TEST(CactusCutTest, MultipleMincuts) {
     }
 }
 
-TEST(CactusCutTest, LargeClique) {
+TYPED_TEST(CactusCutTest, LargeClique) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
 
         G->start_construction(10, 100);
 
@@ -291,9 +293,9 @@ TEST(CactusCutTest, LargeClique) {
         G->finish_construction();
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -310,14 +312,14 @@ TEST(CactusCutTest, LargeClique) {
     }
 }
 
-TEST(CactusCutTest, GraphFromNKPaper) {
+TYPED_TEST(CactusCutTest, GraphFromNKPaper) {
     configuration::getConfig()->save_cut = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
         // Example graph from H. Nagamochi, T. Kameda
         // - Constructing Cactus Representation for all Minimum Cuts
         // - in an Undirected Network
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
         G->start_construction(6, 20);
 
         G->new_edge(0, 1, 3);
@@ -347,9 +349,9 @@ TEST(CactusCutTest, GraphFromNKPaper) {
         G->finish_construction();
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
@@ -367,14 +369,14 @@ TEST(CactusCutTest, GraphFromNKPaper) {
     }
 }
 
-TEST(CactusCutTest, GraphFromNNIPaper) {
+TYPED_TEST(CactusCutTest, GraphFromNNIPaper) {
     configuration::getConfig()->save_cut = true;
     // Example graph from H. Nagamochi, Y. Nakao, T. Ibaraki
     // - A Fast Algorithm for Cactus Representation of Minimum Cuts
     for (size_t i = 0; i < 3; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
 
-        graphAccessPtr G = std::make_shared<graph_access>();
+        auto G = std::make_shared<TypeParam>();
         G->start_construction(19, 100);
 
         G->new_node();
@@ -482,9 +484,9 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
         G->finish_construction();
 
 #ifdef PARALLEL
-        parallel_cactus mc;
+        parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-        cactus_mincut mc;
+        cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
 
         std::string outfile = std::string(VIECUT_PATH) + "/build/tests/tempcut";
@@ -551,8 +553,8 @@ TEST(CactusCutTest, GraphFromNNIPaper) {
     }
 }
 
-TEST(CactusCutTest, TwoDTorus) {
-    graphAccessPtr G = std::make_shared<graph_access>();
+TYPED_TEST(CactusCutTest, TwoDTorus) {
+    auto G = std::make_shared<TypeParam>();
     size_t dimension = 3;
     size_t num_vertices = dimension * dimension;
     G->start_construction(num_vertices, 4 * num_vertices);
@@ -572,11 +574,10 @@ TEST(CactusCutTest, TwoDTorus) {
         G->new_edge(i, down);
     }
     G->finish_construction();
-
 #ifdef PARALLEL
-    parallel_cactus mc;
+    parallel_cactus<std::shared_ptr<TypeParam> > mc;
 #else
-    cactus_mincut mc;
+    cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
     auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
     configuration::getConfig()->find_most_balanced_cut = true;

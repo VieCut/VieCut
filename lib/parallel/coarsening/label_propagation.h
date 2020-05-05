@@ -30,6 +30,7 @@
 #include "tools/string.h"
 #include "tools/timer.h"
 
+template <class GraphPtr>
 class label_propagation {
     static constexpr bool debug = false;
     bool timing = configuration::getConfig()->verbose;
@@ -38,7 +39,7 @@ class label_propagation {
     label_propagation() { }
     virtual ~label_propagation() { }
 
-    std::vector<NodeID> propagate_labels(graphAccessPtr G) {
+    std::vector<NodeID> propagate_labels(GraphPtr G) {
         timer t_start;
         std::vector<uint32_t> cluster_mapping;
 

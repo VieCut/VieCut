@@ -21,6 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/definitions.h"
@@ -527,6 +528,18 @@ class graph_access {
         return graphref->m_nodes[node].in_cut;
     }
 
+    std::pair<NodeID, EdgeWeight> getEdge(NodeID, EdgeID edge) {
+        return getEdge(edge);
+    }
+
+    std::pair<NodeID, EdgeWeight> getEdge(EdgeID edge) {
+        return std::make_pair(getEdgeTarget(edge), getEdgeWeight(edge));
+    }
+
+    EdgeWeight getEdgeWeight(NodeID, EdgeID edge) {
+        return getEdgeWeight(edge);
+    }
+
     EdgeWeight getEdgeWeight(EdgeID edge) const {
 #ifdef NDEBUG
         return graphref->m_edges[edge].weight;
@@ -550,6 +563,10 @@ class graph_access {
 
     void setNodeWeight(NodeID, NodeWeight) {
         assert(false);
+    }
+
+    NodeID getEdgeTarget(NodeID, EdgeID edge) {
+        return getEdgeTarget(edge);
     }
 
     NodeID getEdgeTarget(EdgeID edge) const {

@@ -31,13 +31,14 @@
 #include "coarsening/contraction_tests.h"
 #endif
 
+template <class GraphPtr>
 class padberg_rinaldi : public minimum_cut {
  public:
     padberg_rinaldi() { }
     virtual ~padberg_rinaldi() { }
     static constexpr bool debug = false;
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         EdgeWeight cut = G->getMinDegree();

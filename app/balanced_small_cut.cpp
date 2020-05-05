@@ -130,9 +130,9 @@ int main(int argn, char** argv) {
         graph_io::readGraphWeighted(cfg->graph_filename);
 
 #ifdef PARALLEL
-    parallel_cactus mc;
+    parallel_cactus<graphAccessPtr> mc;
 #else
-    cactus_mincut mc;
+    cactus_mincut<graphAccessPtr> mc;
 #endif
     LOG1 << "io time: " << t.elapsed();
 

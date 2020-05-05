@@ -210,7 +210,7 @@ class ks_minimum_cut : public minimum_cut {
             }
             mincut_to_return = std::min(w1.first, w2.first);
         } else {
-            noi_minimum_cut mc;
+            noi_minimum_cut<graphAccessPtr> mc;
             mincut_to_return = mc.perform_minimum_cut(G2, true);
         }
 

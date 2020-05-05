@@ -29,10 +29,15 @@ template <typename T>
 class MincutAlgoTest : public testing::Test { };
 
 #ifdef PARALLEL
-typedef testing::Types<viecut, exact_parallel_minimum_cut> MCAlgTypes;
+typedef testing::Types<viecut<graphAccessPtr>,
+                       exact_parallel_minimum_cut<graphAccessPtr> > MCAlgTypes;
 #else
-typedef testing::Types<viecut, noi_minimum_cut, padberg_rinaldi, matula_approx,
-                       ks_minimum_cut, cactus_mincut> MCAlgTypes;
+typedef testing::Types<viecut<graphAccessPtr>,
+                       noi_minimum_cut<graphAccessPtr>,
+                       padberg_rinaldi<graphAccessPtr>,
+                       matula_approx<graphAccessPtr>,
+                       ks_minimum_cut,
+                       cactus_mincut<graphAccessPtr> > MCAlgTypes;
 #endif
 
 TYPED_TEST_CASE(MincutAlgoTest, MCAlgTypes);
@@ -60,19 +65,20 @@ TYPED_TEST(MincutAlgoTest, UnweightedGraphFromFile) {
     EdgeWeight cut = mc.perform_minimum_cut(G);
 
 #ifdef PARALLEL
-    if (std::is_same<TypeParam, viecut>::value) {
+    if (std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<mutableGraphPtr> >::value) {
 #else
-    if (std::is_same<TypeParam, viecut>::value
-        || std::is_same<TypeParam, matula_approx>::value
-        || std::is_same<TypeParam, ks_minimum_cut>::value
-        || std::is_same<TypeParam, padberg_rinaldi>::value) {
+    if (std::is_same<TypeParam, noi_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam, noi_minimum_cut<mutableGraphPtr> >::value) {
 #endif
+        ASSERT_EQ(cut, 2);
+    } else {
         // inexact, we can only guarantee that minimum cut is
         // between minimum degree and minimum cut
         ASSERT_LE(cut, 3);
         ASSERT_GE(cut, 2);
-    } else {
-        ASSERT_EQ(cut, 2);
     }
 }
 
@@ -83,18 +89,19 @@ TYPED_TEST(MincutAlgoTest, WeightedGraphFromFile) {
     EdgeWeight cut = mc.perform_minimum_cut(G);
 
 #ifdef PARALLEL
-    if (std::is_same<TypeParam, viecut>::value) {
+    if (std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam,
+                     exact_parallel_minimum_cut<mutableGraphPtr> >::value) {
 #else
-    if (std::is_same<TypeParam, viecut>::value
-        || std::is_same<TypeParam, matula_approx>::value
-        || std::is_same<TypeParam, ks_minimum_cut>::value
-        || std::is_same<TypeParam, padberg_rinaldi>::value) {
+    if (std::is_same<TypeParam, noi_minimum_cut<graphAccessPtr> >::value ||
+        std::is_same<TypeParam, noi_minimum_cut<mutableGraphPtr> >::value) {
 #endif
+        ASSERT_EQ(cut, 3);
+    } else {
         // inexact, we can only guarantee that minimum cut is
         // between minimum degree and minimum cut
         ASSERT_LE(cut, 10);
         ASSERT_GE(cut, 3);
-    } else {
-        ASSERT_EQ(cut, 3);
     }
 }

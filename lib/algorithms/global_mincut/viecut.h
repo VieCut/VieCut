@@ -41,6 +41,7 @@
 #include "coarsening/label_propagation.h"
 #endif
 
+template <class GraphPtr>
 class viecut : public minimum_cut {
  public:
     static constexpr bool debug = false;
@@ -49,16 +50,16 @@ class viecut : public minimum_cut {
 
     virtual ~viecut() { }
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
         return perform_minimum_cut(G, false);
     }
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G,
+    EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         EdgeWeight cut = G->getMinDegree();
-        std::vector<graphAccessPtr> graphs;
+        std::vector<GraphPtr> graphs;
         graphs.push_back(G);
 
         minimum_cut_helpers::setInitialCutValues(graphs);
@@ -69,7 +70,7 @@ class viecut : public minimum_cut {
                  graphs[graphs.size() - 2]->number_of_nodes()))) {
             timer t;
             G = graphs.back();
-            label_propagation lp;
+            label_propagation<GraphPtr> lp;
             std::vector<NodeID> cluster_mapping = lp.propagate_labels(G);
             auto [mapping, reverse_mapping] =
                 minimum_cut_helpers::remap_cluster(G, cluster_mapping);
@@ -100,7 +101,7 @@ class viecut : public minimum_cut {
 
         if (graphs.back()->number_of_nodes() > 1) {
             timer t;
-            noi_minimum_cut noi;
+            noi_minimum_cut<GraphPtr> noi;
             cut = std::min(cut, noi.perform_minimum_cut(graphs.back(), true));
 
             LOGC(timing) << "Exact Algorithm:"

@@ -79,11 +79,11 @@ class kernelization_criteria {
             if (flow_values.size() >= 2)
                 contr_flow = sum - flow_values[flow_values.size() - 1]
                              - flow_values[flow_values.size() - 2];
-            noi_minimum_cut noi;
+            noi_minimum_cut<mutableGraphPtr> noi;
             EdgeWeight noi_limit = global_upper_bound
                                    - problem->deleted_weight
                                    - tlx::div_ceil(contr_flow, 4);
-            auto uf_noi = noi.modified_capforest(problem, noi_limit);
+            auto uf_noi = noi.modified_capforest(problem->graph, noi_limit);
             contractIfImproved(&uf_noi, problem, "noi", &active_n);
 
             find_articulation_points find_aps(problem->graph);

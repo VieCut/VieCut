@@ -248,13 +248,13 @@ TYPED_TEST(CactusCutTest, RingOfSmallCliques) {
     }
 }
 
-TYPED_TEST(Disabled_CactusCutTest, MultipleMincuts) {
+TYPED_TEST(CactusCutTest, MultipleMincuts) {
     configuration::getConfig()->save_cut = true;
     configuration::getConfig()->verbose = true;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
         auto G = graph_io::readGraphWeighted<TypeParam>(
-            std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
+            std::string(VIECUT_PATH) + "/graphs/small-wgt2.metis");
 
 #ifdef PARALLEL
         parallel_cactus<std::shared_ptr<TypeParam> > mc;

@@ -49,7 +49,7 @@ class cactus_mincut : public minimum_cut {
 
     bool timing = configuration::getConfig()->verbose;
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
         if (!minimum_cut_helpers::graphValid(G))
             return -1;
         // compatibility with min cut interface
@@ -57,14 +57,13 @@ class cactus_mincut : public minimum_cut {
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
-               std::unordered_set<EdgeID> > findAllMincuts(
-        graphAccessPtr G) {
-        std::vector<graphAccessPtr> v = { G };
+               std::unordered_set<EdgeID> > findAllMincuts(GraphPtr G) {
+        std::vector<GraphPtr> v = { G };
         return findAllMincuts(v);
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr, std::unordered_set<EdgeID> >
-    findAllMincuts(std::vector<graphAccessPtr> graphs) {
+    findAllMincuts(std::vector<GraphPtr> graphs) {
         recursive_cactus rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;
@@ -105,6 +104,10 @@ class cactus_mincut : public minimum_cut {
                     }
                 }
             }
+
+            LOGC(timing) << "t-noi " << t.elapsed() << " contract "
+                         << graphs.back()->number_of_nodes()
+                         << " to " << uf.n();
 
             if (uf.n() < current_graph->number_of_nodes()) {
                 auto newg = contraction::fromUnionFind(current_graph, &uf);

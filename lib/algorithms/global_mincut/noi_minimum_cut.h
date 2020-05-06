@@ -146,7 +146,7 @@ class noi_minimum_cut : public minimum_cut {
                         if (r_v[tgt] < mincut) {
                             increase = true;
                             if ((r_v[tgt] + G->getEdgeWeight(
-                                current_node, e)) >= mincut) {
+                                     current_node, e)) >= mincut) {
                                 uf.Union(current_node, tgt);
                             }
                         }
@@ -172,7 +172,7 @@ class noi_minimum_cut : public minimum_cut {
                     if (!visited[tgt]) {
                         if (r_v[tgt] < mincut) {
                             if ((r_v[tgt] + G->getEdgeWeight(
-                                current_node, e)) >= mincut) {
+                                     current_node, e)) >= mincut) {
                                 uf.Union(current_node, tgt);
                             }
                         }

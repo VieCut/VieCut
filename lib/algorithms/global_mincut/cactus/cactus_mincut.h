@@ -43,6 +43,7 @@
 template <class GraphPtr>
 class cactus_mincut : public minimum_cut {
  public:
+    typedef GraphPtr GraphPtrType;
     cactus_mincut() { }
     virtual ~cactus_mincut() { }
     static constexpr bool debug = false;
@@ -50,8 +51,6 @@ class cactus_mincut : public minimum_cut {
     bool timing = configuration::getConfig()->verbose;
 
     EdgeWeight perform_minimum_cut(GraphPtr G) {
-        if (!minimum_cut_helpers::graphValid(G))
-            return -1;
         // compatibility with min cut interface
         return std::get<0>(findAllMincuts(G));
     }
@@ -74,7 +73,7 @@ class cactus_mincut : public minimum_cut {
         std::vector<std::vector<std::pair<NodeID, NodeID> > > guaranteed_edges;
         std::vector<size_t> ge_ids;
 
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);
 
         NodeID previous_size = UNDEFINED_NODE;
         while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
@@ -112,7 +111,8 @@ class cactus_mincut : public minimum_cut {
             if (uf.n() < current_graph->number_of_nodes()) {
                 auto newg = contraction::fromUnionFind(current_graph, &uf);
                 graphs.emplace_back(newg);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             }
 
             union_find uf12 = tests::prTests12(
@@ -124,7 +124,8 @@ class cactus_mincut : public minimum_cut {
                 auto g12 = contraction::fromUnionFind(
                     graphs.back(), &uf12);
                 graphs.push_back(g12);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             }
 
             union_find uf34 = tests::prTests34(
@@ -136,7 +137,8 @@ class cactus_mincut : public minimum_cut {
                 auto g34 = contraction::fromUnionFind(
                     graphs.back(), &uf34);
                 graphs.push_back(g34);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             }
 
             if (current_mincut > mincut) {
@@ -154,7 +156,7 @@ class cactus_mincut : public minimum_cut {
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);
 
-        minimum_cut_helpers::setVertexLocations(
+        minimum_cut_helpers<GraphPtr>::setVertexLocations(
             out_graph, graphs, ge_ids, guaranteed_edges, mincut);
         LOGC(timing)
             << "unpacked - n " << out_graph->n() << " m " << out_graph->m();

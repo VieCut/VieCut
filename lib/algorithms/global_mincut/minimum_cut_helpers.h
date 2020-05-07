@@ -21,11 +21,12 @@
 #include "data_structure/graph_access.h"
 #include "data_structure/mutable_graph.h"
 
+template <class GraphPtr>
 class minimum_cut_helpers {
  private:
     static constexpr bool debug = false;
     // Get index of minimum degree vertex
-    static size_t minimumIndex(graphAccessPtr G) {
+    static size_t minimumIndex(GraphPtr G) {
         size_t minimum_index = 0;
         for (NodeID n : G->nodes()) {
             if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
@@ -37,26 +38,10 @@ class minimum_cut_helpers {
     }
 
  public:
-    static bool graphValid(graphAccessPtr G) {
-        // graph does not exist
-        if (!G.use_count())
-            return false;
-
-        // graph has no nodes
-        if (!G->number_of_nodes())
-            return false;
-
-        // in process of building graph
-        if (G->currentlyBuildingGraph())
-            return false;
-
-        return true;
-    }
-
     // set minimum cut to initial value (one minimum degree vertex)
     // - this cut will be updated later in the global_mincut
     static void setInitialCutValues(
-        const std::vector<graphAccessPtr>& graphs) {
+        const std::vector<GraphPtr>& graphs) {
         if (configuration::getConfig()->save_cut) {
             size_t minimum_index = minimumIndex(graphs.back());
 
@@ -71,7 +56,7 @@ class minimum_cut_helpers {
     }
 
     static EdgeWeight updateCut(
-        const std::vector<graphAccessPtr>& graphs,
+        const std::vector<GraphPtr>& graphs,
         EdgeWeight previous_mincut) {
         if (configuration::getConfig()->save_cut) {
             graphAccessPtr new_graph = graphs.back();
@@ -101,8 +86,8 @@ class minimum_cut_helpers {
     }
 
     static void retrieveMinimumCut(
-        std::vector<graphAccessPtr> graphs) {
-        graphAccessPtr G = graphs[0];
+        std::vector<GraphPtr> graphs) {
+        GraphPtr G = graphs[0];
         size_t inside = 0, outside = 0;
         for (NodeID n : G->nodes()) {
             if (G->getNodeInCut(n)) {
@@ -131,7 +116,7 @@ class minimum_cut_helpers {
 
     static std::pair<std::vector<NodeID>,
                      std::vector<std::vector<NodeID> > > remap_cluster(
-        graphAccessPtr G,
+        GraphPtr G,
         const std::vector<NodeID>& cluster_id) {
         std::vector<NodeID> mapping;
         std::vector<std::vector<NodeID> > reverse_mapping;

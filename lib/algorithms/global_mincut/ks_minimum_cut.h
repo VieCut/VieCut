@@ -39,6 +39,7 @@
 
 class ks_minimum_cut : public minimum_cut {
  public:
+    typedef graphAccessPtr GraphPtrType;
     static const bool debug = false;
     static const bool timing = true;
 
@@ -47,9 +48,6 @@ class ks_minimum_cut : public minimum_cut {
     ~ks_minimum_cut() { }
 
     EdgeWeight perform_minimum_cut(graphAccessPtr G) {
-        if (!minimum_cut_helpers::graphValid(G))
-            return -1;
-
         EdgeWeight mincut = std::numeric_limits<EdgeWeight>::max();
         std::vector<PartitionID> best_partition(G->number_of_nodes());
         timer t;

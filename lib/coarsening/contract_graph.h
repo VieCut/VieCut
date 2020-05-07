@@ -71,7 +71,8 @@ class contraction {
         return std::make_pair(G_out, terminals_out);
     }
 
-    static void findTrivialCuts(graphAccessPtr G,
+    template <class GraphPtr>
+    static void findTrivialCuts(GraphPtr G,
                                 std::vector<NodeID>* m,
                                 std::vector<std::vector<NodeID> >* rm,
                                 int target_mindeg) {
@@ -177,9 +178,7 @@ class contraction {
         return contracted;
     }
 
-    static mutableGraphPtr fromUnionFind(
-        mutableGraphPtr G,
-        union_find* uf) {
+    static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf) {
         if (uf->n() == G->n()) {
             // no contraction
             return G;
@@ -213,9 +212,7 @@ class contraction {
         return G;
     }
 
-    static graphAccessPtr fromUnionFind(
-        graphAccessPtr G,
-        union_find* uf) {
+    static graphAccessPtr fromUnionFind(graphAccessPtr G, union_find* uf) {
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
 
         std::vector<NodeID> mapping(G->number_of_nodes());

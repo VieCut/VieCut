@@ -48,6 +48,7 @@
 template <class GraphPtr>
 class noi_minimum_cut : public minimum_cut {
  public:
+    typedef GraphPtr GraphPtrType;
     noi_minimum_cut() { }
     ~noi_minimum_cut() { }
     static constexpr bool debug = false;
@@ -59,23 +60,20 @@ class noi_minimum_cut : public minimum_cut {
 
     EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
-        if (!minimum_cut_helpers::graphValid(G))
-            return -1;
-
         std::vector<GraphPtr> graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();
         graphs.push_back(G);
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);
 
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
             auto uf = modified_capforest(graphs.back(), mincut);
             graphs.emplace_back(contraction::fromUnionFind(graphs.back(), &uf));
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            mincut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, mincut);
         }
 
         if (!indirect && configuration::getConfig()->save_cut)
-            minimum_cut_helpers::retrieveMinimumCut(graphs);
+            minimum_cut_helpers<GraphPtr>::retrieveMinimumCut(graphs);
 
         return mincut;
     }

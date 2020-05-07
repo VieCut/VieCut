@@ -34,19 +34,18 @@
 template <class GraphPtr>
 class padberg_rinaldi : public minimum_cut {
  public:
+    typedef GraphPtr GraphPtrType;
     padberg_rinaldi() { }
     virtual ~padberg_rinaldi() { }
     static constexpr bool debug = false;
 
     EdgeWeight perform_minimum_cut(GraphPtr G) {
-        if (!minimum_cut_helpers::graphValid(G))
-            return -1;
         EdgeWeight cut = G->getMinDegree();
         std::vector<graphAccessPtr> graphs;
         graphs.push_back(G);
         NodeID last_nodes = G->number_of_nodes() + 1;
         timer t;
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);
 
         while (graphs.back()->number_of_nodes() > 2
                && graphs.back()->number_of_nodes() < last_nodes) {
@@ -54,16 +53,16 @@ class padberg_rinaldi : public minimum_cut {
             union_find uf_34 = tests::prTests34(graphs.back(), cut);
             auto G_34 = contraction::fromUnionFind(graphs.back(), &uf_34);
             graphs.push_back(G_34);
-            cut = minimum_cut_helpers::updateCut(graphs, cut);
+            cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
 
             union_find uf_12 = tests::prTests12(graphs.back(), cut);
             auto G_12 = contraction::fromUnionFind(graphs.back(), &uf_12);
             graphs.push_back(G_12);
-            cut = minimum_cut_helpers::updateCut(graphs, cut);
+            cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
         }
 
         if (configuration::getConfig()->save_cut) {
-            minimum_cut_helpers::retrieveMinimumCut(graphs);
+            minimum_cut_helpers<GraphPtr>::retrieveMinimumCut(graphs);
         }
 
         LOG << "nodesleft=" << graphs.back()->number_of_nodes();

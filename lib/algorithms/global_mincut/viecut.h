@@ -44,6 +44,7 @@
 template <class GraphPtr>
 class viecut : public minimum_cut {
  public:
+    typedef GraphPtr GraphPtrType;
     static constexpr bool debug = false;
     bool timing = configuration::getConfig()->verbose;
     viecut() { }
@@ -56,13 +57,11 @@ class viecut : public minimum_cut {
 
     EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
-        if (!minimum_cut_helpers::graphValid(G))
-            return -1;
         EdgeWeight cut = G->getMinDegree();
         std::vector<GraphPtr> graphs;
         graphs.push_back(G);
 
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);
 
         while (graphs.back()->number_of_nodes() > 10000 &&
                (graphs.size() == 1 ||
@@ -73,7 +72,8 @@ class viecut : public minimum_cut {
             label_propagation<GraphPtr> lp;
             std::vector<NodeID> cluster_mapping = lp.propagate_labels(G);
             auto [mapping, reverse_mapping] =
-                minimum_cut_helpers::remap_cluster(G, cluster_mapping);
+                minimum_cut_helpers<GraphPtr>::remap_cluster(
+                    G, cluster_mapping);
             LOGC(timing) << "LP (total): " << t.elapsedToZero();
 
             contraction::findTrivialCuts(G, &mapping, &reverse_mapping, cut);
@@ -83,17 +83,17 @@ class viecut : public minimum_cut {
                                            reverse_mapping.size(),
                                            reverse_mapping);
             graphs.push_back(G);
-            cut = minimum_cut_helpers::updateCut(graphs, cut);
+            cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             LOGC(timing) << "Graph Contraction (to "
                          << graphs.back()->number_of_nodes()
                          << " nodes): " << t.elapsedToZero();
 
             union_find uf = tests::prTests12(graphs.back(), cut);
             graphs.push_back(contraction::fromUnionFind(graphs.back(), &uf));
-            cut = minimum_cut_helpers::updateCut(graphs, cut);
+            cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             union_find uf2 = tests::prTests34(graphs.back(), cut);
             graphs.push_back(contraction::fromUnionFind(graphs.back(), &uf2));
-            cut = minimum_cut_helpers::updateCut(graphs, cut);
+            cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             LOGC(timing) << "Padberg-Rinaldi Tests (to "
                          << graphs.back()->number_of_nodes()
                          << " nodes): " << t.elapsedToZero();
@@ -110,7 +110,7 @@ class viecut : public minimum_cut {
         }
 
         if (!indirect && configuration::getConfig()->save_cut)
-            minimum_cut_helpers::retrieveMinimumCut(graphs);
+            minimum_cut_helpers<GraphPtr>::retrieveMinimumCut(graphs);
 
         return cut;
     }

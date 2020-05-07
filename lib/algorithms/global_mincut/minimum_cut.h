@@ -21,11 +21,11 @@ class minimum_cut {
     virtual ~minimum_cut() { }
 
     virtual EdgeWeight perform_minimum_cut(graphAccessPtr) {
-            return perform_minimum_cut();
+        return perform_minimum_cut();
     }
 
     virtual EdgeWeight perform_minimum_cut(mutableGraphPtr) {
-            return perform_minimum_cut();
+        return perform_minimum_cut();
     }
 
     virtual EdgeWeight perform_minimum_cut() {

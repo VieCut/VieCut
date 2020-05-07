@@ -68,24 +68,25 @@ class parallel_cactus : public minimum_cut {
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
         GraphPtr G) {
-        std::vector<graphAccessPtr> v = { G };
+        std::vector<GraphPtr> v = { G };
         return findAllMincuts(v);
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
         std::vector<GraphPtr> graphs) {
+        if (graphs.size() == 0 || !graphs.back()) {
+            mutableGraphPtr empty;
+            std::unordered_set<EdgeID> es;
+            return std::make_tuple(-1, empty, es);
+        }
         timer t;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         recursive_cactus<GraphPtr> rc;
         exact_parallel_minimum_cut<GraphPtr> mc;
 #ifdef PARALLEL
         viecut<GraphPtr> heuristic_mc;
-        sparsify sf;
         auto G2 = graphs.back();
-        if (configuration::getConfig()->contraction_factor > 0.0) {
-            G2 = sf.one_ks(G2);
-        }
         mincut = heuristic_mc.perform_minimum_cut(G2, true);
         LOGC(timing) << "VieCut found cut " << mincut
                      << " [Time: " << t.elapsed() << "s]";
@@ -131,9 +132,9 @@ class parallel_cactus : public minimum_cut {
             for (NodeID n : graphs.back()->nodes()) {
                 if (graphs.back()->getUnweightedNodeDegree(n) == 1) {
                     EdgeID e = graphs.back()->get_first_edge(n);
-                    if ((graphs.back()->getEdgeWeight(e) == mincut)
+                    if ((graphs.back()->getEdgeWeight(n, e) == mincut)
                         && (guaranteed_edges.back().size() + 1 < n)) {
-                        NodeID t = graphs.back()->getEdgeTarget(e);
+                        NodeID t = graphs.back()->getEdgeTarget(n, e);
                         uf.Union(n, t);
                         guaranteed_edges.back().emplace_back(n, t);
                     }

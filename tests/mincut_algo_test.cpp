@@ -13,6 +13,7 @@
 #ifdef PARALLEL
 #include "algorithms/global_mincut/viecut.h"
 #include "parallel/algorithm/exact_parallel_minimum_cut.h"
+#include "parallel/algorithm/parallel_cactus.h"
 #else
 #include "algorithms/global_mincut/cactus/cactus_mincut.h"
 #include "algorithms/global_mincut/ks_minimum_cut.h"
@@ -30,7 +31,12 @@ class MincutAlgoTest : public testing::Test { };
 
 #ifdef PARALLEL
 typedef testing::Types<viecut<graphAccessPtr>,
-                       exact_parallel_minimum_cut<graphAccessPtr> > MCAlgTypes;
+                       exact_parallel_minimum_cut<graphAccessPtr>,
+                       parallel_cactus<graphAccessPtr>,
+                       viecut<mutableGraphPtr>,
+                       exact_parallel_minimum_cut<mutableGraphPtr>,
+                       parallel_cactus<mutableGraphPtr> >
+    MCAlgTypes;
 #else
 typedef testing::Types<viecut<graphAccessPtr>,
                        noi_minimum_cut<graphAccessPtr>,

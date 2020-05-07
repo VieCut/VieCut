@@ -56,7 +56,8 @@ class tests {
     }
 
  public:
-    static union_find prTests12(graphAccessPtr G,
+    template <class GraphPtr>
+    static union_find prTests12(GraphPtr G,
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
@@ -71,8 +72,7 @@ class tests {
             NodeWeight n_wgt = G->getWeightedNodeDegree(n);
 
             for (EdgeID e : G->edges_of(n)) {
-                EdgeWeight wgt = G->getEdgeWeight(e);
-                NodeID tgt = G->getEdgeTarget(e);
+                auto [tgt, wgt] = G->getEdge(n, e);
                 NodeWeight tgt_wgt = G->getWeightedNodeDegree(tgt);
                 if (wgt >= weight_limit) {
                     contracted[n] = true;
@@ -110,7 +110,8 @@ class tests {
         return uf;
     }
 
-    static union_find prTests34(graphAccessPtr G,
+    template <class GraphPtr>
+    static union_find prTests34(GraphPtr G,
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
@@ -130,7 +131,7 @@ class tests {
                 finished[n] = true;
 
                 for (EdgeID e : G->edges_of(n)) {
-                    NodeID tgt = G->getEdgeTarget(e);
+                    NodeID tgt = G->getEdgeTarget(n, e);
                     if (tgt > n) {
                         marked[tgt] = std::make_pair(n, e);
                     }
@@ -138,11 +139,10 @@ class tests {
 
                 NodeID deg_n = G->getWeightedNodeDegree(n);
                 for (EdgeID e1 : G->edges_of(n)) {
-                    NodeID tgt = G->getEdgeTarget(e1);
+                    auto [tgt, w1] = G->getEdge(n, e1);
                     NodeID deg_tgt = G->getWeightedNodeDegree(tgt);
-                    EdgeWeight w1 = G->getEdgeWeight(e1);
                     finished[tgt] = true;
-                    EdgeWeight wgt_sum = G->getEdgeWeight(e1);
+                    EdgeWeight wgt_sum = w1;
                     if (tgt > n) {
                         for (EdgeID e2 : G->edges_of(tgt)) {
                             NodeID tgt2 = G->getEdgeTarget(tgt, e2);

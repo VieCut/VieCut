@@ -139,7 +139,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
         return mincut;
     }
 
-    std::vector<NodeID> randomStartNodes(graphAccessPtr G) {
+    std::vector<NodeID> randomStartNodes(GraphPtr G) {
         std::vector<NodeID> start_nodes;
         for (int i = 0; i < omp_get_max_threads(); ++i)
             start_nodes.push_back(
@@ -148,7 +148,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
         return start_nodes;
     }
 
-    std::vector<NodeID> bfsStartNodes(graphAccessPtr G) {
+    std::vector<NodeID> bfsStartNodes(GraphPtr G) {
         NodeID starting_node = random_functions::next() % G->number_of_nodes();
         std::vector<NodeID> start_nodes;
         start_nodes.push_back(starting_node);
@@ -184,7 +184,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
     }
 
     union_find parallel_modified_capforest(
-        graphAccessPtr G,
+        GraphPtr G,
         const EdgeWeight mincut,
         const bool disable_blacklist = false) {
         union_find uf(G->number_of_nodes());
@@ -227,10 +227,10 @@ class exact_parallel_minimum_cut : public minimum_cut {
                 }
 
                 for (EdgeID e : G->edges_of(current_node)) {
-                    NodeID tgt = G->getEdgeTarget(e);
+                    auto [tgt, wgt] = G->getEdge(current_node, e);
                     if (!local_visited[tgt]) {
                         if (r_v[tgt] < mincut) {
-                            if ((r_v[tgt] + G->getEdgeWeight(e)) >= mincut) {
+                            if ((r_v[tgt] + wgt) >= mincut) {
                                 if (!blacklisted[tgt]) {
                                     uf.Union(current_node, tgt);
                                 }
@@ -238,7 +238,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
 
                             if (!visited[tgt]) {
                                 size_t new_rv =
-                                    std::min(r_v[tgt] + G->getEdgeWeight(e),
+                                    std::min(r_v[tgt] + wgt,
                                              mincut);
                                 r_v[tgt] = new_rv;
                                 if (!visited[tgt] && !local_visited[tgt]) {

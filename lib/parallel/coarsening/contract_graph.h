@@ -54,6 +54,30 @@ class contraction {
         return ((uint64_t)cluster_a << 32) | cluster_b;
     }
 
+    static mutableGraphPtr contractGraph(
+        mutableGraphPtr G,
+        const std::vector<NodeID>&,
+        const std::vector<std::vector<NodeID> >& reverse_mapping,
+        bool copy = true) {
+        mutableGraphPtr H;
+        if (copy) {
+            H = std::make_shared<mutable_graph>(*G);
+        } else {
+            H = G;
+        }
+        for (size_t i = 0; i < reverse_mapping.size(); ++i) {
+            if (reverse_mapping[i].size() > 1) {
+                std::unordered_set<NodeID> vtx_to_ctr;
+                for (auto v : reverse_mapping[i]) {
+                    vtx_to_ctr.emplace(G->getCurrentPosition(v));
+                }
+                H->contractVertexSet(vtx_to_ctr);
+            }
+        }
+
+        return H;
+    }
+
     static inline std::pair<NodeID, NodeID> get_pair_from_uint64(
         uint64_t data) {
         NodeID first = data >> 32;
@@ -61,7 +85,8 @@ class contraction {
         return std::make_pair(first, second);
     }
 
-    static void findTrivialCuts(graphAccessPtr G,
+    template <class GraphPtr>
+    static void findTrivialCuts(GraphPtr G,
                                 std::vector<NodeID>* m,
                                 std::vector<std::vector<NodeID> >* rm,
                                 NodeWeight target_mindeg) {
@@ -79,16 +104,18 @@ class contraction {
             if (rev_mapping[p].size() < std::log2(G->number_of_nodes())) {
                 NodeID improve_idx;
                 for (NodeID node = 0; node < rev_mapping[p].size(); ++node) {
-                    for (EdgeID e : G->edges_of(rev_mapping[p][node])) {
-                        auto contracted_target = mapping[G->getEdgeTarget(e)];
+                    NodeID vtx = rev_mapping[p][node];
+                    for (EdgeID e : G->edges_of(vtx)) {
+                        auto [t, w] = G->getEdge(vtx, e);
+                        auto contracted_target = mapping[t];
 
                         if (contracted_target == p) {
-                            node_degree += G->getEdgeWeight(e);
+                            node_degree += w;
                             continue;
                         }
 
-                        node_degree -= G->getEdgeWeight(e);
-                        block_degree += G->getEdgeWeight(e);
+                        node_degree -= w;
+                        block_degree += w;
                     }
 
                     if (improve > node_degree) {

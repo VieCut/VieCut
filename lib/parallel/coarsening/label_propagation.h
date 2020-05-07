@@ -76,12 +76,12 @@ class label_propagation {
                     EdgeWeight max_value = 0;
 
                     for (EdgeID e : G->edges_of(n)) {
-                        NodeID target = G->getEdgeTarget(e);
+                        NodeID target = G->getEdgeTarget(n, e);
                         PartitionID block = cluster_mapping[target];
 
                         wgt[block].second =
                             ((wgt[block].first == n) * wgt[block].second)
-                            + G->getEdgeWeight(e);
+                            + G->getEdgeWeight(n, e);
                         wgt[block].first = n;
 
                         if (wgt[block].second > max_value ||

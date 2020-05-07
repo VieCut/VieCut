@@ -20,8 +20,15 @@ class minimum_cut {
  public:
     virtual ~minimum_cut() { }
 
-    template <class GraphPtr>
-    EdgeWeight perform_minimum_cut(GraphPtr) {
+    virtual EdgeWeight perform_minimum_cut(graphAccessPtr) {
+            return perform_minimum_cut();
+    }
+
+    virtual EdgeWeight perform_minimum_cut(mutableGraphPtr) {
+            return perform_minimum_cut();
+    }
+
+    virtual EdgeWeight perform_minimum_cut() {
 #ifdef PARALLEL
         LOG1 << "Please select a parallel minimum cut"
              << " algorithm [inexact, exact, cactus]!";

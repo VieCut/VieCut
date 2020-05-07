@@ -100,7 +100,7 @@ class tests {
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
-        std::vector<std::pair<NodeID, EdgeID>> marked(
+        std::vector<std::pair<NodeID, EdgeID> > marked(
             G->number_of_nodes(),
             std::make_pair(UNDEFINED_NODE, UNDEFINED_EDGE));
         std::vector<bool> finished(G->number_of_nodes(), false);
@@ -133,7 +133,7 @@ class tests {
                 EdgeWeight wgt_sum = w1;
                 if (tgt > n) {
                     for (EdgeID e2 : G->edges_of(tgt)) {
-                        NodeID tgt2 = G->getEdgeTarget(n, e2);
+                        NodeID tgt2 = G->getEdgeTarget(tgt, e2);
                         if (marked[tgt2].second == UNDEFINED_EDGE)
                             continue;
 
@@ -141,8 +141,9 @@ class tests {
                             continue;
                         }
 
-                        EdgeWeight w2 = G->getEdgeWeight(n, e2);
-                        EdgeWeight w3 = G->getEdgeWeight(n, marked[tgt2].second);
+                        EdgeWeight w2 = G->getEdgeWeight(tgt, e2);
+                        EdgeWeight w3 =
+                            G->getEdgeWeight(n, marked[tgt2].second);
 
                         wgt_sum += std::min(w2, w3);
 

@@ -62,7 +62,7 @@ class noi_minimum_cut : public minimum_cut {
         if (!G) {
             return -1;
         }
-                    
+
         std::vector<GraphPtr> graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();

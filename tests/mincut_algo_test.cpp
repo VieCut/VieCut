@@ -43,7 +43,7 @@ typedef testing::Types<viecut<graphAccessPtr>,
                        padberg_rinaldi<mutableGraphPtr>,
                        matula_approx<mutableGraphPtr>,
                        cactus_mincut<mutableGraphPtr> >
-                       MCAlgTypes;
+    MCAlgTypes;
 #endif
 
 TYPED_TEST_CASE(MincutAlgoTest, MCAlgTypes);
@@ -60,7 +60,7 @@ TYPED_TEST(MincutAlgoTest, UnweightedGraphFromFile) {
     typename TypeParam::GraphPtrType G =
         graph_io::readGraphWeighted<
             typename TypeParam::GraphPtrType::element_type>(
-        std::string(VIECUT_PATH) + "/graphs/small.metis");
+            std::string(VIECUT_PATH) + "/graphs/small.metis");
     TypeParam mc;
     EdgeWeight cut = mc.perform_minimum_cut(G);
 
@@ -83,10 +83,10 @@ TYPED_TEST(MincutAlgoTest, UnweightedGraphFromFile) {
 }
 
 TYPED_TEST(MincutAlgoTest, WeightedGraphFromFile) {
-    typename TypeParam::GraphPtrType G = 
+    typename TypeParam::GraphPtrType G =
         graph_io::readGraphWeighted<
             typename TypeParam::GraphPtrType::element_type>(
-        std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
+            std::string(VIECUT_PATH) + "/graphs/small-wgt.metis");
     TypeParam mc;
     EdgeWeight cut = mc.perform_minimum_cut(G);
 

@@ -119,7 +119,9 @@ class tests {
         std::vector<uint8_t> contracted(G->number_of_nodes(), 0);
 #pragma omp parallel
         {
-            std::vector<EdgeID> marked(G->number_of_nodes(), UNDEFINED_EDGE);
+            std::vector<std::pair<NodeID, EdgeID> > marked(
+                G->number_of_nodes(),
+                std::make_pair(UNDEFINED_NODE, UNDEFINED_EDGE));
 #pragma omp for schedule(dynamic, 100)
             for (NodeID n = 0; n < G->number_of_nodes(); ++n) {
                 if (finished[n])
@@ -130,7 +132,7 @@ class tests {
                 for (EdgeID e : G->edges_of(n)) {
                     NodeID tgt = G->getEdgeTarget(e);
                     if (tgt > n) {
-                        marked[tgt] = e;
+                        marked[tgt] = std::make_pair(n, e);
                     }
                 }
 
@@ -143,16 +145,16 @@ class tests {
                     EdgeWeight wgt_sum = G->getEdgeWeight(e1);
                     if (tgt > n) {
                         for (EdgeID e2 : G->edges_of(tgt)) {
-                            NodeID tgt2 = G->getEdgeTarget(e2);
-                            if (marked[tgt2] == UNDEFINED_EDGE)
+                            NodeID tgt2 = G->getEdgeTarget(tgt, e2);
+                            if (marked[tgt2].second == UNDEFINED_EDGE)
                                 continue;
 
-                            if (marked[tgt2] < G->get_first_edge(n)
-                                || marked[tgt2] >= G->get_first_invalid_edge(n))
+                            if (marked[tgt2].first != n)
                                 continue;
 
-                            EdgeWeight w2 = G->getEdgeWeight(e2);
-                            EdgeWeight w3 = G->getEdgeWeight(marked[tgt2]);
+                            EdgeWeight w2 = G->getEdgeWeight(tgt, e2);
+                            EdgeWeight w3 = G->getEdgeWeight(
+                                n, marked[tgt2].second);
 
                             wgt_sum += std::min(w2, w3);
 
@@ -168,7 +170,8 @@ class tests {
                                 && deg_n >= weight_limit
                                 && deg_tgt >= weight_limit;
 
-                            if (contractible_one_cut || contractible_all_cuts) {
+                            if (contractible_one_cut ||
+                                contractible_all_cuts) {
                                 // node degrees change when we contract edges.
                                 // thus, we only use PR 2 or 3 when the
                                 // incident vertices haven't been contracted yet
@@ -190,7 +193,8 @@ class tests {
                             contracted[tgt] = true;
                             uf.Union(n, tgt);
                         }
-                        marked[tgt] = UNDEFINED_EDGE;
+                        marked[tgt] = std::make_pair(UNDEFINED_NODE,
+                                                     UNDEFINED_EDGE);
                     }
                 }
             }

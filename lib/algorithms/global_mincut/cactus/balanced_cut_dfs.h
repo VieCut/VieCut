@@ -21,7 +21,7 @@
 #include "data_structure/mutable_graph.h"
 #include "tools/random_functions.h"
 
-template<class GraphPtr>
+template <class GraphPtr>
 class balanced_cut_dfs {
  public:
     static constexpr bool debug = false;

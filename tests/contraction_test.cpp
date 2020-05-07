@@ -38,7 +38,7 @@ TEST(ContractionTest, NoContr) {
     }
 
     graphAccessPtr cntr = contraction::contractGraph(
-        G, mapping, G->number_of_nodes(), reverse_mapping);
+        G, mapping, reverse_mapping);
 
     ASSERT_EQ(G->number_of_nodes(), cntr->number_of_nodes());
     ASSERT_EQ(G->number_of_edges(), cntr->number_of_edges());
@@ -65,7 +65,7 @@ TEST(ContractionTest, ContrBlock) {
         }
 
         graphAccessPtr cntr = contraction::contractGraph(
-            G, mapping, 2, reverse_mapping);
+            G, mapping, reverse_mapping);
 
         ASSERT_EQ(cntr->number_of_edges(), 2);
         ASSERT_EQ(cntr->number_of_nodes(), 2);

@@ -270,9 +270,10 @@ class sparsify {
         LOG1 << "t " << t.elapsed() << " sample";
 
         auto [map, rev_map] = createMappings(G_in, &uf);
+        std::vector<std::vector<NodeID> > rm(rev_map);
 
         graphAccessPtr G2 =
-            contraction::contractGraph(G_in, map, rev_map);
+            contraction::contractGraph(G_in, map, rm);
 
         LOG1 << "t " << t.elapsed() << " for contraction from "
              << G_in->number_of_nodes() << " to " << G2->number_of_nodes();

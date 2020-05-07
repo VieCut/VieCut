@@ -23,7 +23,6 @@
 #include "algorithms/global_mincut/minimum_cut_helpers.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/global_mincut/viecut.h"
-#include "coarsening/test_wrapper.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
@@ -50,8 +49,8 @@
 template <class GraphPtr>
 class exact_parallel_minimum_cut : public minimum_cut {
  public:
+    typedef GraphPtr GraphPtrType;
     exact_parallel_minimum_cut() { }
-
     ~exact_parallel_minimum_cut() { }
 
     static constexpr bool debug = false;
@@ -63,9 +62,11 @@ class exact_parallel_minimum_cut : public minimum_cut {
 
     EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
-        if (!minimum_cut_helpers::graphValid(G))
+        if (!G) {
             return -1;
-        std::vector<graphAccessPtr> graphs;
+        }
+
+        std::vector<GraphPtr> graphs;
         timer t;
         EdgeWeight mincut = G->getMinDegree();
 #ifdef PARALLEL
@@ -80,7 +81,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
         // if PARALLEL is set, NodeInCut are already set to the result of viecut
         // This is what we want.
 #ifndef PARALLEL
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);
 #endif
 
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
@@ -108,7 +109,6 @@ class exact_parallel_minimum_cut : public minimum_cut {
                 std::vector<NodeID> mapping(curr_g->number_of_nodes());
                 std::vector<NodeID> part(curr_g->number_of_nodes(),
                                          UNDEFINED_NODE);
-                std::vector<std::vector<NodeID> > reverse_mapping;
                 NodeID current_pid = 0;
                 for (NodeID n : curr_g->nodes()) {
                     NodeID part_id = uf.Find(n);
@@ -121,18 +121,20 @@ class exact_parallel_minimum_cut : public minimum_cut {
                     curr_g->setPartitionIndex(n, part[part_id]);
                 }
 
-                graphs.push_back(
-                    contraction::contractGraph(curr_g, mapping,
-                                               current_pid, reverse_mapping));
+                std::vector<std::vector<NodeID> > reverse_mapping(current_pid);
 
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                graphs.push_back(contraction::contractGraph(
+                                     curr_g, mapping, reverse_mapping));
+
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             } else {
                 break;
             }
         }
 
         if (!indirect && configuration::getConfig()->save_cut)
-            minimum_cut_helpers::retrieveMinimumCut(graphs);
+            minimum_cut_helpers<GraphPtr>::retrieveMinimumCut(graphs);
 
         return mincut;
     }

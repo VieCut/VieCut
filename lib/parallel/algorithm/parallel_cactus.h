@@ -27,7 +27,6 @@
 #include "algorithms/global_mincut/minimum_cut_helpers.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/global_mincut/viecut.h"
-#include "coarsening/test_wrapper.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
 #include "data_structure/priority_queues/bucket_pq.h"
@@ -54,33 +53,31 @@
 template <class GraphPtr>
 class parallel_cactus : public minimum_cut {
  public:
+    typedef GraphPtr GraphPtrType;
     parallel_cactus() { }
-
     ~parallel_cactus() { }
 
     static constexpr bool debug = false;
     bool timing = configuration::getConfig()->verbose;
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
-        if (!minimum_cut_helpers::graphValid(G))
-            return -1;
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
         // compatibility with min cut interface
         return std::get<0>(findAllMincuts(G));
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
-        graphAccessPtr G) {
+        GraphPtr G) {
         std::vector<graphAccessPtr> v = { G };
         return findAllMincuts(v);
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::unordered_set<EdgeID> > findAllMincuts(
-        std::vector<graphAccessPtr> graphs) {
+        std::vector<GraphPtr> graphs) {
         timer t;
         EdgeWeight mincut = graphs.back()->getMinDegree();
-        recursive_cactus rc;
+        recursive_cactus<GraphPtr> rc;
         exact_parallel_minimum_cut<GraphPtr> mc;
 #ifdef PARALLEL
         viecut<GraphPtr> heuristic_mc;
@@ -100,14 +97,14 @@ class parallel_cactus : public minimum_cut {
         // if PARALLEL is set, NodeInCut are already set to the result of viecut
         // This is what we want.
 #ifndef PARALLEL
-        minimum_cut_helpers::setInitialCutValues(graphs);
+        minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);
 #endif
 
         NodeID previous_size = UNDEFINED_NODE;
         bool disable_blacklist = false;
 
         while (graphs.back()->number_of_nodes() * 1.01 < previous_size) {
-            mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+            mincut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, mincut);
             previous_size = graphs.back()->number_of_nodes();
             LOGC(timing) << "t " << t.elapsed() << " n "
                          << graphs.back()->number_of_nodes()
@@ -148,7 +145,8 @@ class parallel_cactus : public minimum_cut {
             if (uf.n() < graphs.back()->number_of_nodes()) {
                 auto g_new = contraction::fromUnionFind(graphs.back(), &uf);
                 graphs.push_back(g_new);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             }
 
             auto uf12 = tests::prTests12(graphs.back(), mincut + 1, true);
@@ -158,7 +156,8 @@ class parallel_cactus : public minimum_cut {
             if (uf12.n() < graphs.back()->number_of_nodes()) {
                 auto g12 = contraction::fromUnionFind(graphs.back(), &uf12);
                 graphs.push_back(g12);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             }
 
             auto uf34 = tests::prTests34(graphs.back(), mincut + 1, true);
@@ -168,7 +167,8 @@ class parallel_cactus : public minimum_cut {
             if (uf34.n() < graphs.back()->number_of_nodes()) {
                 auto g34 = contraction::fromUnionFind(graphs.back(), &uf34);
                 graphs.push_back(g34);
-                mincut = minimum_cut_helpers::updateCut(graphs, mincut);
+                mincut = minimum_cut_helpers<GraphPtr>::updateCut(
+                    graphs, mincut);
             }
 
             if (current_mincut > mincut) {
@@ -190,15 +190,15 @@ class parallel_cactus : public minimum_cut {
         rc.setMincut(mincut);
         auto out_graph = rc.flowMincut(graphs);
 
-        minimum_cut_helpers::setVertexLocations(out_graph, graphs, ge_ids,
-                                                guaranteed_edges, mincut);
+        minimum_cut_helpers<GraphPtr>::setVertexLocations(
+            out_graph, graphs, ge_ids, guaranteed_edges, mincut);
 
         LOGC(timing) << "t " << t.elapsed() << " unpacked - n "
                      << out_graph->n() << " m " << out_graph->m();
 
         std::unordered_set<EdgeID> mb_edges;
         if (configuration::getConfig()->find_most_balanced_cut) {
-            most_balanced_minimum_cut mbmc;
+            most_balanced_minimum_cut<GraphPtr> mbmc;
             mb_edges = mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
         }
         return std::make_tuple(mincut, out_graph, mb_edges);

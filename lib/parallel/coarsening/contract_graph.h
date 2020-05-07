@@ -80,7 +80,7 @@ class contraction {
                 NodeID improve_idx;
                 for (NodeID node = 0; node < rev_mapping[p].size(); ++node) {
                     for (EdgeID e : G->edges_of(rev_mapping[p][node])) {
-                        NodeID contracted_target = mapping[G->getEdgeTarget(e)];
+                        auto contracted_target = mapping[G->getEdgeTarget(e)];
 
                         if (contracted_target == p) {
                             node_degree += G->getEdgeWeight(e);
@@ -230,20 +230,19 @@ class contraction {
             }
             rev_mapping[part[part_id]].push_back(n);
         }
-        return contractGraph(G, mapping, rev_mapping.size());
+        return contractGraph(G, mapping, rev_mapping);
     }
 
     static graphAccessPtr
     contractGraph(graphAccessPtr G,
                   const std::vector<NodeID>& mapping,
-                  size_t num_nodes,
-                  const std::vector<std::vector<NodeID> >& = { }) {
-        if (num_nodes > std::sqrt(G->number_of_nodes())) {
+                  const std::vector<std::vector<NodeID> >& reverse_mapping) {
+        if (reverse_mapping.size() > std::sqrt(G->number_of_nodes())) {
             LOG << "SPARSE CONTRACT!";
-            return contractGraphSparse(G, mapping, num_nodes);
+            return contractGraphSparse(G, mapping, reverse_mapping.size());
         } else {
             LOG << "FULL MESH CONTRACT";
-            return contractGraphFullMesh(G, mapping, num_nodes);
+            return contractGraphFullMesh(G, mapping, reverse_mapping.size());
         }
     }
 

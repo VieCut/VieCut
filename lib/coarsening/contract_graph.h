@@ -91,7 +91,8 @@ class contraction {
                      node < reverse_mapping[p].size(); ++node) {
                     NodeID vtx = reverse_mapping[p][node];
                     for (EdgeID e : G->edges_of(vtx)) {
-                        NodeID contracted_target = mapping[G->getEdgeTarget(vtx, e)];
+                        NodeID contracted_target =
+                            mapping[G->getEdgeTarget(vtx, e)];
                         if (contracted_target == p) {
                             node_degree += G->getEdgeWeight(vtx, e);
                             continue;
@@ -197,7 +198,7 @@ class contraction {
                 G->containedVertices(n)[0]);
         }
 
-        return contractGraph(G, part, reverse_mapping, false);        
+        return contractGraph(G, part, reverse_mapping, false);
     }
 
     static mutableGraphPtr contractGraph(

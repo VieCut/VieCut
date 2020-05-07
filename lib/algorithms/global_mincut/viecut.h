@@ -57,6 +57,10 @@ class viecut : public minimum_cut {
 
     EdgeWeight perform_minimum_cut(GraphPtr G,
                                    bool indirect) {
+        if (!G) {
+            return -1;
+        }
+
         EdgeWeight cut = G->getMinDegree();
         std::vector<GraphPtr> graphs;
         graphs.push_back(G);
@@ -79,9 +83,7 @@ class viecut : public minimum_cut {
             contraction::findTrivialCuts(G, &mapping, &reverse_mapping, cut);
             LOGC(timing) << "Trivial Cut Local Search: " << t.elapsedToZero();
 
-            G = contraction::contractGraph(G, mapping,
-                                           reverse_mapping.size(),
-                                           reverse_mapping);
+            G = contraction::contractGraph(G, mapping, reverse_mapping);
             graphs.push_back(G);
             cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             LOGC(timing) << "Graph Contraction (to "

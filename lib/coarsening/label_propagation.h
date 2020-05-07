@@ -62,7 +62,7 @@ class label_propagation {
                 PartitionID max_block = cluster_id[n];
                 EdgeWeight max_value = 0;
                 for (EdgeID e : G->edges_of(n)) {
-                    NodeID target = G->getEdgeTarget(e);
+                    NodeID target = G->getEdgeTarget(n, e);
                     PartitionID block = cluster_id[target];
                     // we want to store connection of vertex n to block 'block'
                     // thus reset now that we look at outgoing edges from n
@@ -70,7 +70,7 @@ class label_propagation {
                         hash_vec[block].first = 0;
                         hash_vec[block].second = n;
                     }
-                    hash_vec[block].first += G->getEdgeWeight(e);
+                    hash_vec[block].first += G->getEdgeWeight(n, e);
                     // set strongest connected block if higher
                     // connection strength, random if equal
                     if (hash_vec[block].first > max_value ||

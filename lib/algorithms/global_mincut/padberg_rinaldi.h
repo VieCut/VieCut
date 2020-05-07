@@ -40,8 +40,11 @@ class padberg_rinaldi : public minimum_cut {
     static constexpr bool debug = false;
 
     EdgeWeight perform_minimum_cut(GraphPtr G) {
+        if (!G) {
+            return -1;
+        }
         EdgeWeight cut = G->getMinDegree();
-        std::vector<graphAccessPtr> graphs;
+        std::vector<GraphPtr> graphs;
         graphs.push_back(G);
         NodeID last_nodes = G->number_of_nodes() + 1;
         timer t;

@@ -22,11 +22,12 @@
 #include "data_structure/mutable_graph.h"
 #include "io/graph_io.h"
 
+template <class GraphPtr>
 class most_balanced_minimum_cut {
  public:
     std::unordered_set<EdgeID> findCutFromCactus(
         mutableGraphPtr G, EdgeWeight mincut,
-        graphAccessPtr original_graph) {
+        GraphPtr original_graph) {
         if (!configuration::getConfig()->save_cut) {
             LOG1 << "Error: can't find most balanced minimum cut "
                  << "when save_cut is not set";
@@ -88,7 +89,7 @@ class most_balanced_minimum_cut {
 
         for (NodeID on : original_graph->nodes()) {
             for (EdgeID oe : original_graph->edges_of(on)) {
-                NodeID ot = original_graph->getEdgeTarget(oe);
+                NodeID ot = original_graph->getEdgeTarget(on, oe);
                 if (original_graph->getNodeInCut(on)
                     != original_graph->getNodeInCut(ot)) {
                     originalBestcutEdges.insert(oe);

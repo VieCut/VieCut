@@ -53,7 +53,8 @@ class tests {
     }
 
  public:
-    static union_find prTests12(graphAccessPtr G,
+    template <class GraphPtr>
+    static union_find prTests12(GraphPtr G,
                                 EdgeWeight limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
@@ -62,16 +63,15 @@ class tests {
         for (NodeID n : G->nodes()) {
             NodeWeight n_wgt = G->getWeightedNodeDegree(n);
             for (EdgeID e : G->edges_of(n)) {
-                NodeID t = G->getEdgeTarget(e);
-                NodeID target = uf.Find(G->getEdgeTarget(e));
+                auto [t, wgt] = G->getEdge(n, e);
+                NodeID target = uf.Find(t);
                 NodeID t_wgt = G->getWeightedNodeDegree(t);
                 NodeID source = uf.Find(n);
-                EdgeWeight wgt = G->getEdgeWeight(e);
 
                 if (wgt >= limit) {
                     uf.Union(source, target);
                     contracted[n] = true;
-                    contracted[G->getEdgeTarget(e)] = true;
+                    contracted[t] = true;
                 }
 
                 // if we want to find all cuts
@@ -95,11 +95,14 @@ class tests {
         return uf;
     }
 
-    static union_find prTests34(graphAccessPtr G,
+    template <class GraphPtr>
+    static union_find prTests34(GraphPtr G,
                                 EdgeWeight weight_limit,
                                 bool find_all_cuts = false) {
         union_find uf(G->number_of_nodes());
-        std::vector<EdgeID> marked(G->number_of_nodes(), UNDEFINED_EDGE);
+        std::vector<std::pair<NodeID, EdgeID>> marked(
+            G->number_of_nodes(),
+            std::make_pair(UNDEFINED_NODE, UNDEFINED_EDGE));
         std::vector<bool> finished(G->number_of_nodes(), false);
         std::vector<bool> contracted(G->number_of_nodes(), false);
 
@@ -109,37 +112,37 @@ class tests {
 
             finished[n] = true;
             for (EdgeID e : G->edges_of(n)) {
-                NodeID tgt = G->getEdgeTarget(e);
+                NodeID tgt = G->getEdgeTarget(n, e);
                 if (tgt > n) {
-                    marked[tgt] = e;
+                    marked[tgt] = std::make_pair(n, e);
                 }
             }
 
             EdgeWeight deg_n = G->getWeightedNodeDegree(n);
             for (EdgeID e1 : G->edges_of(n)) {
-                NodeID tgt = G->getEdgeTarget(e1);
+                NodeID tgt = G->getEdgeTarget(n, e1);
                 EdgeWeight deg_tgt = G->getWeightedNodeDegree(tgt);
                 if (finished[tgt]) {
-                    marked[tgt] = UNDEFINED_EDGE;
+                    marked[tgt] =
+                        std::make_pair(UNDEFINED_NODE, UNDEFINED_EDGE);
                     continue;
                 }
 
-                EdgeWeight w1 = G->getEdgeWeight(e1);
+                EdgeWeight w1 = G->getEdgeWeight(n, e1);
                 finished[tgt] = true;
                 EdgeWeight wgt_sum = w1;
                 if (tgt > n) {
                     for (EdgeID e2 : G->edges_of(tgt)) {
-                        NodeID tgt2 = G->getEdgeTarget(e2);
-                        if (marked[tgt2] == UNDEFINED_EDGE)
+                        NodeID tgt2 = G->getEdgeTarget(n, e2);
+                        if (marked[tgt2].second == UNDEFINED_EDGE)
                             continue;
 
-                        if (marked[tgt2] >= G->get_first_invalid_edge(n)
-                            || marked[tgt2] < G->get_first_edge(n)) {
+                        if (marked[tgt2].first != n) {
                             continue;
                         }
 
-                        EdgeWeight w2 = G->getEdgeWeight(e2);
-                        EdgeWeight w3 = G->getEdgeWeight(marked[tgt2]);
+                        EdgeWeight w2 = G->getEdgeWeight(n, e2);
+                        EdgeWeight w3 = G->getEdgeWeight(n, marked[tgt2].second);
 
                         wgt_sum += std::min(w2, w3);
 
@@ -171,7 +174,8 @@ class tests {
                         contracted[n] = true;
                         contracted[tgt] = true;
                     }
-                    marked[tgt] = UNDEFINED_EDGE;
+                    marked[tgt] =
+                        std::make_pair(UNDEFINED_NODE, UNDEFINED_EDGE);
                 }
             }
         }

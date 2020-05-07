@@ -46,6 +46,7 @@
 #include "data_structure/union_find.h"
 #endif
 
+template <class GraphPtr>
 class recursive_cactus {
  public:
     recursive_cactus() { }
@@ -60,9 +61,16 @@ class recursive_cactus {
     }
 
     mutableGraphPtr flowMincut(
-        const std::vector<graphAccessPtr>& graphs) {
+        const std::vector<GraphPtr>& graphs) {
         std::vector<mutableGraphPtr> flow_graphs;
-        auto in_graph = mutable_graph::from_graph_access(graphs.back());
+
+        mutableGraphPtr in_graph;
+        if constexpr (std::is_same<GraphPtr, mutableGraphPtr>::value) {
+            in_graph = std::make_shared<mutable_graph>(*(graphs.back()));
+        } else {
+            in_graph = mutable_graph::from_graph_access(graphs.back());
+        }
+
         auto out_graph = recursiveCactus(in_graph, 0);
         VIECUT_ASSERT_TRUE(graph_modification::isCNCR(out_graph, mincut));
         LOGC(timing) << "t " << t.elapsed() << " cactus n "

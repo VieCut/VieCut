@@ -63,7 +63,12 @@ class cactus_mincut : public minimum_cut {
 
     std::tuple<EdgeWeight, mutableGraphPtr, std::unordered_set<EdgeID> >
     findAllMincuts(std::vector<GraphPtr> graphs) {
-        recursive_cactus rc;
+        if (graphs.size() == 0 || !graphs.back()) {
+            mutableGraphPtr empty;
+            std::unordered_set<EdgeID> es;
+            return std::make_tuple(-1, empty, es);
+        }
+        recursive_cactus<GraphPtr> rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;
 
@@ -95,9 +100,9 @@ class cactus_mincut : public minimum_cut {
             for (NodeID n : current_graph->nodes()) {
                 EdgeID e = current_graph->get_first_edge(n);
                 if (current_graph->get_first_invalid_edge(n) - e == 1) {
-                    if ((current_graph->getEdgeWeight(e) == mincut)
+                    if ((current_graph->getEdgeWeight(n, e) == mincut)
                         && uf.n() > 1) {
-                        NodeID t = current_graph->getEdgeTarget(e);
+                        NodeID t = current_graph->getEdgeTarget(n, e);
                         uf.Union(n, t);
                         guaranteed_edges.back().emplace_back(n, t);
                     }
@@ -163,7 +168,7 @@ class cactus_mincut : public minimum_cut {
 
         std::unordered_set<EdgeID> mb_edges;
         if (configuration::getConfig()->find_most_balanced_cut) {
-            most_balanced_minimum_cut mbmc;
+            most_balanced_minimum_cut<GraphPtr> mbmc;
             mb_edges = mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
         }
 

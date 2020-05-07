@@ -235,6 +235,18 @@ class graph_io {
         f.close();
     }
 
+    static void writeCut(mutableGraphPtr G,
+                         std::string filename) {
+        std::ofstream f(filename.c_str());
+        LOG1 << "writing partition to " << filename << " ... ";
+
+        for (NodeID node : G->nodes()) {
+            f << G->getNodeInCut(node) << std::endl;
+        }
+
+        f.close();
+    }
+
     static std::shared_ptr<flow_graph> createFlowGraph(
         graphAccessPtr G) {
         std::shared_ptr<flow_graph> fg = std::make_shared<flow_graph>();

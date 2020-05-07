@@ -59,7 +59,7 @@ class minimum_cut_helpers {
         const std::vector<GraphPtr>& graphs,
         EdgeWeight previous_mincut) {
         if (configuration::getConfig()->save_cut) {
-            graphAccessPtr new_graph = graphs.back();
+            GraphPtr new_graph = graphs.back();
             if (new_graph->number_of_nodes() > 1) {
                 if (new_graph->getMinDegree() < previous_mincut) {
                     size_t minimum_index = minimumIndex(graphs.back());
@@ -148,7 +148,7 @@ class minimum_cut_helpers {
 
     static void setVertexLocations(
         mutableGraphPtr out_graph,
-        const std::vector<graphAccessPtr>& graphs,
+        const std::vector<GraphPtr>& graphs,
         const std::vector<size_t>& ge_ids,
         const std::vector<std::vector<std::pair<NodeID, NodeID> > >& g_edges,
         const EdgeWeight mincut) {

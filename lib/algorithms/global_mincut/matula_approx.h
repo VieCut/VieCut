@@ -41,8 +41,11 @@ class matula_approx : public minimum_cut {
     virtual ~matula_approx() { }
     static constexpr bool debug = false;
 
-    EdgeWeight perform_minimum_cut(graphAccessPtr G) {
-        std::vector<graphAccessPtr> graphs;
+    EdgeWeight perform_minimum_cut(GraphPtr G) {
+        if (!G) {
+            return -1;
+        }
+        std::vector<GraphPtr> graphs;
         EdgeWeight mincut = G->getMinDegree();
         graphs.push_back(G);
         minimum_cut_helpers<GraphPtr>::setInitialCutValues(graphs);

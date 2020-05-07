@@ -21,12 +21,13 @@
 #include "data_structure/mutable_graph.h"
 #include "tools/random_functions.h"
 
+template<class GraphPtr>
 class balanced_cut_dfs {
  public:
     static constexpr bool debug = false;
 
     balanced_cut_dfs() = delete;
-    balanced_cut_dfs(graphAccessPtr original_graph,
+    balanced_cut_dfs(GraphPtr original_graph,
                      mutableGraphPtr G, EdgeWeight mincut)
         : original_graph(original_graph),
           G(G),
@@ -204,7 +205,7 @@ class balanced_cut_dfs {
         }
     }
 
-    graphAccessPtr original_graph;
+    GraphPtr original_graph;
     mutableGraphPtr G;
     EdgeWeight mincut;
     NodeID start_vertex;

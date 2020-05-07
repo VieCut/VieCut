@@ -89,15 +89,16 @@ class contraction {
                 NodeID improve_idx;
                 for (NodeID node = 0;
                      node < reverse_mapping[p].size(); ++node) {
-                    for (EdgeID e : G->edges_of(reverse_mapping[p][node])) {
-                        NodeID contracted_target = mapping[G->getEdgeTarget(e)];
+                    NodeID vtx = reverse_mapping[p][node];
+                    for (EdgeID e : G->edges_of(vtx)) {
+                        NodeID contracted_target = mapping[G->getEdgeTarget(vtx, e)];
                         if (contracted_target == p) {
-                            node_degree += G->getEdgeWeight(e);
+                            node_degree += G->getEdgeWeight(vtx, e);
                             continue;
                         }
 
-                        node_degree -= G->getEdgeWeight(e);
-                        block_degree += G->getEdgeWeight(e);
+                        node_degree -= G->getEdgeWeight(vtx, e);
+                        block_degree += G->getEdgeWeight(vtx, e);
                     }
 
                     if (improve > node_degree) {
@@ -196,20 +197,34 @@ class contraction {
                 G->containedVertices(n)[0]);
         }
 
+        return contractGraph(G, part, reverse_mapping, false);        
+    }
+
+    static mutableGraphPtr contractGraph(
+        mutableGraphPtr G,
+        const std::vector<NodeID>&,
+        const std::vector<std::vector<NodeID> >& reverse_mapping,
+        bool copy = true) {
+        mutableGraphPtr H;
+        if (copy) {
+            H = std::make_shared<mutable_graph>(*G);
+        } else {
+            H = G;
+        }
         for (size_t i = 0; i < reverse_mapping.size(); ++i) {
             if (reverse_mapping[i].size() > 1) {
                 std::unordered_set<NodeID> vtx_to_ctr;
                 for (auto v : reverse_mapping[i]) {
                     vtx_to_ctr.emplace(G->getCurrentPosition(v));
                 }
-                G->contractVertexSet(vtx_to_ctr);
+                H->contractVertexSet(vtx_to_ctr);
             }
         }
 
         if (debug) {
-            graph_algorithms::checkGraphValidity(G);
+            graph_algorithms::checkGraphValidity(H);
         }
-        return G;
+        return H;
     }
 
     static graphAccessPtr fromUnionFind(graphAccessPtr G, union_find* uf) {
@@ -234,14 +249,12 @@ class contraction {
             reverse_mapping[part[part_id]].push_back(n);
         }
 
-        return contractGraph(G, mapping,
-                             reverse_mapping.size(), reverse_mapping);
+        return contractGraph(G, mapping, reverse_mapping);
     }
 
     static graphAccessPtr contractGraph(
         graphAccessPtr G,
         const std::vector<NodeID>& mapping,
-        size_t /*num_nodes*/,
         const std::vector<std::vector<NodeID> >& reverse_mapping) {
         if (reverse_mapping.size() > std::sqrt(G->number_of_nodes())) {
             return contractGraphSparse(G, mapping, reverse_mapping);

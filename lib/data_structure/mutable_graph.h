@@ -62,6 +62,7 @@ class mutable_graph {
         : partition_index(copy.partition_index),
           vertices(copy.vertices),
           weighted_degree(copy.weighted_degree),
+          node_in_cut(copy.node_in_cut),
           current_position(copy.current_position),
           contained_in_this(copy.contained_in_this),
           last_node(copy.last_node),
@@ -73,6 +74,7 @@ class mutable_graph {
         vertices.resize(n);
         weighted_degree.resize(n, 0);
         partition_index.resize(n, 0);
+        node_in_cut.resize(n, 0);
         current_position.resize(n);
         original_nodes = n;
 
@@ -94,6 +96,7 @@ class mutable_graph {
             current_position[last_node] = vertices.size();
             vertices.emplace_back();
             partition_index.emplace_back();
+            node_in_cut.emplace_back();
             weighted_degree.emplace_back();
         }
 
@@ -105,6 +108,7 @@ class mutable_graph {
             contained_in_this.emplace_back();
             vertices.emplace_back();
             partition_index.emplace_back();
+            node_in_cut.emplace_back();
             weighted_degree.emplace_back();
         }
 
@@ -215,6 +219,14 @@ class mutable_graph {
         partition_count = count;
     }
 
+    bool getNodeInCut(NodeID n) {
+        return node_in_cut[n];
+    }
+
+    void setNodeInCut(NodeID n, bool b) {
+        node_in_cut[n] = b;
+    }
+
     PartitionID getPartitionIndex(NodeID node) {
         return partition_index[node];
     }
@@ -247,6 +259,14 @@ class mutable_graph {
 
     NodeID getOriginalNodes() {
         return original_nodes;
+    }
+
+    EdgeWeight sumOfEdgeWeights() {
+        EdgeWeight sum_weights = 0;
+        for (NodeID n : nodes()) {
+            sum_weights += weighted_degree[n];
+        }
+        return sum_weights;
     }
 
     void setOriginalNodes(NodeID n) {
@@ -349,9 +369,11 @@ class mutable_graph {
         vertices[node] = std::move(vertices.back());
         weighted_degree[node] = std::move(weighted_degree.back());
         partition_index[node] = std::move(partition_index.back());
+        node_in_cut[node] = std::move(node_in_cut.back());
         vertices.pop_back();
         weighted_degree.pop_back();
         partition_index.pop_back();
+        node_in_cut.pop_back();
     }
 
     // Contraction methods
@@ -446,9 +468,11 @@ class mutable_graph {
         vertices[target] = std::move(vertices.back());
         weighted_degree[target] = std::move(weighted_degree.back());
         partition_index[target] = std::move(partition_index.back());
+        node_in_cut[target] = std::move(node_in_cut.back());
         vertices.pop_back();
         weighted_degree.pop_back();
         partition_index.pop_back();
+        node_in_cut.pop_back();
         contained_in_this.pop_back();
 
         // remap all reverse edges of vertex that was now moved to 'target'
@@ -533,9 +557,11 @@ class mutable_graph {
         vertices[target] = std::move(vertices.back());
         weighted_degree[target] = std::move(weighted_degree.back());
         partition_index[target] = std::move(partition_index.back());
+        node_in_cut[target] = std::move(node_in_cut.back());
         vertices.pop_back();
         weighted_degree.pop_back();
         partition_index.pop_back();
+        node_in_cut.pop_back();
         contained_in_this.pop_back();
 
         // remap all reverse edges of vertex that was now moved to 'target'
@@ -670,6 +696,7 @@ class mutable_graph {
                 vertices[vtx] = std::move(vertices.back());
                 weighted_degree[vtx] = std::move(weighted_degree.back());
                 partition_index[vtx] = std::move(partition_index.back());
+                node_in_cut[vtx] = std::move(node_in_cut.back());
 
                 // remap all rev edges of vertex that was now moved to 'target'
                 for (EdgeID ed : edges_of(vtx)) {
@@ -683,6 +710,7 @@ class mutable_graph {
             vertices.pop_back();
             weighted_degree.pop_back();
             partition_index.pop_back();
+            node_in_cut.pop_back();
             contained_in_this.pop_back();
         }
     }
@@ -843,6 +871,7 @@ class mutable_graph {
     std::vector<PartitionID> partition_index;
     std::vector<std::vector<RevEdge> > vertices;
     std::vector<EdgeWeight> weighted_degree;
+    std::vector<bool> node_in_cut;
     std::vector<NodeID> current_position;
     std::vector<std::vector<NodeID> > contained_in_this;
 

@@ -180,7 +180,8 @@ class contraction {
         return contracted;
     }
 
-    static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf) {
+    static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf,
+                                         bool copy = false) {
         if (uf->n() == G->n()) {
             // no contraction
             return G;
@@ -198,7 +199,7 @@ class contraction {
                 G->containedVertices(n)[0]);
         }
 
-        return contractGraph(G, part, reverse_mapping, false);
+        return contractGraph(G, part, reverse_mapping, copy);
     }
 
     static mutableGraphPtr contractGraph(
@@ -216,11 +217,21 @@ class contraction {
             if (reverse_mapping[i].size() > 1) {
                 std::unordered_set<NodeID> vtx_to_ctr;
                 for (auto v : reverse_mapping[i]) {
-                    vtx_to_ctr.emplace(G->getCurrentPosition(v));
+                    vtx_to_ctr.emplace(H->getCurrentPosition(v));
                 }
                 H->contractVertexSet(vtx_to_ctr);
             }
         }
+
+        if (copy) {
+            for (size_t i = 0; i < reverse_mapping.size(); ++i) {
+                for (auto v : reverse_mapping[i]) {
+                    G->setPartitionIndex(v, H->getCurrentPosition(v));
+                }
+            }
+        }
+
+        H->resetContainedvertices();
 
         if (debug) {
             graph_algorithms::checkGraphValidity(H);
@@ -228,7 +239,8 @@ class contraction {
         return H;
     }
 
-    static graphAccessPtr fromUnionFind(graphAccessPtr G, union_find* uf) {
+    static graphAccessPtr fromUnionFind(graphAccessPtr G, union_find* uf,
+                                        bool = false) {
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
 
         std::vector<NodeID> mapping(G->number_of_nodes());

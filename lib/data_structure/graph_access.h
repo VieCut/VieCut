@@ -498,6 +498,14 @@ class graph_access {
         return sum_weights;
     }
 
+    EdgeWeight containedVertices(size_t) {
+        return 0;
+    }
+
+    EdgeWeight getCurrentPosition(size_t) {
+        return 0;
+    }
+
     EdgeWeight getMinDegree() {
         if (!m_degrees_computed) {
             computeDegrees();

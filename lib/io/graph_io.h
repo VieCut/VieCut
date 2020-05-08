@@ -167,8 +167,11 @@ class graph_io {
         return G;
     }
 
-    static int writeGraphWeighted(graphAccessPtr G,
-                                  std::string filename) {
+    static int writeGraphWeighted(mutableGraphPtr G, std::string filename) {
+        return writeGraphWeighted(G->to_graph_access(), filename);
+    }
+
+    static int writeGraphWeighted(graphAccessPtr G, std::string filename) {
         std::ofstream f(filename.c_str());
         f << G->number_of_nodes() << " "
           << G->number_of_edges() / 2 << " 1" << std::endl;

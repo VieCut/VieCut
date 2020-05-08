@@ -29,11 +29,13 @@
 template <typename T>
 class CactusCutTest : public testing::Test { };
 
-typedef testing::Types<graph_access> GraphTypes;
+typedef testing::Types<graph_access, mutable_graph> GraphTypes;
 TYPED_TEST_CASE(CactusCutTest, GraphTypes);
 
 TYPED_TEST(CactusCutTest, UnweightedGraphFromFile) {
     configuration::getConfig()->save_cut = true;
+    configuration::getConfig()->verbose = true;
+    configuration::getConfig()->find_most_balanced_cut = false;
     for (size_t i = 0; i < 1; ++i) {
         random_functions::setSeed(time(NULL) + i * 623412);
         auto G = graph_io::readGraphWeighted<TypeParam>(
@@ -43,6 +45,7 @@ TYPED_TEST(CactusCutTest, UnweightedGraphFromFile) {
 #else
         cactus_mincut<std::shared_ptr<TypeParam> > mc;
 #endif
+        LOG1 << G->number_of_nodes() << " " << G->number_of_edges();
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
 
         ASSERT_EQ(balanced_edges.size(), 0);
@@ -177,10 +180,8 @@ TYPED_TEST(CactusCutTest, SimplePath) {
         size_t length = 10;
         G->start_construction(length, 2 * length);
         for (size_t i = 0; i < length - 1; ++i) {
-            EdgeID e = G->new_edge(i, i + 1);
-            G->setEdgeWeight(e, wgt);
-            EdgeID e2 = G->new_edge(i + 1, i);
-            G->setEdgeWeight(e2, wgt);
+            G->new_edge(i, i + 1, wgt);
+            G->new_edge(i + 1, i, wgt);
         }
         G->finish_construction();
 #ifdef PARALLEL
@@ -495,8 +496,8 @@ TYPED_TEST(CactusCutTest, GraphFromNNIPaper) {
         auto [cut, mg, balanced_edges] = mc.findAllMincuts(G);
 
         EdgeWeight wgt = 0;
-        for (const auto& e : balanced_edges) {
-            wgt += G->getEdgeWeight(e);
+        for (const auto& [n, e] : balanced_edges) {
+            wgt += G->getEdgeWeight(n, e);
         }
 
         ASSERT_EQ(cut, 4);
@@ -582,8 +583,8 @@ TYPED_TEST(CactusCutTest, TwoDTorus) {
     configuration::getConfig()->find_most_balanced_cut = true;
 
     EdgeWeight wgt = 0;
-    for (const auto& e : balanced_edges) {
-        wgt += G->getEdgeWeight(e);
+    for (const auto& [n, e] : balanced_edges) {
+        wgt += G->getEdgeWeight(n, e);
     }
     ASSERT_EQ(cut, 4);
     ASSERT_EQ(wgt, 2 * cut);

@@ -76,8 +76,8 @@ int main(int argn, char** argv) {
 
     std::vector<int> numthreads;
     timer t;
-    graphAccessPtr G =
-        graph_io::readGraphWeighted(
+    mutableGraphPtr G =
+        graph_io::readGraphWeighted<mutable_graph>(
             configuration::getConfig()->graph_filename);
 
     if (G->getMinDegree() == 0) {
@@ -113,7 +113,7 @@ int main(int argn, char** argv) {
             NodeID n = G->number_of_nodes();
             EdgeID m = G->number_of_edges();
 
-            auto mc = selectMincutAlgorithm<graphAccessPtr>(cfg->algorithm);
+            auto mc = selectMincutAlgorithm<mutableGraphPtr>(cfg->algorithm);
             omp_set_num_threads(numthread);
             cfg->threads = numthread;
 

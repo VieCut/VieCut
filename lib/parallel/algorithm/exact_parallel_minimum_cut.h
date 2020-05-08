@@ -106,25 +106,7 @@ class exact_parallel_minimum_cut : public minimum_cut {
 #endif
 
             if (uf.n() > 1) {
-                std::vector<NodeID> mapping(curr_g->number_of_nodes());
-                std::vector<NodeID> part(curr_g->number_of_nodes(),
-                                         UNDEFINED_NODE);
-                NodeID current_pid = 0;
-                for (NodeID n : curr_g->nodes()) {
-                    NodeID part_id = uf.Find(n);
-
-                    if (part[part_id] == UNDEFINED_NODE) {
-                        part[part_id] = current_pid++;
-                    }
-
-                    mapping[n] = part[part_id];
-                    curr_g->setPartitionIndex(n, part[part_id]);
-                }
-
-                std::vector<std::vector<NodeID> > reverse_mapping(current_pid);
-
-                graphs.push_back(contraction::contractGraph(
-                                     curr_g, mapping, reverse_mapping));
+                graphs.push_back(contraction::fromUnionFind(curr_g, &uf, true));
 
                 mincut = minimum_cut_helpers<GraphPtr>::updateCut(
                     graphs, mincut);

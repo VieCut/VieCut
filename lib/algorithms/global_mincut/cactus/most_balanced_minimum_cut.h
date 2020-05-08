@@ -25,7 +25,7 @@
 template <class GraphPtr>
 class most_balanced_minimum_cut {
  public:
-    std::unordered_set<EdgeID> findCutFromCactus(
+    std::vector<std::pair<NodeID, EdgeID> > findCutFromCactus(
         mutableGraphPtr G, EdgeWeight mincut,
         GraphPtr original_graph) {
         if (!configuration::getConfig()->save_cut) {
@@ -37,7 +37,7 @@ class most_balanced_minimum_cut {
         if (configuration::getConfig()->output_path != "")
             configuration::getConfig()->set_node_in_cut = true;
 
-        std::unordered_set<EdgeID> originalBestcutEdges;
+        std::vector<std::pair<NodeID, EdgeID> > originalBestcutEdges;
 
         if (mincut == 0) {
             LOG1 << "G has multiple connected components and mincut is 0.";
@@ -48,7 +48,7 @@ class most_balanced_minimum_cut {
         auto [n1, e1, n2, e2, bestcutInCycle] = dfs.runDFS();
 
         if (!configuration::getConfig()->set_node_in_cut) {
-            return std::unordered_set<EdgeID>{ };
+            return std::vector<std::pair<NodeID, EdgeID> >{ };
         }
 
         NodeID rev_n1 = G->getEdgeTarget(n1, e1);
@@ -92,7 +92,7 @@ class most_balanced_minimum_cut {
                 NodeID ot = original_graph->getEdgeTarget(on, oe);
                 if (original_graph->getNodeInCut(on)
                     != original_graph->getNodeInCut(ot)) {
-                    originalBestcutEdges.insert(oe);
+                    originalBestcutEdges.emplace_back(on, oe);
                 }
             }
         }

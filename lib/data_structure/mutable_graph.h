@@ -104,6 +104,10 @@ class mutable_graph {
     }
 
     NodeID new_empty_node() {
+        if (last_node > vertices.size()) {
+            last_node = vertices.size();
+        }
+
         if (last_node == vertices.size()) {
             contained_in_this.emplace_back();
             vertices.emplace_back();
@@ -845,6 +849,14 @@ class mutable_graph {
         }
         G->finish_construction();
         return G;
+    }
+
+    void resetContainedvertices() {
+        original_nodes = vertices.size();
+        for (NodeID n : nodes()) {
+            current_position[n] = n;
+            contained_in_this[n] = { n };
+        }
     }
 
  private:

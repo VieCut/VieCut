@@ -71,7 +71,8 @@ class noi_minimum_cut : public minimum_cut {
 
         while (graphs.back()->number_of_nodes() > 2 && mincut > 0) {
             auto uf = modified_capforest(graphs.back(), mincut);
-            graphs.emplace_back(contraction::fromUnionFind(graphs.back(), &uf));
+            graphs.emplace_back(
+                contraction::fromUnionFind(graphs.back(), &uf, true));
             mincut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, mincut);
         }
 

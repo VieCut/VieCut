@@ -54,30 +54,6 @@ class contraction {
         return ((uint64_t)cluster_a << 32) | cluster_b;
     }
 
-    static mutableGraphPtr contractGraph(
-        mutableGraphPtr G,
-        const std::vector<NodeID>&,
-        const std::vector<std::vector<NodeID> >& reverse_mapping,
-        bool copy = true) {
-        mutableGraphPtr H;
-        if (copy) {
-            H = std::make_shared<mutable_graph>(*G);
-        } else {
-            H = G;
-        }
-        for (size_t i = 0; i < reverse_mapping.size(); ++i) {
-            if (reverse_mapping[i].size() > 1) {
-                std::unordered_set<NodeID> vtx_to_ctr;
-                for (auto v : reverse_mapping[i]) {
-                    vtx_to_ctr.emplace(G->getCurrentPosition(v));
-                }
-                H->contractVertexSet(vtx_to_ctr);
-            }
-        }
-
-        return H;
-    }
-
     static inline std::pair<NodeID, NodeID> get_pair_from_uint64(
         uint64_t data) {
         NodeID first = data >> 32;
@@ -205,38 +181,66 @@ class contraction {
         return contracted;
     }
 
-    static mutableGraphPtr fromUnionFind(
-        mutableGraphPtr G,
-        union_find* uf) {
-        std::vector<std::vector<NodeID> > rev_mapping(uf->n());
+    static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf,
+                                         bool copy = false) {
+        if (uf->n() == G->n()) {
+            // no contraction
+            return G;
+        }
 
+        std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         NodeID current_pid = 0;
-
         for (NodeID n : G->nodes()) {
             NodeID part_id = uf->Find(n);
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
             }
-            rev_mapping[part[part_id]].push_back(G->containedVertices(n)[0]);
+            reverse_mapping[part[part_id]].push_back(
+                G->containedVertices(n)[0]);
         }
 
-        for (size_t i = 0; i < rev_mapping.size(); ++i) {
-            if (rev_mapping[i].size() > 1) {
+        return contractGraph(G, part, reverse_mapping, copy);
+    }
+
+    static mutableGraphPtr contractGraph(
+        mutableGraphPtr G,
+        const std::vector<NodeID>&,
+        const std::vector<std::vector<NodeID> >& reverse_mapping,
+        bool copy = true) {
+        mutableGraphPtr H;
+        if (copy) {
+            H = std::make_shared<mutable_graph>(*G);
+        } else {
+            H = G;
+        }
+        for (size_t i = 0; i < reverse_mapping.size(); ++i) {
+            if (reverse_mapping[i].size() > 1) {
                 std::unordered_set<NodeID> vtx_to_ctr;
-                for (auto v : rev_mapping[i]) {
-                    vtx_to_ctr.emplace(G->getCurrentPosition(v));
+                for (auto v : reverse_mapping[i]) {
+                    vtx_to_ctr.emplace(H->getCurrentPosition(v));
                 }
-                G->contractVertexSet(vtx_to_ctr);
+                H->contractVertexSet(vtx_to_ctr);
             }
         }
 
-        return G;
+        if (copy) {
+            for (size_t i = 0; i < reverse_mapping.size(); ++i) {
+                for (auto v : reverse_mapping[i]) {
+                    G->setPartitionIndex(v, H->getCurrentPosition(v));
+                }
+            }
+        }
+
+        H->resetContainedvertices();
+
+        return H;
     }
 
     static graphAccessPtr fromUnionFind(
         graphAccessPtr G,
-        union_find* uf) {
+        union_find* uf,
+        bool = false) {
         std::vector<std::vector<NodeID> > rev_mapping;
         const bool save_cut = configuration::getConfig()->save_cut;
 

@@ -56,22 +56,23 @@ class cactus_mincut : public minimum_cut {
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
-               std::unordered_set<EdgeID> > findAllMincuts(GraphPtr G) {
+               std::vector<std::pair<NodeID, EdgeID> > >
+    findAllMincuts(GraphPtr G) {
         std::vector<GraphPtr> v = { G };
         return findAllMincuts(v);
     }
 
-    std::tuple<EdgeWeight, mutableGraphPtr, std::unordered_set<EdgeID> >
+    std::tuple<EdgeWeight, mutableGraphPtr,
+               std::vector<std::pair<NodeID, EdgeID> > >
     findAllMincuts(std::vector<GraphPtr> graphs) {
         if (graphs.size() == 0 || !graphs.back()) {
             mutableGraphPtr empty;
-            std::unordered_set<EdgeID> es;
-            return std::make_tuple(-1, empty, es);
+            return std::make_tuple(
+                -1, empty, std::vector<std::pair<NodeID, EdgeID> >{ });
         }
         recursive_cactus<GraphPtr> rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;
-
         viecut<GraphPtr> vc;
         mincut = vc.perform_minimum_cut(graphs.back());
         noi_minimum_cut<GraphPtr> noi;
@@ -114,7 +115,8 @@ class cactus_mincut : public minimum_cut {
                          << " to " << uf.n();
 
             if (uf.n() < current_graph->number_of_nodes()) {
-                auto newg = contraction::fromUnionFind(current_graph, &uf);
+                auto newg =
+                    contraction::fromUnionFind(current_graph, &uf, true);
                 graphs.emplace_back(newg);
                 mincut = minimum_cut_helpers<GraphPtr>::updateCut(
                     graphs, mincut);
@@ -127,7 +129,7 @@ class cactus_mincut : public minimum_cut {
                          << " to " << uf12.n();
             if (uf12.n() < graphs.back()->number_of_nodes()) {
                 auto g12 = contraction::fromUnionFind(
-                    graphs.back(), &uf12);
+                    graphs.back(), &uf12, true);
                 graphs.push_back(g12);
                 mincut = minimum_cut_helpers<GraphPtr>::updateCut(
                     graphs, mincut);
@@ -140,7 +142,7 @@ class cactus_mincut : public minimum_cut {
                          << " to " << uf34.n();
             if (uf34.n() < graphs.back()->number_of_nodes()) {
                 auto g34 = contraction::fromUnionFind(
-                    graphs.back(), &uf34);
+                    graphs.back(), &uf34, true);
                 graphs.push_back(g34);
                 mincut = minimum_cut_helpers<GraphPtr>::updateCut(
                     graphs, mincut);
@@ -166,7 +168,7 @@ class cactus_mincut : public minimum_cut {
         LOGC(timing)
             << "unpacked - n " << out_graph->n() << " m " << out_graph->m();
 
-        std::unordered_set<EdgeID> mb_edges;
+        std::vector<std::pair<NodeID, EdgeID> > mb_edges;
         if (configuration::getConfig()->find_most_balanced_cut) {
             most_balanced_minimum_cut<GraphPtr> mbmc;
             mb_edges = mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);

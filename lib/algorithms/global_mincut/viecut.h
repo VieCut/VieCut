@@ -83,18 +83,20 @@ class viecut : public minimum_cut {
             contraction::findTrivialCuts(G, &mapping, &reverse_mapping, cut);
             LOGC(timing) << "Trivial Cut Local Search: " << t.elapsedToZero();
 
-            G = contraction::contractGraph(G, mapping, reverse_mapping);
-            graphs.push_back(G);
+            auto H = contraction::contractGraph(G, mapping, reverse_mapping);
+            graphs.push_back(H);
             cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             LOGC(timing) << "Graph Contraction (to "
                          << graphs.back()->number_of_nodes()
                          << " nodes): " << t.elapsedToZero();
 
             union_find uf = tests::prTests12(graphs.back(), cut);
-            graphs.push_back(contraction::fromUnionFind(graphs.back(), &uf));
+            graphs.push_back(
+                contraction::fromUnionFind(graphs.back(), &uf, true));
             cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             union_find uf2 = tests::prTests34(graphs.back(), cut);
-            graphs.push_back(contraction::fromUnionFind(graphs.back(), &uf2));
+            graphs.push_back(
+                contraction::fromUnionFind(graphs.back(), &uf2, true));
             cut = minimum_cut_helpers<GraphPtr>::updateCut(graphs, cut);
             LOGC(timing) << "Padberg-Rinaldi Tests (to "
                          << graphs.back()->number_of_nodes()

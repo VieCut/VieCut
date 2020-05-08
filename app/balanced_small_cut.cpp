@@ -32,12 +32,13 @@
 #include "tools/macros_assertions.h"
 #include "tools/timer.h"
 
-static void augmentMostBalancedCut(graphAccessPtr original_graph,
-                                   const std::unordered_set<EdgeID>& mb_edges) {
+static void augmentMostBalancedCut(
+    graphAccessPtr original_graph,
+    const std::vector<std::pair<NodeID, EdgeID> >& mb_edges) {
     auto random_it = std::next(std::begin(mb_edges), random_functions::nextInt(
                                    0, mb_edges.size() - 1));
 
-    EdgeID e = *random_it;
+    auto [n, e] = *random_it;
     original_graph->setEdgeWeight(e, original_graph->getEdgeWeight(e) + 1);
     NodeID in_n = original_graph->getEdgeSource(e);
     NodeID in_t = original_graph->getEdgeTarget(e);
@@ -167,8 +168,7 @@ int main(int argn, char** argv) {
                     if (pos == pos_t) {
                         uf.Union(n, t);
                     } else {
-                        if (!augment_mb ||
-                            (mb_edges.count(e) == 0 && !augment_all)) {
+                        if (!augment_mb) {
                             uf.Union(n, t);
                         }
                     }

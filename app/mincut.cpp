@@ -28,7 +28,11 @@
 #include "tools/string.h"
 #include "tools/timer.h"
 
+typedef graph_access graph_type;
+typedef std::shared_ptr<graph_type> GraphPtr;
+
 int main(int argn, char** argv) {
+
     static constexpr bool debug = false;
 
     tlx::CmdlineParser cmdl;
@@ -76,9 +80,8 @@ int main(int argn, char** argv) {
 
     std::vector<int> numthreads;
     timer t;
-    mutableGraphPtr G =
-        graph_io::readGraphWeighted<mutable_graph>(
-            configuration::getConfig()->graph_filename);
+    GraphPtr G = graph_io::readGraphWeighted<graph_type>(
+        configuration::getConfig()->graph_filename);
 
     if (G->getMinDegree() == 0) {
         LOG1 << "empty nodes are bad, exiting";
@@ -113,7 +116,7 @@ int main(int argn, char** argv) {
             NodeID n = G->number_of_nodes();
             EdgeID m = G->number_of_edges();
 
-            auto mc = selectMincutAlgorithm<mutableGraphPtr>(cfg->algorithm);
+            auto mc = selectMincutAlgorithm<GraphPtr>(cfg->algorithm);
             omp_set_num_threads(numthread);
             cfg->threads = numthread;
 

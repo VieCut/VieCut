@@ -95,6 +95,7 @@ class balanced_cut_dfs {
                 break;
 
             case ACTIVE:
+            case CYCLE:
                 if (parent[n] != t) {
                     // found a cycle, mark it, process it when we are back at t
                     status[t] = CYCLE;

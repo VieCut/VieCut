@@ -229,9 +229,9 @@ class contraction {
                     G->setPartitionIndex(v, H->getCurrentPosition(v));
                 }
             }
+            H->resetContainedvertices();
         }
 
-        H->resetContainedvertices();
 
         if (debug) {
             graph_algorithms::checkGraphValidity(H);

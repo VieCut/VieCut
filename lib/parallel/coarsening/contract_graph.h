@@ -230,9 +230,9 @@ class contraction {
                     G->setPartitionIndex(v, H->getCurrentPosition(v));
                 }
             }
+            H->resetContainedvertices();
         }
 
-        H->resetContainedvertices();
 
         return H;
     }

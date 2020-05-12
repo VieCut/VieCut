@@ -445,6 +445,7 @@ class contraction {
 #pragma omp single
                 {
                     coarser->start_construction(num_nodes);
+                    handle.update();
                     auto capacity = handle.capacity();
                     auto all_iter = handle.range(0, capacity);
                     for ( ; all_iter != handle.range_end(); ++all_iter) {

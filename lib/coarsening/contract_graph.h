@@ -249,12 +249,13 @@ class contraction {
         const std::vector<std::vector<NodeID> >& reverse_mapping) {
         // first: coarse vertex which set this (to avoid total invalidation)
         // second: edge id in contracted graph
+        std::vector<EdgeWeight> weights(reverse_mapping.size());
         auto contracted = std::make_shared<typename GraphPtr::element_type>();
         contracted->start_construction(reverse_mapping.size(),
                                        G->number_of_edges());
 
         for (NodeID p = 0; p < reverse_mapping.size(); ++p) {
-            std::unordered_map<NodeID, EdgeWeight> edge_positions;
+            std::unordered_set<NodeID> edge_positions;
             contracted->new_node();
             for (NodeID node = 0; node < reverse_mapping[p].size(); ++node) {
                 NodeID n = reverse_mapping[p][node];
@@ -277,15 +278,16 @@ class contraction {
                         continue;
 
                     if (edge_positions.count(contracted_target) > 0) {
-                        edge_positions[contracted_target] += wgt;
+                        weights[contracted_target] += wgt;
                     } else {
-                        edge_positions[contracted_target] = wgt;
+                        edge_positions.insert(contracted_target);
+                        weights[contracted_target] = wgt;
                     }
                 }
             }
 
-            for (const auto&[tgt, wgt] : edge_positions) {
-                contracted->new_edge(p, tgt, wgt);
+            for (const auto& tgt : edge_positions) {
+                contracted->new_edge(p, tgt, weights[tgt]);
             }
         }
 

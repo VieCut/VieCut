@@ -33,7 +33,6 @@ typedef mutable_graph graph_type;
 typedef std::shared_ptr<graph_type> GraphPtr;
 
 int main(int argn, char** argv) {
-
     static constexpr bool debug = false;
 
     tlx::CmdlineParser cmdl;

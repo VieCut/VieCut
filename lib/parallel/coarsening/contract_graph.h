@@ -183,6 +183,7 @@ class contraction {
 
     static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf,
                                          bool copy = false) {
+        bool save_cut = configuration::getConfig()->save_cut;
         if (uf->n() == G->n()) {
             // no contraction
             return G;
@@ -190,24 +191,41 @@ class contraction {
 
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
+        std::vector<NodeID> mapping(G->n());
         NodeID current_pid = 0;
         for (NodeID n : G->nodes()) {
             NodeID part_id = uf->Find(n);
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
             }
+            mapping[n] = part[part_id];
+            if (save_cut) {
+                G->setPartitionIndex(n, part[part_id]);
+            }
             reverse_mapping[part[part_id]].push_back(
                 G->containedVertices(n)[0]);
         }
 
-        return contractGraph(G, part, reverse_mapping, copy);
+        return contractGraph(G, mapping, reverse_mapping, copy);
     }
 
     static mutableGraphPtr contractGraph(
         mutableGraphPtr G,
-        const std::vector<NodeID>&,
+        const std::vector<NodeID>& mapping,
         const std::vector<std::vector<NodeID> >& reverse_mapping,
         bool copy = true) {
+        if (reverse_mapping.size() * 1.2 > G->n() || !copy) {
+            return contractGraphVtxset(G, mapping, reverse_mapping, copy);
+        } else {
+            return contractGraphSparse(G, mapping, reverse_mapping.size());
+        }
+    }
+
+    static mutableGraphPtr contractGraphVtxset(
+        mutableGraphPtr G,
+        const std::vector<NodeID>&,
+        const std::vector<std::vector<NodeID> >& reverse_mapping,
+        bool copy) {
         mutableGraphPtr H;
         if (copy) {
             H = std::make_shared<mutable_graph>(*G);
@@ -277,8 +295,9 @@ class contraction {
     }
 
     // altered version of KaHiPs matching contraction
-    static graphAccessPtr
-    contractGraphSparse(graphAccessPtr G,
+    template <class GraphPtr>
+    static GraphPtr
+    contractGraphSparse(GraphPtr G,
                         const std::vector<NodeID>& mapping,
                         size_t num_nodes) {
         // contested edge (both incident vertices have at least V/5 vertices)
@@ -288,9 +307,7 @@ class contraction {
         NodeID block0 = 0;
         NodeID block1 = 0;
 
-        if (G->number_of_edges() * 0.02
-            < G->number_of_nodes() * G->number_of_nodes() &&
-            G->number_of_nodes() > 100) {
+        if (G->m() * 0.02 < G->n() * G->n() && G->n() > 100) {
             std::vector<uint32_t> el(num_nodes);
             for (size_t i = 0; i < mapping.size(); ++i) {
                 ++el[mapping[i]];
@@ -314,7 +331,7 @@ class contraction {
 
         EdgeWeight sumweight_contested = 0;
 
-        auto coarser = std::make_shared<graph_access>();
+        auto coarser = std::make_shared<typename GraphPtr::element_type>();
         std::vector<std::vector<std::pair<PartitionID, EdgeWeight> > >
         building_tool(num_nodes);
         std::vector<size_t> degrees(num_nodes);
@@ -331,7 +348,7 @@ class contraction {
             for (NodeID n = 0; n < G->number_of_nodes(); ++n) {
                 NodeID p = mapping[n];
                 for (EdgeID e : G->edges_of(n)) {
-                    NodeID tgt = G->getEdgeTarget(e);
+                    NodeID tgt = G->getEdgeTarget(n, e);
                     if (tgt > n) {
                         continue;
                     }
@@ -343,7 +360,7 @@ class contraction {
                         // as their other side will be
                         continue;
                     }
-                    EdgeWeight edge_weight = G->getEdgeWeight(e);
+                    EdgeWeight edge_weight = G->getEdgeWeight(n, e);
                     uint64_t key = get_uint64_from_pair(p, contracted_target);
 
                     if (key != contested_edge) {
@@ -386,45 +403,58 @@ class contraction {
                 }
             }
 
+            if constexpr (std::is_same<GraphPtr, graphAccessPtr>::value) {
 #pragma omp single
-            {
-                size_t num_edges = 0;
-                coarser->start_construction(num_nodes, 0);
-                for (size_t i = 0; i < degrees.size(); ++i) {
-                    cur_degrees[i] = num_edges;
-                    num_edges += degrees[i];
-                    coarser->new_node_hacky(num_edges);
+                {
+                    size_t num_edges = 0;
+                    coarser->start_construction(num_nodes, 0);
+                    for (size_t i = 0; i < degrees.size(); ++i) {
+                        cur_degrees[i] = num_edges;
+                        num_edges += degrees[i];
+                        coarser->new_node_hacky(num_edges);
+                    }
+                    coarser->resize_m(num_edges);
                 }
-                coarser->resize_m(num_edges);
+
+                for (auto edge_uint : my_keys) {
+                    auto edge = get_pair_from_uint64(edge_uint);
+                    auto edge_weight = (*handle.find(edge_uint)).second;
+                    size_t firstdeg, seconddeg;
+
+                    while (true) {
+                        firstdeg = cur_degrees[edge.first];
+                        size_t plusone = cur_degrees[edge.first] + 1;
+                        if (__sync_bool_compare_and_swap(
+                                &cur_degrees[edge.first], firstdeg, plusone))
+                            break;
+                    }
+
+                    while (true) {
+                        seconddeg = cur_degrees[edge.second];
+                        size_t plusone = cur_degrees[edge.second] + 1;
+                        if (__sync_bool_compare_and_swap(
+                                &cur_degrees[edge.second], seconddeg, plusone))
+                            break;
+                    }
+
+                    coarser->new_edge_and_reverse(
+                        edge.first, edge.second, firstdeg,
+                        seconddeg, edge_weight);
+                }
+            } else {
+#pragma omp single
+                {
+                    coarser->start_construction(num_nodes);
+                    LOG1 << "checkmark";
+                    for (auto edge_uint : my_keys) {
+                        auto edge = get_pair_from_uint64(edge_uint);
+                        auto wgt = (*handle.find(edge_uint)).second;
+                        coarser->new_edge_order(edge.first, edge.second, wgt);
+                    }
+                }
             }
-
-            for (auto edge_uint : my_keys) {
-                auto edge = get_pair_from_uint64(edge_uint);
-                auto edge_weight = (*handle.find(edge_uint)).second;
-                size_t firstdeg, seconddeg;
-
-                while (true) {
-                    firstdeg = cur_degrees[edge.first];
-                    size_t plusone = cur_degrees[edge.first] + 1;
-                    if (__sync_bool_compare_and_swap(&cur_degrees[edge.first],
-                                                     firstdeg, plusone))
-                        break;
-                }
-
-                while (true) {
-                    seconddeg = cur_degrees[edge.second];
-                    size_t plusone = cur_degrees[edge.second] + 1;
-                    if (__sync_bool_compare_and_swap(&cur_degrees[edge.second],
-                                                     seconddeg,
-                                                     plusone))
-                        break;
-                }
-
-                coarser->new_edge_and_reverse(edge.first, edge.second,
-                                              firstdeg, seconddeg, edge_weight);
-            }
+            coarser->finish_construction();
         }
-        coarser->finish_construction();
         return coarser;
     }
 

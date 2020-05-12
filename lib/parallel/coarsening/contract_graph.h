@@ -445,16 +445,18 @@ class contraction {
 #pragma omp single
                 {
                     coarser->start_construction(num_nodes);
-                    LOG1 << "checkmark";
-                    for (auto edge_uint : my_keys) {
-                        auto edge = get_pair_from_uint64(edge_uint);
-                        auto wgt = (*handle.find(edge_uint)).second;
+                    auto capacity = handle.capacity();
+                    auto all_iter = handle.range(0, capacity);
+                    for ( ; all_iter != handle.range_end(); ++all_iter) {
+                        auto el = (*all_iter);
+                        auto edge = get_pair_from_uint64(el.first);
+                        auto wgt = el.second;
                         coarser->new_edge_order(edge.first, edge.second, wgt);
                     }
                 }
             }
-            coarser->finish_construction();
         }
+        coarser->finish_construction();
         return coarser;
     }
 

@@ -233,7 +233,6 @@ class contraction {
             H->resetContainedvertices();
         }
 
-
         return H;
     }
 

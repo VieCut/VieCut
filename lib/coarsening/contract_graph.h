@@ -129,57 +129,6 @@ class contraction {
         LOG << "target min degree now: " << target_mindeg;
     }
 
-    // contraction global_mincut for small number of nodes in constructed graph
-    // we assume a full mesh and remove nonexistent edges afterwards.
-    static graphAccessPtr contractGraphFullMesh(
-        graphAccessPtr G,
-        const std::vector<NodeID>& mapping,
-        const std::vector<std::vector<NodeID> >&
-        reverse_mapping) {
-        NodeID num_nodes = reverse_mapping.size();
-        auto contracted = std::make_shared<graph_access>();
-        if (reverse_mapping.size() == 1) {
-            contracted->start_construction(1, 0);
-            contracted->finish_construction();
-            return contracted;
-        }
-        std::vector<EdgeWeight> intermediate(num_nodes * (num_nodes - 1), 0);
-        for (NodeID n = 0; n < G->number_of_nodes(); ++n) {
-            NodeID src = mapping[n];
-            for (EdgeID e : G->edges_of(n)) {
-                NodeID tgt = mapping[G->getEdgeTarget(e)];
-                if (tgt != src) {
-                    EdgeID edge_id = src * (num_nodes - 1) + tgt - (tgt > src);
-                    intermediate[edge_id] += G->getEdgeWeight(e);
-                }
-            }
-        }
-        EdgeID existing_edges = intermediate.size();
-        for (auto e : intermediate) {
-            if (e == 0)
-                --existing_edges;
-        }
-
-        contracted->start_construction(num_nodes, existing_edges);
-        for (size_t i = 0; i < num_nodes; ++i) {
-            contracted->new_node();
-            for (size_t j = 0; j < num_nodes; ++j) {
-                if (i == j)
-                    continue;
-
-                EdgeID edge_id = i * (num_nodes - 1) + j - (j > i);
-
-                if (intermediate[edge_id] > 0) {
-                    EdgeID edge = contracted->new_edge(i, j);
-                    contracted->setEdgeWeight(edge, intermediate[edge_id]);
-                }
-            }
-        }
-        contracted->finish_construction();
-
-        return contracted;
-    }
-
     static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf,
                                          bool copy = false) {
         if (uf->n() == G->n()) {
@@ -189,20 +138,34 @@ class contraction {
 
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
+        std::vector<NodeID> mapping(G->n(), UNDEFINED_NODE);
         NodeID current_pid = 0;
         for (NodeID n : G->nodes()) {
             NodeID part_id = uf->Find(n);
             if (part[part_id] == UNDEFINED_NODE) {
                 part[part_id] = current_pid++;
             }
+            mapping[n] = part[part_id];
             reverse_mapping[part[part_id]].push_back(
                 G->containedVertices(n)[0]);
         }
-
-        return contractGraph(G, part, reverse_mapping, copy);
+        return contractGraph(G, mapping, reverse_mapping, copy);
     }
 
     static mutableGraphPtr contractGraph(
+        mutableGraphPtr G,
+        const std::vector<NodeID>& mapping,
+        const std::vector<std::vector<NodeID> >& reverse_mapping,
+        bool copy = true) {
+        NodeID cn = reverse_mapping.size();
+        if (cn * 2 > G->n() || !copy) {
+            return contractGraphVertexset(G, mapping, reverse_mapping, copy);
+        } else {
+            return contractGraphSparse(G, mapping, reverse_mapping);
+        }
+    }
+
+    static mutableGraphPtr contractGraphVertexset(
         mutableGraphPtr G,
         const std::vector<NodeID>&,
         const std::vector<std::vector<NodeID> >& reverse_mapping,
@@ -231,7 +194,6 @@ class contraction {
             }
             H->resetContainedvertices();
         }
-
 
         if (debug) {
             graph_algorithms::checkGraphValidity(H);
@@ -268,59 +230,56 @@ class contraction {
     static graphAccessPtr contractGraph(
         graphAccessPtr G,
         const std::vector<NodeID>& mapping,
-        const std::vector<std::vector<NodeID> >& reverse_mapping) {
-        if (reverse_mapping.size() > std::sqrt(G->number_of_nodes())) {
-            return contractGraphSparse(G, mapping, reverse_mapping);
-        } else {
-            return contractGraphFullMesh(G, mapping, reverse_mapping);
-        }
+        const std::vector<std::vector<NodeID> >& reverse_mapping,
+        bool = false) {
+        return contractGraphSparse(G, mapping, reverse_mapping);
     }
 
     // altered version of KaHiPs matching contraction
-    static graphAccessPtr contractGraphSparse(
-        graphAccessPtr G,
+    template <class GraphPtr>
+    static GraphPtr contractGraphSparse(
+        GraphPtr G,
         const std::vector<NodeID>& mapping,
-        const std::vector<std::vector<NodeID> >&
-        reverse_mapping) {
+        const std::vector<std::vector<NodeID> >& reverse_mapping) {
         // first: coarse vertex which set this (to avoid total invalidation)
         // second: edge id in contracted graph
-        auto contracted = std::make_shared<graph_access>();
+        auto contracted = std::make_shared<typename GraphPtr::element_type>();
         contracted->start_construction(reverse_mapping.size(),
                                        G->number_of_edges());
-        std::vector<std::pair<NodeID, EdgeID> > edge_positions(
-            reverse_mapping.size(),
-            std::make_pair(UNDEFINED_NODE, UNDEFINED_EDGE));
 
         for (NodeID p = 0; p < reverse_mapping.size(); ++p) {
+            std::unordered_map<NodeID, EdgeWeight> edge_positions;
             contracted->new_node();
             for (NodeID node = 0; node < reverse_mapping[p].size(); ++node) {
+                NodeID n = reverse_mapping[p][node];
                 for (EdgeID e : G->edges_of(reverse_mapping[p][node])) {
-                    if (G->getEdgeWeight(e) == 0)
+                    if (G->getEdgeWeight(n, e) == 0)
                         continue;
 
-                    NodeID tgt = G->getEdgeTarget(e);
+                    auto [tgt, wgt] = G->getEdge(n, e);
 
                     NodeID contracted_target = mapping[tgt];
+
+                    if constexpr (
+                        std::is_same<GraphPtr, mutableGraphPtr>::value) {
+                        if (contracted_target <= p) {
+                            continue;
+                        }
+                    }
 
                     if (contracted_target == p)
                         continue;
 
-                    NodeID last_use = edge_positions[contracted_target].first;
-
-                    if (last_use == p) {
-                        EdgeWeight weight = G->getEdgeWeight(e);
-                        EdgeID e_new = edge_positions[contracted_target].second;
-                        contracted->setEdgeWeight(
-                            e_new, contracted->getEdgeWeight(e_new) + weight);
+                    if (edge_positions.count(contracted_target) > 0) {
+                        edge_positions[contracted_target] += wgt;
                     } else {
-                        EdgeID e_new =
-                            contracted->new_edge(p, contracted_target);
-                        edge_positions[contracted_target].first = p;
-                        edge_positions[contracted_target].second = e_new;
-
-                        contracted->setEdgeWeight(e_new, G->getEdgeWeight(e));
+                        edge_positions[contracted_target] = wgt;
                     }
                 }
+            }
+
+            for (const auto&[tgt, wgt] : edge_positions) {
+                contracted->new_edge(p, tgt, wgt);
             }
         }
 

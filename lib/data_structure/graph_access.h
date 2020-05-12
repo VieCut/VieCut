@@ -379,8 +379,16 @@ class graph_access {
         return graphref->number_of_nodes();
     }
 
+    NodeID n() const {
+        return number_of_nodes();
+    }
+
     EdgeID number_of_edges() const {
         return graphref->number_of_edges();
+    }
+
+    EdgeID m() const {
+        return number_of_edges();
     }
 
     EdgeID get_first_edge(NodeID node) const {

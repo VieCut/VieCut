@@ -28,7 +28,8 @@
 #include "tools/string.h"
 #include "tools/timer.h"
 
-typedef graph_access graph_type;
+// typedef graph_access graph_type;
+typedef mutable_graph graph_type;
 typedef std::shared_ptr<graph_type> GraphPtr;
 
 int main(int argn, char** argv) {

@@ -103,6 +103,10 @@ class mutable_graph {
         return last_node++;
     }
 
+    void setLastNode() {
+        last_node = vertices.size();
+    }
+
     NodeID new_empty_node() {
         if (last_node > vertices.size()) {
             last_node = vertices.size();

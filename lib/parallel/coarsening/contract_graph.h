@@ -184,11 +184,6 @@ class contraction {
     static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf,
                                          bool copy = false) {
         bool save_cut = configuration::getConfig()->save_cut;
-        if (uf->n() == G->n()) {
-            // no contraction
-            return G;
-        }
-
         std::vector<std::vector<NodeID> > reverse_mapping(uf->n());
         std::vector<NodeID> part(G->number_of_nodes(), UNDEFINED_NODE);
         std::vector<NodeID> mapping(G->n());

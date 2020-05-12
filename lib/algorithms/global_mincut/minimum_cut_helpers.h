@@ -165,6 +165,7 @@ class minimum_cut_helpers {
                                              out_graph->getCurrentPosition(n));
         }
 
+        out_graph->setLastNode();
         int32_t g_id = ge_ids.size() - 1;
         for (auto i = graphs.size(); i-- > 0 && graphs.size() > 1; ) {
             if (i < graphs.size() - 1) {

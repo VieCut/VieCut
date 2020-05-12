@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -131,7 +132,8 @@ class contraction {
 
     static mutableGraphPtr fromUnionFind(mutableGraphPtr G, union_find* uf,
                                          bool copy = false) {
-        if (uf->n() == G->n()) {
+        bool save_cut = configuration::getConfig()->save_cut;
+        if (uf->n() == G->n() && !copy) {
             // no contraction
             return G;
         }
@@ -146,6 +148,9 @@ class contraction {
                 part[part_id] = current_pid++;
             }
             mapping[n] = part[part_id];
+            if (save_cut) {
+                G->setPartitionIndex(n, part[part_id]);
+            }
             reverse_mapping[part[part_id]].push_back(
                 G->containedVertices(n)[0]);
         }
@@ -158,6 +163,7 @@ class contraction {
         const std::vector<std::vector<NodeID> >& reverse_mapping,
         bool copy = true) {
         NodeID cn = reverse_mapping.size();
+
         if (cn * 2 > G->n() || !copy) {
             return contractGraphVertexset(G, mapping, reverse_mapping, copy);
         } else {
@@ -232,6 +238,11 @@ class contraction {
         const std::vector<NodeID>& mapping,
         const std::vector<std::vector<NodeID> >& reverse_mapping,
         bool = false) {
+        if (reverse_mapping.size() == 1) {
+            graphAccessPtr gap = std::make_shared<graph_access>();
+            gap->start_construction(1, 0);
+            return gap;
+        }
         return contractGraphSparse(G, mapping, reverse_mapping);
     }
 

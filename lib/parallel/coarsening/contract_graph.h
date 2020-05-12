@@ -348,27 +348,23 @@ class contraction {
             for (NodeID n = 0; n < G->number_of_nodes(); ++n) {
                 NodeID p = mapping[n];
                 for (EdgeID e : G->edges_of(n)) {
-                    NodeID tgt = G->getEdgeTarget(n, e);
-                    if (tgt > n) {
-                        continue;
-                    }
+                    auto [tgt, wgt] = G->getEdge(n, e);
 
                     NodeID contracted_target = mapping[tgt];
-                    if (contracted_target == p) {
+                    if (contracted_target >= p) {
                         // self-loops are not in graph
                         // smaller do not need to be stored
                         // as their other side will be
                         continue;
                     }
-                    EdgeWeight edge_weight = G->getEdgeWeight(n, e);
                     uint64_t key = get_uint64_from_pair(p, contracted_target);
 
                     if (key != contested_edge) {
-                        if (handle.insert_or_update(key, edge_weight,
+                        if (handle.insert_or_update(key, wgt,
                                                     [](size_t& lhs,
                                                        const size_t& rhs) {
                                                         lhs += rhs;
-                                                    }, edge_weight).second) {
+                                                    }, wgt).second) {
 #pragma omp atomic
                             ++degrees[p];
 #pragma omp atomic
@@ -376,7 +372,7 @@ class contraction {
                             my_keys.push_back(key);
                         }
                     } else {
-                        contested_weight += edge_weight;
+                        contested_weight += wgt;
                     }
                 }
             }
@@ -443,15 +439,12 @@ class contraction {
                 }
             } else {
 #pragma omp single
+                coarser->start_construction(num_nodes);
+#pragma omp critical
                 {
-                    coarser->start_construction(num_nodes);
-                    handle.refresh();
-                    auto capacity = handle.capacity();
-                    auto all_iter = handle.range(0, capacity);
-                    for ( ; all_iter != handle.range_end(); ++all_iter) {
-                        auto el = (*all_iter);
-                        auto edge = get_pair_from_uint64(el.first);
-                        auto wgt = el.second;
+                    for (auto k : my_keys) {
+                        auto edge = get_pair_from_uint64(k);
+                        auto wgt = (*handle.find(k)).second;
                         coarser->new_edge_order(edge.first, edge.second, wgt);
                     }
                 }

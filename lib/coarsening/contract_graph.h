@@ -238,11 +238,6 @@ class contraction {
         const std::vector<NodeID>& mapping,
         const std::vector<std::vector<NodeID> >& reverse_mapping,
         bool = false) {
-        if (reverse_mapping.size() == 1) {
-            graphAccessPtr gap = std::make_shared<graph_access>();
-            gap->start_construction(1, 0);
-            return gap;
-        }
         return contractGraphSparse(G, mapping, reverse_mapping);
     }
 

@@ -180,6 +180,7 @@ TYPED_TEST(CactusCutTest, SimplePath) {
         size_t length = 10;
         G->start_construction(length, 2 * length);
         for (size_t i = 0; i < length - 1; ++i) {
+            G->new_node();
             G->new_edge(i, i + 1, wgt);
             G->new_edge(i + 1, i, wgt);
         }
@@ -221,6 +222,7 @@ TYPED_TEST(CactusCutTest, RingOfSmallCliques) {
             }
 
             for (NodeID i = 0; i < 4; ++i) {
+                G->new_node();
                 for (NodeID j = 0; j < 4; ++j) {
                     G->new_edge(i + (4 * k), j + (4 * k));
                 }

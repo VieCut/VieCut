@@ -161,11 +161,10 @@ class minimum_cut_helpers {
         }
 
         for (NodeID n = 0; n < graphs.back()->number_of_nodes(); ++n) {
-            graphs.back()->setPartitionIndex(n,
-                                             out_graph->getCurrentPosition(n));
+            graphs.back()->setPartitionIndex(
+                n, out_graph->getCurrentPosition(n));
         }
 
-        out_graph->setLastNode();
         int32_t g_id = ge_ids.size() - 1;
         for (auto i = graphs.size(); i-- > 0 && graphs.size() > 1; ) {
             if (i < graphs.size() - 1) {

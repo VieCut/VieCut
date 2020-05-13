@@ -55,7 +55,6 @@ class mutable_graph {
  public:
     static constexpr bool debug = false;
 
-    mutable_graph() : last_node(0), num_edges(0), partition_count(0) { }
     virtual ~mutable_graph() { }
 
     mutable_graph(const mutable_graph& copy)
@@ -69,6 +68,8 @@ class mutable_graph {
           num_edges(copy.num_edges),
           partition_count(copy.partition_count),
           original_nodes(copy.original_nodes) { }
+
+    mutable_graph() : last_node(0), num_edges(0), partition_count(0) { }
 
     void start_construction(NodeID n, EdgeID = 0) {
         vertices.resize(n);
@@ -103,15 +104,11 @@ class mutable_graph {
         return last_node++;
     }
 
-    void setLastNode() {
-        last_node = vertices.size();
+    NodeID getLastNode() {
+        return last_node;
     }
 
     NodeID new_empty_node() {
-        if (last_node > vertices.size()) {
-            last_node = vertices.size();
-        }
-
         if (last_node == vertices.size()) {
             contained_in_this.emplace_back();
             vertices.emplace_back();
@@ -188,8 +185,7 @@ class mutable_graph {
     }
 
     void finish_construction() {
-        LOG << "Unused function end_construction()";
-        LOG << "This is just here for compatibility reasons with graph_access";
+        last_node = vertices.size();
     }
 
     /* ============================================================= */
@@ -632,8 +628,6 @@ class mutable_graph {
             if (n == first)
                 continue;
 
-            last_node--;
-
             for (EdgeID e : edges_of(n)) {
                 NodeID target = getEdgeTarget(n, e);
                 if (vertex_set.count(target) == 0) {
@@ -720,6 +714,7 @@ class mutable_graph {
             partition_index.pop_back();
             node_in_cut.pop_back();
             contained_in_this.pop_back();
+            last_node--;
         }
     }
 

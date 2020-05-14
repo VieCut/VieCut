@@ -8,6 +8,6 @@ for folder in ['../app','../lib','../tests']:
 
     for filename in files:
         if (filename.endswith(".cpp") or filename.endswith(".hpp") or filename.endswith(".h")):
-            uncrustcmd = "uncrustify -c uncrustify.cfg --no-backup " + filename
+            uncrustcmd = "uncrustify -c uncrustify.cfg --no-backup --replace " + filename
             process = os.popen(uncrustcmd)
             output = process.read()

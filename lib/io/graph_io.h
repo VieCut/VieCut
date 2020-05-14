@@ -37,13 +37,14 @@ class graph_io {
 
     virtual ~graph_io() { }
 
-    template <class Graph>
-    static std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> >
+    static std::pair<
+        NodeID, std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> > >
     readTemporalGraph(std::string file) {
         std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> > edges;
         std::string line;
         std::ifstream instream(file.c_str());
         std::getline(instream, line);
+        NodeID numVtxs = 0;
 
         while (std::getline(instream, line)) {
             if (line[0] == '%') {     // a comment in the file
@@ -62,12 +63,17 @@ class graph_io {
             uint64_t timestamp = fast_atoi(line, &line_ptr) - 1;
             edges.emplace_back(source, target, wgt, timestamp);
 
+            NodeID largerVtx = std::max(source, target);
+            if (largerVtx >= numVtxs) {
+                numVtxs = largerVtx + 1;
+            }
+
             if (instream.eof()) {
                 break;
             }
         }
 
-        return edges;
+        return std::pair(numVtxs, edges);
     }
 
     template <class Graph = graph_access>

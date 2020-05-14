@@ -9,26 +9,39 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <omp.h>
+#include <stddef.h>
 
-#include "algorithms/global_mincut/algorithms.h"
-#include "algorithms/global_mincut/minimum_cut.h"
+#include <ext/alloc_traits.h>
+#include <memory>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#ifdef PARALLEL
+#include "parallel/algorithm/parallel_cactus.h"
+#else
+#include "algorithms/global_mincut/cactus/cactus_mincut.h"
+#endif
+
 #include "common/configuration.h"
 #include "common/definitions.h"
+#include "data_structure/graph_access.h"
+#include "data_structure/mutable_graph.h"
 #include "io/graph_io.h"
-#include "tools/timer.h"
+#include "tlx/cmdline_parser.hpp"
+#include "tlx/logger.hpp"
+#include "tools/random_functions.h"
 
 int main(int argn, char** argv) {
     static constexpr bool debug = false;
     tlx::CmdlineParser cmdl;
-    int num_iterations = 1;
+    size_t num_iterations = 1;
     auto cfg = configuration::getConfig();
     cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
 #ifdef PARALLEL
-    std::vector<std::string> procs;
-    cmdl.add_stringlist('p', "proc", procs, "number of processes");
+    size_t procs = 1;
+    cmdl.add_size_t('p', "proc", procs, "number of processes");
 #endif
-    cmdl.add_param_string("algo", cfg->algorithm, "algorithm name");
     cmdl.add_size_t('i', "iter", num_iterations, "number of iterations");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
     cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
@@ -36,7 +49,34 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
+#ifdef PARALLEL
+    LOGC(cfg->verbose) << "PARALLEL DEFINED, USING " << procs << " THREADS";
+    omp_set_num_threads(procs);
+    parallel_cactus<mutableGraphPtr> cactus;
+#else
+    LOGC(cfg->verbose) << "PARALLEL NOT DEFINED";
+    cactus_mincut<mutableGraphPtr> cactus;
+#endif
+
+    random_functions::setSeed(cfg->seed);
+
     cfg->save_cut = true;
 
-    // TODO(anoe): make this actually do something :)
+    auto [numV, tempEdges] = graph_io::readTemporalGraph(cfg->graph_filename);
+    LOG << "Creating graph with " << numV << " vertices!";
+    mutableGraphPtr G = std::make_shared<mutable_graph>();
+    G->start_construction(numV);
+    for (auto [a, b, c, d] : tempEdges) {
+        G->new_edge_order(a, b, c);
+    }
+    G->finish_construction();
+
+    auto [cut, out_cactus, balanced] = cactus.findAllMincuts(G);
+
+    LOG1 << "cut is " << cut;
+    LOG1 << "cactus: " << out_cactus;
+
+    for (auto v : out_cactus->nodes()) {
+        LOG1 << out_cactus->containedVertices(v);
+    }
 }

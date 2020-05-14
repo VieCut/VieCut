@@ -106,6 +106,7 @@ else()
 set(LIBS ${EXTLIBS} ${Tcmalloc_LIBRARIES} ${GUROBI_LIBRARIES})
 endif()
 
+build_and_link(dynamic_mincut)
 build_and_link(kcore)
 build_and_link(mincut_contract)
 build_and_link(mincut_heavy)

@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <stdlib.h>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -18,6 +20,7 @@
 #include "algorithms/misc/strongly_connected_components.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
+#include "tlx/logger.hpp"
 
 struct k_cores {
     std::vector<NodeID> degrees;

@@ -9,11 +9,12 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <algorithm>
+
 #include "algorithms/misc/core_decomposition.h"
 #include "data_structure/graph_access.h"
 #include "gtest/gtest.h"
 #include "io/graph_io.h"
-#include "tlx/logger.hpp"
 
 graphAccessPtr make_G2() {
     auto G = std::make_shared<graph_access>();

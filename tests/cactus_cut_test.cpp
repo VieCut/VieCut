@@ -9,7 +9,13 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <type_traits>
+#include <time.h>
+
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
 #ifdef PARALLEL
 #include "algorithms/global_mincut/viecut.h"
 #include "parallel/algorithm/exact_parallel_minimum_cut.h"
@@ -23,8 +29,15 @@
 #include "algorithms/global_mincut/stoer_wagner_minimum_cut.h"
 #include "algorithms/global_mincut/viecut.h"
 #endif
-#include "gtest/gtest.h"
+#include "common/configuration.h"
+#include "common/definitions.h"
+#include "gtest/gtest_pred_impl.h"
 #include "io/graph_io.h"
+#include "tlx/logger.hpp"
+#include "tools/random_functions.h"
+
+class graph_access;
+class mutable_graph;
 
 template <typename T>
 class CactusCutTest : public testing::Test { };

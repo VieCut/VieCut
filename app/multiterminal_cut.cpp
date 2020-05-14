@@ -10,25 +10,23 @@
  *****************************************************************************/
 
 #include <mpi.h>
-#include <omp.h>
+#include <stdlib.h>
 
-#include <cmath>
+#include <bits/exception.h>
 #include <iostream>
 #include <memory>
-#include <sstream>
+#include <string>
+#include <vector>
 
-#include "algorithms/multicut/multicut_problem.h"
 #include "algorithms/multicut/multiterminal_cut.h"
-#include "data_structure/graph_access.h"
+#include "common/configuration.h"
+#include "common/definitions.h"
+#include "data_structure/mutable_graph.h"
 #include "io/graph_io.h"
 #include "tlx/cmdline_parser.hpp"
+#include "tlx/logger.hpp"
 #include "tools/random_functions.h"
-#include "tools/string.h"
 #include "tools/timer.h"
-
-#ifdef USE_TCMALLOC
-#include "gperftools/malloc_extension.h"
-#endif
 
 int main(int argn, char** argv) {
     MPI_Init(&argn, &argv);

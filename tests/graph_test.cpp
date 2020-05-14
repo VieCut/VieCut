@@ -9,10 +9,15 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <stdio.h>
+
+#include <memory>
+#include <string>
 #include <vector>
 
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
-#include "gtest/gtest.h"
+#include "gtest/gtest_pred_impl.h"
 #include "io/graph_io.h"
 #include "tlx/logger.hpp"
 

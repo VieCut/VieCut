@@ -9,9 +9,12 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <random>
-#include <type_traits>
+#include <stddef.h>
 
+#include <random>
+#include <vector>
+
+#include "common/definitions.h"
 #include "data_structure/priority_queues/bucket_pq.h"
 #include "data_structure/priority_queues/fifo_node_bucket_pq.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"
@@ -19,7 +22,6 @@
 #include "data_structure/priority_queues/priority_queue_interface.h"
 #include "data_structure/priority_queues/vecMaxNodeHeap.h"
 #include "gtest/gtest.h"
-#include "tlx/logger.hpp"
 
 template <typename T>
 class PQTest : public testing::Test { };

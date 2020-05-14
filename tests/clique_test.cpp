@@ -9,13 +9,18 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <stddef.h>
+
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <memory>
+#include <vector>
+
 #include "algorithms/misc/maximal_clique.h"
-#include "algorithms/multicut/multicut_problem.h"
-#include "common/configuration.h"
+#include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
-#include "gtest/gtest.h"
-#include "io/graph_io.h"
-#include "tools/random_functions.h"
+#include "gtest/gtest_pred_impl.h"
+#include "tlx/logger.hpp"
 
 TEST(CliqueCutTest, SingleClique) {
     mutableGraphPtr G = std::make_shared<mutable_graph>();

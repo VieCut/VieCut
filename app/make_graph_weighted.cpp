@@ -9,10 +9,24 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <stdlib.h>
+#include <time.h>
+
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 #include "common/configuration.h"
+#include "common/definitions.h"
+#include "data_structure/graph_access.h"
 #include "io/graph_io.h"
 #include "parallel/coarsening/contract_graph.h"
 #include "tlx/cmdline_parser.hpp"
+#include "tlx/logger.hpp"
 #include "tools/random_functions.h"
 
 int main(int argn, char** argv) {

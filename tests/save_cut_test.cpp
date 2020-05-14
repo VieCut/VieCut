@@ -10,6 +10,10 @@
  *****************************************************************************/
 
 #include <cstdio>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 #ifdef PARALLEL
 #include "algorithms/global_mincut/viecut.h"
@@ -24,10 +28,21 @@
 #include "algorithms/global_mincut/viecut.h"
 #endif
 
+#include "common/configuration.h"
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
 #include "gtest/gtest.h"
 #include "io/graph_io.h"
-#include "tlx/logger.hpp"
+
+template <class GraphPtr>
+class exact_parallel_minimum_cut;
+template <class GraphPtr>
+class viecut;
+class ks_minimum_cut;
+template <class GraphPtr>
+class matula_approx;
+template <class GraphPtr>
+class noi_minimum_cut;
 
 template <typename T>
 class SaveCutTest : public testing::Test { };

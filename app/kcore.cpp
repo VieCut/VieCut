@@ -9,22 +9,24 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <omp.h>
+#include <ext/alloc_traits.h>
+#include <stdlib.h>
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <iostream>
 #include <memory>
-#include <sstream>
+#include <string>
+#include <vector>
 
+#include "algorithms/global_mincut/minimum_cut.h"
 #include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "algorithms/misc/core_decomposition.h"
-#include "algorithms/misc/strongly_connected_components.h"
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
 #include "io/graph_io.h"
 #include "tlx/cmdline_parser.hpp"
-#include "tools/graph_extractor.h"
+#include "tlx/logger.hpp"
+#include "tools/timer.h"
 
 int main(int argn, char** argv) {
     static const bool debug = false;

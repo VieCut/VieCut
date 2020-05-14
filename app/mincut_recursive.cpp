@@ -9,27 +9,30 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <ext/alloc_traits.h>
+
 #include <algorithm>
-#include <cmath>
 #include <cstdio>
-#include <iostream>
 #include <memory>
-#include <sstream>
-#include <stdexcept>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #ifdef PARALLEL
 #include "parallel/algorithm/parallel_cactus.h"
 #else
 #include "algorithms/global_mincut/cactus/cactus_mincut.h"
 #endif
-#include "algorithms/global_mincut/viecut.h"
 #include "algorithms/misc/strongly_connected_components.h"
+#include "common/configuration.h"
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
+#include "data_structure/mutable_graph.h"
 #include "io/graph_io.h"
 #include "tlx/cmdline_parser.hpp"
 #include "tlx/logger.hpp"
 #include "tools/graph_extractor.h"
-#include "tools/macros_assertions.h"
 #include "tools/timer.h"
 
 int main(int argn, char** argv) {

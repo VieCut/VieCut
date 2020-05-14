@@ -10,10 +10,15 @@
  *****************************************************************************/
 
 #include <omp.h>
+#include <stddef.h>
+
+#include <algorithm>
+#include <memory>
 #include <random>
+#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
-#include "tlx/logger.hpp"
 
 #ifdef PARALLEL
 #include "parallel/data_structure/union_find.h"

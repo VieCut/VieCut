@@ -9,11 +9,14 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <type_traits>
+#include <stddef.h>
 
+#include <memory>
+
+#include "common/definitions.h"
 #include "data_structure/flow_graph.h"
 #include "data_structure/graph_access.h"
-#include "gtest/gtest.h"
+#include "gtest/gtest_pred_impl.h"
 #include "io/graph_io.h"
 
 TEST(FlowGraphTest, EmptyGraph) {

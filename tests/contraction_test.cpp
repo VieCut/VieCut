@@ -11,15 +11,20 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
 #ifdef PARALLEL
 #include "parallel/coarsening/contract_graph.h"
 #else
 #include "coarsening/contract_graph.h"
 #endif
+#include "common/definitions.h"
 #include "data_structure/graph_access.h"
-#include "gtest/gtest.h"
+#include "gtest/gtest_pred_impl.h"
 #include "io/graph_io.h"
-#include "tlx/logger.hpp"
 
 TEST(ContractionTest, NoContr) {
 #ifdef PARALLEL

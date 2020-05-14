@@ -9,12 +9,20 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <type_traits>
+#include <mpi.h>
+#include <stddef.h>
+
+#include <algorithm>
+#include <memory>
+#include <random>
+#include <vector>
 
 #include "algorithms/multicut/multiterminal_cut.h"
-#include "gperftools/malloc_extension.h"
+#include "common/configuration.h"
+#include "common/definitions.h"
+#include "data_structure/graph_access.h"
+#include "data_structure/mutable_graph.h"
 #include "gtest/gtest.h"
-#include "io/graph_io.h"
 
 class MultiterminalCutTest : public ::testing::Test {
  public:

@@ -9,7 +9,9 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <string>
 #include <type_traits>
+
 #ifdef PARALLEL
 #include "algorithms/global_mincut/viecut.h"
 #include "parallel/algorithm/exact_parallel_minimum_cut.h"
@@ -23,8 +25,25 @@
 #include "algorithms/global_mincut/stoer_wagner_minimum_cut.h"
 #include "algorithms/global_mincut/viecut.h"
 #endif
-#include "gtest/gtest.h"
+#include "common/definitions.h"
+#include "gtest/gtest_pred_impl.h"
 #include "io/graph_io.h"
+
+template <class GraphPtr>
+class exact_parallel_minimum_cut;
+template <class GraphPtr>
+class parallel_cactus;
+template <class GraphPtr>
+class viecut;
+class ks_minimum_cut;
+template <class GraphPtr>
+class cactus_mincut;
+template <class GraphPtr>
+class matula_approx;
+template <class GraphPtr>
+class noi_minimum_cut;
+template <class GraphPtr>
+class padberg_rinaldi;
 
 template <typename T>
 class MincutAlgoTest : public testing::Test { };

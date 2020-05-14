@@ -9,11 +9,17 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <stddef.h>
+
+#include <memory>
 #include <random>
-#include <type_traits>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "algorithms/flow/push_relabel.h"
-#include "data_structure/graph_access.h"
+#include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
 #include "gtest/gtest.h"
 #include "io/graph_io.h"

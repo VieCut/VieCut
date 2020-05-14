@@ -9,11 +9,19 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#include <stddef.h>
+
+#include <cstdint>
+#include <initializer_list>
+#include <memory>
 #include <random>
+#include <string>
 #include <vector>
 
+#include "common/definitions.h"
+#include "data_structure/graph_access.h"
 #include "data_structure/mutable_graph.h"
-#include "gtest/gtest.h"
+#include "gtest/gtest_pred_impl.h"
 #include "io/graph_io.h"
 #include "tlx/logger.hpp"
 

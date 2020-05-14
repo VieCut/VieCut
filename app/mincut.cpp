@@ -44,11 +44,8 @@ int main(int argn, char** argv) {
 #ifdef PARALLEL
     std::vector<std::string> procs;
     cmdl.add_stringlist('p', "proc", procs, "number of processes");
-    cmdl.add_param_string("algo", cfg->algorithm, "algorithm name");
-#else
-    cmdl.add_param_string("algo", cfg->algorithm, "algorithm name");
 #endif
-
+    cmdl.add_param_string("algo", cfg->algorithm, "algorithm name");
     cmdl.add_string('q', "pq", cfg->queue_type,
                     "name of priority queue implementation");
     cmdl.add_size_t('i', "iter", num_iterations, "number of iterations");

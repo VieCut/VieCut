@@ -180,6 +180,8 @@ struct multicut_problem {
             }
         }
 
+        g->finish_construction();
+
         if (gMapIndex < problem->graph->n()) {
             LOG1 << "Warning: Graph has more than 5000 vertices, only printing "
                  << gMapIndex << " out of " << problem->graph->n();

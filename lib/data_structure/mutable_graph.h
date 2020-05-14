@@ -746,6 +746,7 @@ class mutable_graph {
                 }
             }
         }
+        m_G->finish_construction();
         return m_G;
     }
 
@@ -796,6 +797,8 @@ class mutable_graph {
             G->setCurrentPosition(i, pos);
             G->addContainedVertex(pos, i);
         }
+
+        G->finish_construction();
 
         return G;
     }

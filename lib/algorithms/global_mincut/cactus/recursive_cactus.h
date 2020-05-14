@@ -266,6 +266,7 @@ class recursive_cactus {
                     }
                 }
             }
+            graph->finish_construction();
         } else {
             // find a node in G that is contracted
             // and one that is not contracted,
@@ -336,6 +337,7 @@ class recursive_cactus {
                 }
             }
         }
+        contract->finish_construction();
         for (NodeID n : contract->nodes()) {
             for (EdgeID e = contract->getUnweightedNodeDegree(n); e-- > 0; ) {
                 if (contract->getEdgeWeight(n, e) == 0) {
@@ -383,6 +385,7 @@ class recursive_cactus {
                 stcactus->setCurrentPosition(v, n);
             }
         }
+        stcactus->finish_construction();
         std::vector<std::vector<NodeID> > A;
         std::vector<NodeID> B;
         std::vector<bool> order;

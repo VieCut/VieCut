@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -24,6 +25,7 @@
 #include <ostream>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "common/definitions.h"
@@ -60,7 +62,12 @@ class graph_io {
             NodeID source = fast_atoi(line, &line_ptr) - 1;
             NodeID target = fast_atoi(line, &line_ptr) - 1;
             EdgeWeight wgt = 1;
-            uint64_t timestamp = fast_atoi(line, &line_ptr) - 1;
+            uint64_t timestamp = fast_atoi(line, &line_ptr);
+
+            if (line_ptr < line.size()) {
+                wgt = timestamp;
+                timestamp = fast_atoi(line, &line_ptr);
+            }
             edges.emplace_back(source, target, wgt, timestamp);
 
             NodeID largerVtx = std::max(source, target);
@@ -72,6 +79,11 @@ class graph_io {
                 break;
             }
         }
+
+        std::sort(edges.begin(), edges.end(),
+                  [](const auto& e1, const auto& e2) {
+                      return std::get<3>(e1) < std::get<3>(e2);
+                  });
 
         return std::pair(numVtxs, edges);
     }

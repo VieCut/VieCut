@@ -338,13 +338,6 @@ class recursive_cactus {
             }
         }
         contract->finish_construction();
-        for (NodeID n : contract->nodes()) {
-            for (EdgeID e = contract->getUnweightedNodeDegree(n); e-- > 0; ) {
-                if (contract->getEdgeWeight(n, e) == 0) {
-                    contract->deleteEdge(n, e);
-                }
-            }
-        }
         auto stcactus = std::make_shared<mutable_graph>();
         NodeID num_vertices = contract->n();
         stcactus->start_construction(num_vertices);

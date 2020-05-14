@@ -38,8 +38,5 @@ int main(int argn, char** argv) {
 
     cfg->save_cut = true;
 
-    //TODO(anoe): make this actually do something :)
-
-    
-
+    // TODO(anoe): make this actually do something :)
 }

@@ -9,24 +9,26 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-#include <omp.h>
-
-#include <algorithm>
-#include <cmath>
-#include <cstdlib>
-#include <iostream>
-#include <memory>
-#include <sstream>
-
-#include "algorithms/global_mincut/algorithms.h"
-#include "algorithms/global_mincut/minimum_cut.h"
-#include "algorithms/global_mincut/minimum_cut_helpers.h"
-#include "data_structure/graph_access.h"
-#include "io/graph_io.h"
-#include "tlx/cmdline_parser.hpp"
-#include "tools/random_functions.h"
-#include "tools/string.h"
-#include "tools/timer.h"
+#include "algorithms/global_mincut/algorithms.h"   // for selectMincutAlgorithm
+#include "algorithms/global_mincut/minimum_cut.h"  // for minimum_cut
+#include "common/configuration.h"                  // for configuration
+#include "common/definitions.h"                    // for EdgeID, EdgeWeight
+#include "data_structure/graph_access.h"           // for iterator
+#include "data_structure/mutable_graph.h"          // for mutable_graph
+#include "io/graph_io.h"                           // for graph_io
+#include "tlx/cmdline_parser.hpp"                  // for CmdlineParser
+#include "tlx/logger.hpp"                          // for LOG1, Logger, LOG
+#include "tools/random_functions.h"                // for random_functions
+#include "tools/string.h"                          // for string
+#include "tools/timer.h"                           // for timer
+#include <algorithm>                               // for max
+#include <cstdlib>                                 // for exit, size_t
+#include <ext/alloc_traits.h>                      // for __alloc_traits<>::...
+#include <iostream>                                // for operator<<, basic_...
+#include <memory>                                  // for __shared_ptr_access
+#include <omp.h>                                   // for omp_set_num_threads
+#include <string>                                  // for operator<<, string
+#include <vector>                                  // for vector
 
 // typedef graph_access graph_type;
 typedef mutable_graph graph_type;

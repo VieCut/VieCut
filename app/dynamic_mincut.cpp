@@ -81,4 +81,15 @@ int main(int argn, char** argv) {
         EdgeWeight rW = random_functions::nextInt(0, 100);
         dynmc.addEdge(rS, rT, rW);
     }
+
+    for (size_t i = 0; i < 1000; ++i) {
+        mutableGraphPtr mgp = dynmc.getOriginalGraph();
+        NodeID rS = random_functions::nextInt(0, mgp->n() - 1);
+        if (mgp->get_first_invalid_edge(rS) == 0) {
+            continue;
+        }
+        auto e = random_functions::nextInt(
+            0, mgp->get_first_invalid_edge(rS) - 1);
+        dynmc.removeEdge(rS, mgp->getEdgeTarget(rS, e));
+    }
 }

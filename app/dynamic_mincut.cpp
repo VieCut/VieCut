@@ -23,6 +23,7 @@
 #include "algorithms/global_mincut/cactus/cactus_mincut.h"
 #endif
 
+#include "algorithms/global_mincut/dynamic/dynamic_mincut.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
@@ -71,12 +72,13 @@ int main(int argn, char** argv) {
     }
     G->finish_construction();
 
-    auto [cut, out_cactus, balanced] = cactus.findAllMincuts(G);
+    dynamic_mincut dynmc;
+    dynmc.initialize(G);
 
-    LOG1 << "cut is " << cut;
-    LOG1 << "cactus: " << out_cactus;
-
-    for (auto v : out_cactus->nodes()) {
-        LOG1 << out_cactus->containedVertices(v);
+    for (size_t i = 0; i < 1000; ++i) {
+        NodeID rS = random_functions::nextInt(0, G->n() - 1);
+        NodeID rT = random_functions::nextInt(0, G->n() - 1);
+        EdgeWeight rW = random_functions::nextInt(0, 100);
+        dynmc.addEdge(rS, rT, rW);
     }
 }

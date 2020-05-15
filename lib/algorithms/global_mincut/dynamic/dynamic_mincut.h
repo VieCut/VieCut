@@ -68,7 +68,7 @@ class dynamic_mincut {
                                                     tCactusPos, current_cut);
                 if (vtxset.size() == out_cactus->n()) {
                     LOG1 << "full recompute";
-                    auto [cut, outg, bal] = cactus.findAllMincuts(original_graph);
+                    auto [cut, outg, b] = cactus.findAllMincuts(original_graph);
                     out_cactus = outg;
                     current_cut = cut;
                 } else {

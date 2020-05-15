@@ -9,7 +9,11 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
+#pragma once
+
 #include <queue>
+#include <tuple>
+#include <unordered_set>
 #include <vector>
 
 #include "common/definitions.h"

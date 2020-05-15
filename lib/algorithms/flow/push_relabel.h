@@ -30,6 +30,7 @@ const int WORK_OP_RELABEL = 9;
 const double GLOBAL_UPDATE_FRQ = 0.51;
 const int WORK_NODE_TO_EDGES = 4;
 
+template <bool limited = false>
 class push_relabel {
  public:
     push_relabel() { }
@@ -57,7 +58,6 @@ class push_relabel {
         m_count[G->number_of_nodes()] = 1;
 
         NodeID flow_source = sources[source];
-
         m_distance[flow_source] = G->number_of_nodes();
 
         for (NodeID n : sources) {
@@ -133,6 +133,13 @@ class push_relabel {
 
         m_excess[source] -= amount;
         m_excess[target] += amount;
+
+        if constexpr (limited) {
+            if (target == m_sink && m_excess[target] >= m_limit) {
+                m_limitreached = true;
+                return;
+            }
+        }
 
         enqueue(target);
     }
@@ -292,7 +299,8 @@ class push_relabel {
         std::vector<NodeID> sources,
         NodeID curr_source,
         bool compute_source_set,
-        bool parallel_flows = false) {
+        bool parallel_flows = false,
+        FlowType limit = 0) {
         for (NodeID s : sources) {
             if (s >= G->number_of_nodes()) {
                 LOG1 << "source " << s << " is too large (only "
@@ -325,6 +333,16 @@ class push_relabel {
         m_gaps = 0;
         m_pushes = 0;
         m_global_updates = 1;
+        m_limit = limit;
+        m_limitreached = false;
+
+        if constexpr (limited) {
+            if (sources.size() != 2) {
+                LOG1 << "Limited push_relabel only implemented for single sink";
+            }
+            m_sink = curr_source == 1 ? sources[0] : sources[1];
+        }
+
         NodeID src = sources[curr_source];
 
         init(G, sources, curr_source);
@@ -332,12 +350,19 @@ class push_relabel {
 
         int work_todo = WORK_NODE_TO_EDGES * G->number_of_nodes()
                         + G->number_of_edges();
+
         // main loop
         while (!m_Q.empty()) {
             NodeID v = m_Q.front();
             m_Q.pop();
             m_active[v] = false;
             discharge(v);
+
+            if constexpr (limited) {
+                if (m_limitreached) {
+                    return std::make_pair(limit, std::vector<NodeID>{ });
+                }
+            }
 
             if (m_work > GLOBAL_UPDATE_FRQ * work_todo) {
                 global_relabeling(sources, curr_source);
@@ -381,6 +406,9 @@ class push_relabel {
     int m_global_updates;
     int m_pushes;
     int m_work;
+    NodeID m_sink;
+    FlowType m_limit;
+    bool m_limitreached;
     mutableGraphPtr m_G;
     static const bool extended_logs = false;
     bool m_parallel_flows;

@@ -43,10 +43,13 @@ class dynamic_mincut {
     ~dynamic_mincut() { }
 
     EdgeWeight initialize(mutableGraphPtr graph) {
+        timer t;
         auto [cut, outgraph, balanced] = cactus.findAllMincuts(graph);
         original_graph = graph;
         out_cactus = outgraph;
         current_cut = cut;
+        LOGC(verbose) << "initialize t " << t.elapsed() << " cut " << cut
+                      << " cactus_vtcs " << outgraph->n();
         return cut;
     }
 
@@ -55,7 +58,6 @@ class dynamic_mincut {
         NodeID sCactusPos = out_cactus->getCurrentPosition(s);
         NodeID tCactusPos = out_cactus->getCurrentPosition(t);
         original_graph->new_edge_order(s, t, w);
-
         if (sCactusPos != tCactusPos) {
             if (current_cut == 0) {
                 if (out_cactus->n() == 2) {

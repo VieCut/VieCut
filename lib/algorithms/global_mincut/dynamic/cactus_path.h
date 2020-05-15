@@ -47,7 +47,7 @@ class cactus_path {
                     std::unordered_set<NodeID> pathST;
                     pathST.insert(tgt);
                     pathST.insert(n);
-                    NodeID nToS = n;
+                    NodeID nToS = myRoot == s ? n : tgt;
                     bool onTree = std::get<2>(parents[n]);
                     while (nToS != s) {
                         nToS = std::get<0>(parents[nToS]);
@@ -55,7 +55,7 @@ class cactus_path {
                             pathST.insert(nToS);
                         onTree = std::get<2>(parents[nToS]);
                     }
-                    NodeID tgtToT = tgt;
+                    NodeID tgtToT = myRoot == s ? tgt : n;
                     onTree = std::get<2>(parents[tgt]);
                     while (tgtToT != t) {
                         tgtToT = std::get<0>(parents[tgtToT]);

@@ -28,8 +28,9 @@ class minimum_cut_helpers {
     // Get index of minimum degree vertex
     static size_t minimumIndex(GraphPtr G) {
         size_t minimum_index = 0;
+        EdgeWeight mindeg = G->getMinDegree();
         for (NodeID n : G->nodes()) {
-            if (G->getWeightedNodeDegree(n) == G->getMinDegree()) {
+            if (G->getWeightedNodeDegree(n) == mindeg) {
                 minimum_index = n;
                 break;
             }
@@ -44,7 +45,6 @@ class minimum_cut_helpers {
         const std::vector<GraphPtr>& graphs) {
         if (configuration::getConfig()->save_cut) {
             size_t minimum_index = minimumIndex(graphs.back());
-
             for (NodeID idx : graphs[0]->nodes()) {
                 if (idx == minimum_index) {
                     graphs[0]->setNodeInCut(idx, true);

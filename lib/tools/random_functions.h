@@ -171,6 +171,11 @@ class random_functions {
         return A(m_mt);
     }
 
+    static double nextDouble(double lb, double rb) {
+        std::uniform_real_distribution<double> A(lb, rb);
+        return A(m_mt);
+    }
+
     static uint32_t next() {
         return m_mt();
     }

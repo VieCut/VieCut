@@ -64,9 +64,16 @@ int main(int argn, char** argv) {
 
     auto [numV, tempEdges] = graph_io::readTemporalGraph(cfg->graph_filename);
     mutableGraphPtr G = std::make_shared<mutable_graph>();
+    std::vector<std::tuple<NodeID, NodeID, EdgeWeight> > edgesToIntroduce;
+    double limit = 0.99;
     G->start_construction(numV);
     for (auto [a, b, c, d] : tempEdges) {
-        G->new_edge_order(a, b, c);
+        double r = random_functions::nextDouble(0, 1);
+        if (r > limit) {
+            edgesToIntroduce.emplace_back(a, b, c);
+        } else {
+            G->new_edge_order(a, b, c);
+        }
     }
     G->finish_construction();
 
@@ -75,12 +82,16 @@ int main(int argn, char** argv) {
     dynamic_mincut dynmc;
     dynmc.initialize(G);
 
-    for (size_t i = 0; i < 1000; ++i) {
+    for (auto [s, t, w] : edgesToIntroduce) {
+        dynmc.addEdge(s, t, w);
+    }
+
+    /*for (size_t i = 0; i < 1000; ++i) {
         NodeID rS = random_functions::nextInt(0, G->n() - 1);
         NodeID rT = random_functions::nextInt(0, G->n() - 1);
         EdgeWeight rW = random_functions::nextInt(0, 100);
         dynmc.addEdge(rS, rT, rW);
-    }
+    }*/
 
     for (size_t i = 0; i < 1000; ++i) {
         mutableGraphPtr mgp = dynmc.getOriginalGraph();

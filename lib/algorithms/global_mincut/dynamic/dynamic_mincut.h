@@ -104,6 +104,8 @@ class dynamic_mincut {
         }
 
         EdgeWeight wgt = original_graph->getEdgeWeight(s, eToT);
+        NodeID sCactusPos = out_cactus->getCurrentPosition(s);
+        NodeID tCactusPos = out_cactus->getCurrentPosition(t);
 
         original_graph->deleteEdge(s, eToT);
 
@@ -111,9 +113,6 @@ class dynamic_mincut {
             LOGC(verbose) << "edge has zero weight, current cut remains same";
             return current_cut;
         }
-
-        NodeID sCactusPos = out_cactus->getCurrentPosition(s);
-        NodeID tCactusPos = out_cactus->getCurrentPosition(t);
 
         if (sCactusPos != tCactusPos) {
             LOGC(verbose) << "previously mincut between vertices, recompute";

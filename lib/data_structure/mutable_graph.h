@@ -30,25 +30,29 @@ struct RevEdge {
     EdgeWeight weight;
     EdgeID     reverse_edge;
     FlowType   flow;
+    size_t     problem_id;
 
     RevEdge() { }
 
-    explicit RevEdge(NodeID p_target) : target(p_target), weight(1), flow(0) { }
+    explicit RevEdge(NodeID p_target)
+        : target(p_target), weight(1), flow(0), problem_id(0) { }
 
     RevEdge(NodeID p_target, EdgeWeight p_wgt)
-        : target(p_target), weight(p_wgt), flow(0) { }
+        : target(p_target), weight(p_wgt), flow(0), problem_id(0) { }
 
     RevEdge(NodeID p_target, EdgeWeight p_wgt, EdgeID p_rev)
         : target(p_target),
           weight(p_wgt),
           reverse_edge(p_rev),
-          flow(0) { }
+          flow(0),
+          problem_id(0) { }
 
     RevEdge(NodeID p_target, EdgeWeight p_wgt, EdgeID p_rev, FlowType p_flow)
         : target(p_target),
           weight(p_wgt),
           reverse_edge(p_rev),
-          flow(p_flow) { }
+          flow(p_flow),
+          problem_id(0) { }
 };
 
 class mutable_graph {
@@ -176,11 +180,22 @@ class mutable_graph {
         return vertices[e.target][e.reverse_edge].target;
     }
 
-    void setEdgeFlow(NodeID node, EdgeID edge, FlowType flow) {
+    void setEdgeFlow(NodeID node, EdgeID edge, FlowType flow, size_t f_prob) {
         vertices[node][edge].flow = flow;
+        vertices[node][edge].problem_id = f_prob;
     }
 
-    FlowType getEdgeFlow(NodeID node, EdgeID edge) const {
+    FlowType getEdgeFlow(NodeID node, EdgeID edge, size_t f_problem) {
+        if (vertices[node][edge].problem_id == f_problem) {
+            return vertices[node][edge].flow;
+        } else {
+            vertices[node][edge].flow = 0;
+            vertices[node][edge].problem_id = f_problem;
+            return 0;
+        }
+    }
+
+    FlowType getEdgeFlow(NodeID node, EdgeID edge) {
         return vertices[node][edge].flow;
     }
 
@@ -813,12 +828,13 @@ class mutable_graph {
 
         for (NodeID n : nodes()) {
             serial[next++] = static_cast<uint64_t>(num_edges + n);
-            for (const auto& [t, w, r, f] : vertices[n]) {
+            for (const auto& [t, w, r, f, l] : vertices[n]) {
                 // I am deeply sorry for this ugly code, but structured bindings
                 // seem to not work in combination with maybe_unused to suppress
                 // unintended unused warnings.
                 (void)r;
                 (void)f;
+                (void)l;
                 if (t > n) {
                     serial[next++] = static_cast<uint64_t>(t);
                     serial[next++] = static_cast<uint64_t>(w);

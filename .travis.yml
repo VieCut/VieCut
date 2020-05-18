@@ -99,6 +99,7 @@ script:
 
 notifications:
   email:
+    recipients: alexander.noe@univie.ac.at
     on_success: change
     on_failure: always
 

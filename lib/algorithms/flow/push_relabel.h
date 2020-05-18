@@ -24,6 +24,7 @@
 #include "algorithms/misc/graph_algorithms.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
+#include "tools/random_functions.h"
 #include "tools/timer.h"
 
 const int WORK_OP_RELABEL = 9;
@@ -270,7 +271,7 @@ class push_relabel {
         if (m_parallel_flows) {
             edge_flow[n][e] = f;
         } else {
-            m_G->setEdgeFlow(n, e, f);
+            m_G->setEdgeFlow(n, e, f, m_problemid);
         }
     }
 
@@ -278,7 +279,7 @@ class push_relabel {
         if (m_parallel_flows) {
             return edge_flow[n][e];
         } else {
-            return m_G->getEdgeFlow(n, e);
+            return m_G->getEdgeFlow(n, e, m_problemid);
         }
     }
 
@@ -300,7 +301,9 @@ class push_relabel {
         NodeID curr_source,
         bool compute_source_set,
         bool parallel_flows = false,
-        FlowType limit = 0) {
+        FlowType limit = 0,
+        size_t problem_id = random_functions::nextInt(0, UNDEFINED_NODE)) {
+        timer t;
         for (NodeID s : sources) {
             if (s >= G->number_of_nodes()) {
                 LOG1 << "source " << s << " is too large (only "
@@ -318,12 +321,6 @@ class push_relabel {
             for (NodeID n : G->nodes()) {
                 edge_flow.emplace_back(G->get_first_invalid_edge(n), 0);
             }
-        } else {
-            for (NodeID n : G->nodes()) {
-                for (EdgeID e : G->edges_of(n)) {
-                    G->setEdgeFlow(n, e, 0);
-                }
-            }
         }
 
         m_parallel_flows = parallel_flows;
@@ -335,6 +332,7 @@ class push_relabel {
         m_global_updates = 1;
         m_limit = limit;
         m_limitreached = false;
+        m_problemid = problem_id;
 
         if constexpr (limited) {
             if (sources.size() != 2) {
@@ -346,7 +344,9 @@ class push_relabel {
         NodeID src = sources[curr_source];
 
         init(G, sources, curr_source);
-        global_relabeling(sources, curr_source);
+        if constexpr (!limited) {
+            global_relabeling(sources, curr_source);
+        }
 
         int work_todo = WORK_NODE_TO_EDGES * G->number_of_nodes()
                         + G->number_of_edges();
@@ -409,6 +409,7 @@ class push_relabel {
     NodeID m_sink;
     FlowType m_limit;
     bool m_limitreached;
+    size_t m_problemid;
     mutableGraphPtr m_G;
     static const bool extended_logs = false;
     bool m_parallel_flows;

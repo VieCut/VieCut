@@ -62,16 +62,15 @@ int main(int argn, char** argv) {
 
     cfg->save_cut = true;
 
-    /*auto [numV, tempEdges] = graph_io::readTemporalGraph(cfg->graph_filename);
-    LOG << "Creating graph with " << numV << " vertices!";
+    auto [numV, tempEdges] = graph_io::readTemporalGraph(cfg->graph_filename);
     mutableGraphPtr G = std::make_shared<mutable_graph>();
     G->start_construction(numV);
     for (auto [a, b, c, d] : tempEdges) {
         G->new_edge_order(a, b, c);
     }
-    G->finish_construction();*/
+    G->finish_construction();
 
-    auto G = graph_io::readGraphWeighted<mutable_graph>(cfg->graph_filename);
+    // auto G = graph_io::readGraphWeighted<mutable_graph>(cfg->graph_filename);
 
     dynamic_mincut dynmc;
     dynmc.initialize(G);

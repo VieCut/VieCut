@@ -117,6 +117,7 @@ bal_mpi(multiterminal_cut)
 bal_seq(largest_cc)
 bal_seq(make_graph_weighted)
 bal_seq(gnp_torus)
+bal_seq(temporal_largest_cc)
 
 message(STATUS "CXX Flags ${CMAKE_CXX_FLAGS}")
 message(STATUS "Linker flags ${CMAKE_EXE_LINKER_FLAGS}")

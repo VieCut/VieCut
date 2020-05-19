@@ -29,6 +29,7 @@ class dynamic_mincut {
     mutableGraphPtr original_graph;
     mutableGraphPtr out_cactus;
     EdgeWeight current_cut;
+    size_t flow_problem_id;
 #ifdef PARALLEL
     parallel_cactus<mutableGraphPtr> cactus;
 #else
@@ -48,6 +49,7 @@ class dynamic_mincut {
         original_graph = graph;
         out_cactus = outgraph;
         current_cut = cut;
+        flow_problem_id = random_functions::next();
         LOGC(verbose) << "initialize t " << t.elapsed() << " cut " << cut
                       << " cactus_vtcs " << outgraph->n();
         return cut;
@@ -122,7 +124,8 @@ class dynamic_mincut {
         } else {
             push_relabel<true> pr;
             auto [flow, sourceset] = pr.solve_max_flow_min_cut(
-                original_graph, { 0, 1 }, 0, false, false, current_cut);
+                original_graph, { 0, 1 }, 0, false, false,
+                current_cut, flow_problem_id++);
             if (static_cast<EdgeWeight>(flow) >= current_cut) {
                 LOGC(verbose) << "cut not changed!";
             } else {

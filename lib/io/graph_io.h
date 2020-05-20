@@ -40,15 +40,43 @@ class graph_io {
     virtual ~graph_io() { }
 
     static std::pair<
-        NodeID, std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> > >
-    readTemporalGraph(std::string file) {
-        std::vector<std::tuple<NodeID, NodeID, EdgeWeight, uint64_t> > edges;
+        NodeID, std::vector<std::tuple<NodeID, NodeID, int64_t, uint64_t> > >
+    readDimacs(std::string file) {
+        std::vector<std::tuple<NodeID, NodeID, int64_t, uint64_t> > edges;
         std::string line;
         std::ifstream instream(file.c_str());
         std::getline(instream, line);
+        size_t line_ptr = 2;
+        NodeID numV = fast_atoi(line, &line_ptr);
+
+        uint64_t counter = 1;
+        while (std::getline(instream, line)) {
+            line_ptr = 2;
+            NodeID source = fast_atoi(line, &line_ptr) - 1;
+            NodeID target = fast_atoi(line, &line_ptr) - 1;
+            if (target > source) {
+                edges.emplace_back(source, target, 1, counter++);
+            }
+
+            if (instream.eof()) {
+                break;
+            }
+        }
+        return std::make_pair(numV, edges);
+    }
+
+    static std::pair<
+        NodeID, std::vector<std::tuple<NodeID, NodeID, int64_t, uint64_t> > >
+    readTemporalGraph(std::string file) {
+        std::vector<std::tuple<NodeID, NodeID, int64_t, uint64_t> > edges;
+        std::string line;
+        std::ifstream instream(file.c_str());
         NodeID numVtxs = 0;
 
         while (std::getline(instream, line)) {
+            if (line[0] == 'p') {
+                return readDimacs(file);
+            }
             if (line[0] == '%') {     // a comment in the file
                 continue;
             }
@@ -61,13 +89,26 @@ class graph_io {
 
             NodeID source = fast_atoi(line, &line_ptr) - 1;
             NodeID target = fast_atoi(line, &line_ptr) - 1;
-            EdgeWeight wgt = 1;
-            uint64_t timestamp = fast_atoi(line, &line_ptr);
+            int64_t wgt;
+            uint64_t timestamp;
 
-            if (line_ptr < line.size()) {
-                wgt = timestamp;
+            if (line[line_ptr] == '+' || line[line_ptr] == '-') {
+                bool isNegative = line[line_ptr] == '-';
+                line_ptr++;
+                wgt = fast_atoi(line, &line_ptr);
+                if (isNegative) {
+                    wgt = (-1) * wgt;
+                }
                 timestamp = fast_atoi(line, &line_ptr);
+            } else {
+                wgt = 1;
+                timestamp = fast_atoi(line, &line_ptr);
+                if (line_ptr < line.size()) {
+                    wgt = timestamp;
+                    timestamp = fast_atoi(line, &line_ptr);
+                }
             }
+
             edges.emplace_back(source, target, wgt, timestamp);
 
             NodeID largerVtx = std::max(source, target);

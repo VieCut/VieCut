@@ -84,11 +84,6 @@ int main(int argn, char** argv) {
     GraphPtr G = graph_io::readGraphWeighted<graph_type>(
         configuration::getConfig()->graph_filename);
 
-    if (G->getMinDegree() == 0) {
-        LOG1 << "empty nodes are bad, exiting";
-        exit(1);
-    }
-
     LOG1 << "io time: " << t.elapsed();
     // ***************************** perform cut *****************************
 #ifdef PARALLEL

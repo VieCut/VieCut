@@ -64,17 +64,7 @@ int main(int argn, char** argv) {
 
     auto [numV, tempEdges] = graph_io::readTemporalGraph(cfg->graph_filename);
     mutableGraphPtr G = std::make_shared<mutable_graph>();
-    std::vector<std::tuple<NodeID, NodeID, EdgeWeight> > edgesToIntroduce;
-    double limit = 0.99;
     G->start_construction(numV);
-    for (auto [a, b, c, d] : tempEdges) {
-        double r = random_functions::nextDouble(0, 1);
-        if (r > limit) {
-            edgesToIntroduce.emplace_back(a, b, c);
-        } else {
-            G->new_edge_order(a, b, c);
-        }
-    }
     G->finish_construction();
 
     // auto G = graph_io::readGraphWeighted<mutable_graph>(cfg->graph_filename);
@@ -82,25 +72,17 @@ int main(int argn, char** argv) {
     dynamic_mincut dynmc;
     dynmc.initialize(G);
 
-    for (auto [s, t, w] : edgesToIntroduce) {
-        dynmc.addEdge(s, t, w);
-    }
-
-    /*for (size_t i = 0; i < 1000; ++i) {
-        NodeID rS = random_functions::nextInt(0, G->n() - 1);
-        NodeID rT = random_functions::nextInt(0, G->n() - 1);
-        EdgeWeight rW = random_functions::nextInt(0, 100);
-        dynmc.addEdge(rS, rT, rW);
-    }*/
-
-    for (size_t i = 0; i < 1000; ++i) {
-        mutableGraphPtr mgp = dynmc.getOriginalGraph();
-        NodeID rS = random_functions::nextInt(0, mgp->n() - 1);
-        if (mgp->get_first_invalid_edge(rS) == 0) {
-            continue;
+    size_t ctr = 0;
+    timer t;
+    for (auto [s, t, w, timestamp] : tempEdges) {
+        LOG1 << ctr++ << " of " << tempEdges.size();
+        if (w > 0) {
+            dynmc.addEdge(s, t, w);
+        } else {
+            dynmc.removeEdge(s, t);
         }
-        auto e = random_functions::nextInt(
-            0, mgp->get_first_invalid_edge(rS) - 1);
-        dynmc.removeEdge(rS, mgp->getEdgeTarget(rS, e));
     }
+    LOG1 << t.elapsed();
+    mutableGraphPtr mgp = dynmc.getOriginalGraph();
+    graph_io::writeGraphWeighted(mgp->to_graph_access(), "output.graph");
 }

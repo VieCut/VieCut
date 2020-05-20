@@ -106,17 +106,20 @@ else()
 set(LIBS ${EXTLIBS} ${Tcmalloc_LIBRARIES} ${GUROBI_LIBRARIES})
 endif()
 
+build_and_link(balanced_small_cut)
 build_and_link(dynamic_mincut)
 build_and_link(kcore)
+build_and_link(mincut)
 build_and_link(mincut_contract)
 build_and_link(mincut_heavy)
 build_and_link(mincut_recursive)
-build_and_link(mincut)
-build_and_link(balanced_small_cut)
+
 bal_mpi(multiterminal_cut)
+
+bal_seq(create_augment_edges)
+bal_seq(gnp_torus)
 bal_seq(largest_cc)
 bal_seq(make_graph_weighted)
-bal_seq(gnp_torus)
 bal_seq(temporal_largest_cc)
 
 message(STATUS "CXX Flags ${CMAKE_CXX_FLAGS}")

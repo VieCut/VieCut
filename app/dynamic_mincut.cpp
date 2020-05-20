@@ -35,14 +35,12 @@
 
 int main(int argn, char** argv) {
     tlx::CmdlineParser cmdl;
-    size_t num_iterations = 1;
     auto cfg = configuration::getConfig();
     cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
 #ifdef PARALLEL
     size_t procs = 1;
     cmdl.add_size_t('p', "proc", procs, "number of processes");
 #endif
-    cmdl.add_size_t('i', "iter", num_iterations, "number of iterations");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
     cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
 

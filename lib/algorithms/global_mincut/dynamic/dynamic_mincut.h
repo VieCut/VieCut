@@ -116,6 +116,11 @@ class dynamic_mincut {
             return current_cut;
         }
 
+        if (current_cut == 0) {
+            LOGC(verbose) << "previously multiple CCs already, cut remains 0";
+            return current_cut;
+        }
+
         if (sCactusPos != tCactusPos) {
             LOGC(verbose) << "previously mincut between vertices, recompute";
             auto [cut, outg, b] = cactus.findAllMincuts(original_graph);

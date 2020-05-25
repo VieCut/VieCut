@@ -304,6 +304,10 @@ class mutable_graph {
         return vertices[node][edge].weight;
     }
 
+    size_t numContainedVertices(NodeID node) const {
+        return contained_in_this[node].size();
+    }
+
     std::vector<NodeID> containedVertices(NodeID node) const {
         return contained_in_this[node];
     }

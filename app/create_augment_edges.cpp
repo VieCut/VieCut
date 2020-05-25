@@ -9,7 +9,6 @@
  * Published under the MIT license in the LICENSE file.
  *****************************************************************************/
 
-
 #include "algorithms/global_mincut/dynamic/dynamic_mincut.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
@@ -24,6 +23,7 @@ int main(int argn, char** argv) {
     tlx::CmdlineParser cmdl;
     auto cfg = configuration::getConfig();
     cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
+
     size_t insert_edges = 0;
     size_t delete_edges = 0;
 #ifdef PARALLEL
@@ -38,14 +38,65 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
+    cfg->save_cut = true;
+
+    auto output = cfg->graph_filename + "." + std::to_string(insert_edges)
+                  + "." + std::to_string(delete_edges);
+
+    std::ofstream f(output, std::ofstream::trunc);
+
     if (delete_edges > insert_edges) {
         LOG1 << "Error: Trying to delete more edges that were inserted!";
         exit(1);
     }
 
-    
-    // TODO(anoe): run cactus algorithm, find set of edges that augment
-    // connectivity, repeat until number of edges is reached
+    auto G = graph_io::readGraphWeighted<mutable_graph>(cfg->graph_filename);
 
+    dynamic_mincut dynmc;
+    dynmc.initialize(G);
 
+    for (size_t ins = 0; ins < insert_edges; ++ins) {
+        auto curr = dynmc.getCurrentCactus();
+        auto original_graph = dynmc.getOriginalGraph();
+        NodeID s = UNDEFINED_NODE;
+        NodeID t = UNDEFINED_NODE;
+
+        while (s == UNDEFINED_NODE) {
+            NodeID r = random_functions::nextInt(0, curr->n() - 1);
+            NodeID size = curr->numContainedVertices(r);
+            if (size > 0) {
+                NodeID r2 = random_functions::nextInt(0, size - 1);
+                s = curr->containedVertices(r)[r2];
+            }
+        }
+
+        while (t == UNDEFINED_NODE) {
+            NodeID r = random_functions::nextInt(0, curr->n() - 1);
+            NodeID size = curr->containedVertices(r).size();
+            if (size > 0) {
+                NodeID r2 = random_functions::nextInt(0, size - 1);
+                NodeID preliminary_t = curr->containedVertices(r)[r2];
+                bool neighbors = false;
+                for (EdgeID e : original_graph->edges_of(s)) {
+                    // only create edge if it doesn't exist yet
+                    NodeID tgt = original_graph->getEdgeTarget(s, e);
+                    if (tgt == preliminary_t) {
+                        neighbors = true;
+                        break;
+                    }
+                }
+
+                if (!neighbors) {
+                    t = preliminary_t;
+                }
+            }
+        }
+        LOG1 << "adding edge from " << s << " to " << t;
+
+        f << s << " " << t << " +1\n";
+        dynmc.addEdge(s, t, 1);
+    }
+
+    //todo(anoe): deletes (intermingle)
+    f.close();
 }

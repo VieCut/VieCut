@@ -147,4 +147,8 @@ class dynamic_mincut {
     mutableGraphPtr getOriginalGraph() {
         return original_graph;
     }
+
+    mutableGraphPtr getCurrentCactus() {
+        return out_cactus;
+    }
 };

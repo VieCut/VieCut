@@ -55,6 +55,7 @@ int main(int argn, char** argv) {
     dynamic_mincut dynmc;
     dynmc.initialize(G);
     std::vector<std::pair<NodeID, NodeID> > insEdges;
+    size_t index = 0;
 
     for (size_t ins = 0; ins < insert_edges; ++ins) {
         auto curr = dynmc.getCurrentCactus();
@@ -95,7 +96,8 @@ int main(int argn, char** argv) {
             }
         }
 
-        f << s << " " << t << " +1\n";
+        // graph format starts at 1, we start at 0
+        f << (s + 1) << " " << (t + 1) << " +1 " << index++ << "\n";
         dynmc.addEdge(s, t, 1);
         insEdges.emplace_back(s, t);
     }
@@ -108,7 +110,8 @@ int main(int argn, char** argv) {
             del++;
             alreadyDeleted[r] = true;
             auto [s, t] = insEdges[r];
-            f << s << " " << t << " -1\n";
+            // graph format starts at 1, we start at 0
+            f << (s + 1) << " " << (t + 1) << " -1 " << index++ << "\n";
         }
     }
     f.close();

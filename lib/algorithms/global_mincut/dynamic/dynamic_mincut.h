@@ -81,13 +81,76 @@ class dynamic_mincut {
                     current_cut = cut;
                 } else {
                     LOGC(verbose) << "contract set of size " << vtxset.size();
-                    out_cactus->contractVertexSet(vtxset);
+                    contractVertexSet(vtxset);
                 }
             }
         }
         LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut
                       << " vtcs_in_cactus " << out_cactus->n();
         return current_cut;
+    }
+
+    void contractVertexSet(const std::unordered_set<NodeID>& vtxset) {
+        // if one vertex has high degree and all others have low, it is faster
+        // to explicitly contract others into this high degree vertex instead of
+        // standard set contraction (also check that no vertex is empty so we
+        // have handles on the vertices)
+        bool alternativeContract = true;
+
+        NodeID high_degree = UNDEFINED_NODE;
+        size_t numNonlow = 0;
+
+        for (auto v : vtxset) {
+            if (out_cactus->numContainedVertices(v) == 0) {
+                alternativeContract = false;
+                break;
+            }
+            if (out_cactus->getUnweightedNodeDegree(v) > 100) {
+                if (high_degree != UNDEFINED_NODE) {
+                    alternativeContract = false;
+                    break;
+                } else {
+                    high_degree = v;
+                }
+            }
+
+            if (out_cactus->getUnweightedNodeDegree(v) > 10) {
+                numNonlow++;
+            }
+            if (numNonlow > 1) {
+                alternativeContract = false;
+                break;
+            }
+        }
+
+        if (alternativeContract && high_degree != UNDEFINED_NODE) {
+            NodeID high_origid = out_cactus->containedVertices(high_degree)[0];
+            std::vector<NodeID> orig_ids;
+            for (auto v : vtxset) {
+                if (v != high_degree) {
+                    orig_ids.emplace_back(out_cactus->containedVertices(v)[0]);
+                }
+            }
+
+            for (auto v : orig_ids) {
+                NodeID s = out_cactus->getCurrentPosition(high_origid);
+                NodeID t = out_cactus->getCurrentPosition(v);
+                EdgeID conn_edge = UNDEFINED_EDGE;
+                for (EdgeID e : out_cactus->edges_of(t)) {
+                    if (out_cactus->getEdgeTarget(t, e) == s) {
+                        conn_edge = out_cactus->getReverseEdge(t, e);
+                        break;
+                    }
+                }
+                if (conn_edge == UNDEFINED_EDGE) {
+                    out_cactus->contractSparseTargetNoEdge(s, t);
+                } else {
+                    out_cactus->contractEdgeSparseTarget(s, conn_edge);
+                }
+            }
+        } else {
+            out_cactus->contractVertexSet(vtxset);
+        }
     }
 
     EdgeWeight removeEdge(NodeID s, NodeID t) {

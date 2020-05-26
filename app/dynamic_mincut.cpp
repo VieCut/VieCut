@@ -36,7 +36,10 @@
 int main(int argn, char** argv) {
     tlx::CmdlineParser cmdl;
     auto cfg = configuration::getConfig();
-    cmdl.add_param_string("graph", cfg->graph_filename, "path to graph file");
+    std::string initial_graph = "";
+    std::string dynamic_edges = "";
+    cmdl.add_string('i', "initial_graph", initial_graph, "path to graph file");
+    cmdl.add_string('d', "dynamic_edges", dynamic_edges, "path to edge list");
 #ifdef PARALLEL
     size_t procs = 1;
     cmdl.add_size_t('p', "proc", procs, "number of processes");
@@ -46,6 +49,8 @@ int main(int argn, char** argv) {
 
     if (!cmdl.process(argn, argv))
         return -1;
+
+    random_functions::setSeed(cfg->seed);
 
 #ifdef PARALLEL
     LOGC(cfg->verbose) << "PARALLEL DEFINED, USING " << procs << " THREADS";
@@ -60,18 +65,29 @@ int main(int argn, char** argv) {
 
     cfg->save_cut = true;
 
-    auto [numV, tempEdges] = graph_io::readTemporalGraph(cfg->graph_filename);
-    mutableGraphPtr G = std::make_shared<mutable_graph>();
-    G->start_construction(numV);
-    G->finish_construction();
+    mutableGraphPtr G;
 
-    // auto G = graph_io::readGraphWeighted<mutable_graph>(cfg->graph_filename);
+    if (dynamic_edges == "") {
+        LOG1 << "ERROR: No list of dynamic edges given! Use parameter -d!";
+        exit(1);
+    }
+
+    auto [numV, tempEdges] = graph_io::readTemporalGraph(dynamic_edges);
+
+    if (initial_graph == "") {
+        G = std::make_shared<mutable_graph>();
+        G->start_construction(numV);
+        G->finish_construction();
+    } else {
+        G = graph_io::readGraphWeighted<mutable_graph>(initial_graph);
+    }
+
+    timer t;
 
     dynamic_mincut dynmc;
     dynmc.initialize(G);
 
     size_t ctr = 0;
-    timer t;
     for (auto [s, t, w, timestamp] : tempEdges) {
         LOG1 << ctr++ << " of " << tempEdges.size();
         if (w > 0) {

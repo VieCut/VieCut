@@ -11,6 +11,9 @@
 
 #pragma once
 
+#include <unordered_set>
+#include <vector>
+
 #ifdef PARALLEL
 #include "parallel/algorithm/parallel_cactus.h"
 #else

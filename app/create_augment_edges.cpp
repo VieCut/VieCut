@@ -54,6 +54,7 @@ int main(int argn, char** argv) {
 
     dynamic_mincut dynmc;
     dynmc.initialize(G);
+    std::vector<std::pair<NodeID, NodeID> > insEdges;
 
     for (size_t ins = 0; ins < insert_edges; ++ins) {
         auto curr = dynmc.getCurrentCactus();
@@ -76,6 +77,8 @@ int main(int argn, char** argv) {
             if (size > 0) {
                 NodeID r2 = random_functions::nextInt(0, size - 1);
                 NodeID preliminary_t = curr->containedVertices(r)[r2];
+                if (s == preliminary_t)
+                    continue;
                 bool neighbors = false;
                 for (EdgeID e : original_graph->edges_of(s)) {
                     // only create edge if it doesn't exist yet
@@ -91,12 +94,22 @@ int main(int argn, char** argv) {
                 }
             }
         }
-        LOG1 << "adding edge from " << s << " to " << t;
 
         f << s << " " << t << " +1\n";
         dynmc.addEdge(s, t, 1);
+        insEdges.emplace_back(s, t);
     }
 
-    //todo(anoe): deletes (intermingle)
+    std::vector<bool> alreadyDeleted(insert_edges, false);
+    size_t del = 0;
+    while (del < delete_edges) {
+        size_t r = random_functions::nextInt(0, insert_edges - 1);
+        if (!alreadyDeleted[r]) {
+            del++;
+            alreadyDeleted[r] = true;
+            auto [s, t] = insEdges[r];
+            f << s << " " << t << " -1\n";
+        }
+    }
     f.close();
 }

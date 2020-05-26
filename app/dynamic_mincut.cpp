@@ -24,6 +24,7 @@
 #endif
 
 #include "algorithms/global_mincut/dynamic/dynamic_mincut.h"
+#include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
@@ -38,14 +39,16 @@ int main(int argn, char** argv) {
     auto cfg = configuration::getConfig();
     std::string initial_graph = "";
     std::string dynamic_edges = "";
+    bool run_static = false;
     cmdl.add_string('i', "initial_graph", initial_graph, "path to graph file");
     cmdl.add_string('d', "dynamic_edges", dynamic_edges, "path to edge list");
 #ifdef PARALLEL
     size_t procs = 1;
     cmdl.add_size_t('p', "proc", procs, "number of processes");
 #endif
-    cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
     cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
+    cmdl.add_bool('s', "static", run_static, "run static algorithm");
+    cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
 
     if (!cmdl.process(argn, argv))
         return -1;
@@ -83,20 +86,42 @@ int main(int argn, char** argv) {
     }
 
     timer t;
-
-    dynamic_mincut dynmc;
-    dynmc.initialize(G);
-
     size_t ctr = 0;
-    for (auto [s, t, w, timestamp] : tempEdges) {
-        LOG1 << ctr++ << " of " << tempEdges.size();
-        if (w > 0) {
-            dynmc.addEdge(s, t, w);
-        } else {
-            dynmc.removeEdge(s, t);
+
+    if (run_static) {
+        noi_minimum_cut<mutableGraphPtr> noi;
+        noi.perform_minimum_cut(G);
+        for (auto [s, t, w, timestamp] : tempEdges) {
+            LOG1 << ctr++ << " of " << tempEdges.size();
+            if (w > 0) {
+                G->new_edge_order(s, t, w);
+            } else {
+                EdgeID eToT = UNDEFINED_EDGE;
+                for (EdgeID e : G->edges_of(s)) {
+                    if (G->getEdgeTarget(s, e) == t) {
+                        eToT = e;
+                        break;
+                    }
+                }
+                if (eToT == UNDEFINED_EDGE) {
+                    LOG1 << "Warning: delete edge that doesn't exist!";
+                }
+                G->deleteEdge(s, eToT);
+            }
+            LOG1 << noi.perform_minimum_cut(G);
+        }
+    } else {
+        dynamic_mincut dynmc;
+        dynmc.initialize(G);
+
+        for (auto [s, t, w, timestamp] : tempEdges) {
+            LOG1 << ctr++ << " of " << tempEdges.size();
+            if (w > 0) {
+                dynmc.addEdge(s, t, w);
+            } else {
+                dynmc.removeEdge(s, t);
+            }
         }
     }
-    LOG1 << t.elapsed();
-    mutableGraphPtr mgp = dynmc.getOriginalGraph();
-    graph_io::writeGraphWeighted(mgp->to_graph_access(), "output.graph");
+    LOG1 << "time " << t.elapsed() << " static " << run_static;
 }

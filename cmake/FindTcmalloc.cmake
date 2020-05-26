@@ -40,7 +40,7 @@ else ()
   message(STATUS "Not Found Tcmalloc: ${Tcmalloc_LIBRARY}")
   if (Tcmalloc_FIND_REQUIRED)
     message(STATUS "Looked for Tcmalloc libraries named ${Tcmalloc_NAMES}.")
-    message(FATAL_ERROR "Could NOT find Tcmalloc library")
+    message(FATAL_ERROR "Could NOT find Tcmalloc library. Disable using -DUSE_TCMALLOC=off!")
   endif ()
 endif ()
 

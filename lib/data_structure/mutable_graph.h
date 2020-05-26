@@ -433,6 +433,77 @@ class mutable_graph {
         num_edges -= 2;
     }
 
+    void mergeEdgeSparse(NodeID node, NodeID target, EdgeID ed) {
+        NodeID e_target = getEdgeTarget(target, ed);
+        EdgeWeight e_weight = getEdgeWeight(target, ed);
+        EdgeID del_rev = getReverseEdge(target, ed);
+        bool edge_found = false;
+        for (EdgeID src_edge : edges_of(node)) {
+            if (getEdgeTarget(node, src_edge) == e_target) {
+                EdgeID rev = getReverseEdge(node, src_edge);
+                vertices[node][src_edge].weight += e_weight;
+                vertices[e_target][rev].weight += e_weight;
+                weighted_degree[node] += e_weight;
+                num_edges -= 2;
+                internalDeleteEdge(e_target, del_rev);
+                edge_found = true;
+                break;
+            }
+        }
+        if (!edge_found) {
+            // create new edge and map reverse edge
+            vertices[e_target][del_rev].reverse_edge
+                = vertices[node].size();
+            vertices[e_target][del_rev].target = node;
+            vertices[node].emplace_back(
+                e_target, e_weight, del_rev);
+            weighted_degree[node] += e_weight;
+        }
+    }
+
+    NodeID contractSparseTargetNoEdge(NodeID node, NodeID target) {
+        if (node == target + 1) {
+            std::unordered_set<NodeID> nodes = { node, target };
+            contractVertexSet(nodes);
+            return target;
+        }
+
+        last_node--;
+        for (EdgeID ed : edges_of(target)) {
+            mergeEdgeSparse(node, target, ed);
+        }
+
+        for (NodeID n : contained_in_this[target]) {
+            contained_in_this[node].emplace_back(n);
+            current_position[n] = node;
+        }
+
+        contained_in_this[target].clear();
+
+        for (NodeID n : contained_in_this[vertices.size() - 1]) {
+            contained_in_this[target].emplace_back(n);
+            current_position[n] = target;
+        }
+
+        vertices[target] = std::move(vertices.back());
+        weighted_degree[target] = std::move(weighted_degree.back());
+        partition_index[target] = std::move(partition_index.back());
+        node_in_cut[target] = std::move(node_in_cut.back());
+        vertices.pop_back();
+        weighted_degree.pop_back();
+        partition_index.pop_back();
+        node_in_cut.pop_back();
+        contained_in_this.pop_back();
+
+        // remap all reverse edges of vertex that was now moved to 'target'
+        for (EdgeID ed : edges_of(target)) {
+            RevEdge e = vertices[target][ed];
+            vertices[e.target][e.reverse_edge].target = target;
+        }
+
+        return target;
+    }
+
     NodeID contractEdgeSparseTarget(NodeID node, EdgeID edge) {
         RevEdge e = vertices[node][edge];
         NodeID target = e.target;
@@ -443,31 +514,7 @@ class mutable_graph {
         last_node--;
         for (EdgeID ed : edges_of(target)) {
             if (ed != e.reverse_edge) {
-                NodeID e_target = getEdgeTarget(target, ed);
-                EdgeWeight e_weight = getEdgeWeight(target, ed);
-                EdgeID del_rev = getReverseEdge(target, ed);
-                bool edge_found = false;
-                for (EdgeID src_edge : edges_of(node)) {
-                    if (getEdgeTarget(node, src_edge) == e_target) {
-                        EdgeID rev = getReverseEdge(node, src_edge);
-                        vertices[node][src_edge].weight += e_weight;
-                        vertices[e_target][rev].weight += e_weight;
-                        weighted_degree[node] += e_weight;
-                        num_edges -= 2;
-                        internalDeleteEdge(e_target, del_rev);
-                        edge_found = true;
-                        break;
-                    }
-                }
-                if (!edge_found) {
-                    // create new edge and map reverse edge
-                    vertices[e_target][del_rev].reverse_edge
-                        = vertices[node].size();
-                    vertices[e_target][del_rev].target = node;
-                    vertices[node].emplace_back(
-                        e_target, e_weight, del_rev);
-                    weighted_degree[node] += e_weight;
-                }
+                mergeEdgeSparse(node, target, ed);
             }
         }
 

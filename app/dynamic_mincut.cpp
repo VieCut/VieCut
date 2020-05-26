@@ -18,13 +18,14 @@
 #include <vector>
 
 #ifdef PARALLEL
+#include "parallel/algorithm/exact_parallel_minimum_cut.h"
 #include "parallel/algorithm/parallel_cactus.h"
 #else
 #include "algorithms/global_mincut/cactus/cactus_mincut.h"
+#include "algorithms/global_mincut/noi_minimum_cut.h"
 #endif
 
 #include "algorithms/global_mincut/dynamic/dynamic_mincut.h"
-#include "algorithms/global_mincut/noi_minimum_cut.h"
 #include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
@@ -89,8 +90,12 @@ int main(int argn, char** argv) {
     size_t ctr = 0;
 
     if (run_static) {
-        noi_minimum_cut<mutableGraphPtr> noi;
-        noi.perform_minimum_cut(G);
+#ifdef PARALLEL
+        exact_parallel_minimum_cut<mutableGraphPtr> static_alg;
+#else
+        noi_minimum_cut<mutableGraphPtr> static_alg;
+#endif
+        static_alg.perform_minimum_cut(G);
         for (auto [s, t, w, timestamp] : tempEdges) {
             LOG1 << ctr++ << " of " << tempEdges.size();
             if (w > 0) {
@@ -108,7 +113,7 @@ int main(int argn, char** argv) {
                 }
                 G->deleteEdge(s, eToT);
             }
-            LOG1 << noi.perform_minimum_cut(G);
+            LOG1 << static_alg.perform_minimum_cut(G);
         }
     } else {
         dynamic_mincut dynmc;

@@ -172,7 +172,7 @@ class random_functions {
     }
 
     static double nextDouble(double lb, double rb) {
-        std::uniform_real_distribution<double> A(lb, rb);
+        std::uniform_real_distribution<> A(lb, rb);
         return A(m_mt);
     }
 

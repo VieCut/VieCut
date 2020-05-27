@@ -172,10 +172,9 @@ class dynamic_mincut {
         }
 
         EdgeWeight wgt = original_graph->getEdgeWeight(s, eToT);
+        original_graph->deleteEdge(s, eToT);
         NodeID sCactusPos = out_cactus->getCurrentPosition(s);
         NodeID tCactusPos = out_cactus->getCurrentPosition(t);
-
-        original_graph->deleteEdge(s, eToT);
 
         if (wgt == 0) {
             LOGC(verbose) << "edge has zero weight, current cut remains same";
@@ -195,7 +194,7 @@ class dynamic_mincut {
         } else {
             push_relabel<true> pr;
             auto [flow, sourceset] = pr.solve_max_flow_min_cut(
-                original_graph, { 0, 1 }, 0, false, false,
+                original_graph, { s, t }, 0, false, false,
                 current_cut, flow_problem_id++);
             if (static_cast<EdgeWeight>(flow) >= current_cut) {
                 LOGC(verbose) << "cut not changed!";

@@ -205,12 +205,12 @@ class minimum_cut_helpers {
                 printLogs(b);
             } else {
                 std::sort(b.begin(), b.end());
-
+                bool verbose = configuration::getConfig()->verbose;
                 NodeID id0 = b.end() - std::upper_bound(b.begin(), b.end(), 0);
                 NodeID id1 = b.end() - std::upper_bound(b.begin(), b.end(), 1);
-                LOG1 << "Largest block: " << b.back();
-                LOG1 << "Nonempty blocks: " << id0;
-                LOG1 << "Nontrivial blocks: " << id1;
+                LOGC(verbose) << "Largest block: " << b.back();
+                LOGC(verbose) << "Nonempty blocks: " << id0;
+                LOGC(verbose) << "Nontrivial blocks: " << id1;
             }
         }
     }

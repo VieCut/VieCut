@@ -56,63 +56,94 @@ int main(int argn, char** argv) {
     dynmc.initialize(G);
     std::vector<std::pair<NodeID, NodeID> > insEdges;
     size_t index = 0;
+    size_t ins = 0;
+    size_t del = 0;
+    std::vector<bool> alreadyDeleted(insert_edges, false);
 
-    for (size_t ins = 0; ins < insert_edges; ++ins) {
-        auto curr = dynmc.getCurrentCactus();
-        auto original_graph = dynmc.getOriginalGraph();
-        NodeID s = UNDEFINED_NODE;
-        NodeID t = UNDEFINED_NODE;
+    double insProbability = static_cast<double>(insert_edges)
+                            / static_cast<double>(insert_edges + delete_edges);
 
-        while (s == UNDEFINED_NODE) {
-            NodeID r = random_functions::nextInt(0, curr->n() - 1);
-            NodeID size = curr->numContainedVertices(r);
-            if (size > 0) {
-                NodeID r2 = random_functions::nextInt(0, size - 1);
-                s = curr->containedVertices(r)[r2];
+    LOG1 << insProbability;
+
+    for (size_t dedge = 0; dedge < insert_edges + delete_edges; ++dedge) {
+        bool isInsert = false;
+        if (ins == insert_edges) {
+            isInsert = false;
+        } else {
+            if (del == delete_edges || del >= ins) {
+                isInsert = true;
+            } else {
+                double d = random_functions::nextDouble(0, 1);
+                if (d < insProbability) {
+                    isInsert = true;
+                } else {
+                    isInsert = false;
+                }
             }
         }
 
-        while (t == UNDEFINED_NODE) {
-            NodeID r = random_functions::nextInt(0, curr->n() - 1);
-            NodeID size = curr->containedVertices(r).size();
-            if (size > 0) {
-                NodeID r2 = random_functions::nextInt(0, size - 1);
-                NodeID preliminary_t = curr->containedVertices(r)[r2];
-                if (s == preliminary_t)
-                    continue;
-                bool neighbors = false;
-                for (EdgeID e : original_graph->edges_of(s)) {
-                    // only create edge if it doesn't exist yet
-                    NodeID tgt = original_graph->getEdgeTarget(s, e);
-                    if (tgt == preliminary_t) {
-                        neighbors = true;
-                        break;
+        if (isInsert) {
+            ins++;
+            auto curr = dynmc.getCurrentCactus();
+            LOG1 << "INSERT " << curr->n();
+            auto original_graph = dynmc.getOriginalGraph();
+            NodeID s = UNDEFINED_NODE;
+            NodeID t = UNDEFINED_NODE;
+
+            while (s == UNDEFINED_NODE) {
+                NodeID r = random_functions::nextInt(0, curr->n() - 1);
+                NodeID size = curr->numContainedVertices(r);
+                if (size > 0) {
+                    NodeID r2 = random_functions::nextInt(0, size - 1);
+                    s = curr->containedVertices(r)[r2];
+                }
+            }
+
+            while (t == UNDEFINED_NODE) {
+                NodeID r = random_functions::nextInt(0, curr->n() - 1);
+                NodeID size = curr->containedVertices(r).size();
+                if (size > 0) {
+                    NodeID r2 = random_functions::nextInt(0, size - 1);
+                    NodeID preliminary_t = curr->containedVertices(r)[r2];
+                    if (s == preliminary_t)
+                        continue;
+                    bool neighbors = false;
+                    for (EdgeID e : original_graph->edges_of(s)) {
+                        // only create edge if it doesn't exist yet
+                        NodeID tgt = original_graph->getEdgeTarget(s, e);
+                        if (tgt == preliminary_t) {
+                            neighbors = true;
+                            break;
+                        }
+                    }
+
+                    if (!neighbors) {
+                        t = preliminary_t;
                     }
                 }
+            }
 
-                if (!neighbors) {
-                    t = preliminary_t;
+            // graph format starts at 1, we start at 0
+            f << (s + 1) << " " << (t + 1) << " +1 " << index++ << "\n";
+            dynmc.addEdge(s, t, 1);
+            insEdges.emplace_back(s, t);
+        } else {
+            LOG1 << "DELETO!";
+            bool deleted = false;
+            while (!deleted) {
+                size_t r = random_functions::nextInt(0, ins - 1);
+                if (!alreadyDeleted[r]) {
+                    deleted = true;
+                    del++;
+                    alreadyDeleted[r] = true;
+                    auto [s, t] = insEdges[r];
+                    dynmc.removeEdge(s, t);
+                    // graph format starts at 1, we start at 0
+                    f << (s + 1) << " " << (t + 1) << " -1 " << index++ << "\n";
                 }
             }
         }
-
-        // graph format starts at 1, we start at 0
-        f << (s + 1) << " " << (t + 1) << " +1 " << index++ << "\n";
-        dynmc.addEdge(s, t, 1);
-        insEdges.emplace_back(s, t);
     }
 
-    std::vector<bool> alreadyDeleted(insert_edges, false);
-    size_t del = 0;
-    while (del < delete_edges) {
-        size_t r = random_functions::nextInt(0, insert_edges - 1);
-        if (!alreadyDeleted[r]) {
-            del++;
-            alreadyDeleted[r] = true;
-            auto [s, t] = insEdges[r];
-            // graph format starts at 1, we start at 0
-            f << (s + 1) << " " << (t + 1) << " -1 " << index++ << "\n";
-        }
-    }
     f.close();
 }

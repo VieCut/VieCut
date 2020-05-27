@@ -95,9 +95,9 @@ int main(int argn, char** argv) {
 #else
         noi_minimum_cut<mutableGraphPtr> static_alg;
 #endif
-        static_alg.perform_minimum_cut(G);
+        EdgeWeight previous_cut = static_alg.perform_minimum_cut(G);
         for (auto [s, t, w, timestamp] : tempEdges) {
-            LOG1 << ctr++ << " of " << tempEdges.size();
+            ctr++;
             if (w > 0) {
                 G->new_edge_order(s, t, w);
             } else {
@@ -113,18 +113,26 @@ int main(int argn, char** argv) {
                 }
                 G->deleteEdge(s, eToT);
             }
-            LOG1 << static_alg.perform_minimum_cut(G);
+            EdgeWeight current_cut = static_alg.perform_minimum_cut(G);
+            if (current_cut != previous_cut) {
+                LOG1 << "after " << ctr << " cut changed to " << current_cut;
+                previous_cut = current_cut;
+            }
         }
     } else {
         dynamic_mincut dynmc;
-        dynmc.initialize(G);
-
+        EdgeWeight previous_cut = dynmc.initialize(G);
+        EdgeWeight current_cut = 0;
         for (auto [s, t, w, timestamp] : tempEdges) {
-            LOG1 << ctr++ << " of " << tempEdges.size();
+            ctr++;
             if (w > 0) {
-                dynmc.addEdge(s, t, w);
+                current_cut = dynmc.addEdge(s, t, w);
             } else {
-                dynmc.removeEdge(s, t);
+                current_cut = dynmc.removeEdge(s, t);
+            }
+            if (current_cut != previous_cut) {
+                LOG1 << "after " << ctr << " cut changed to " << current_cut;
+                previous_cut = current_cut;
             }
         }
     }

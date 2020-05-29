@@ -78,6 +78,22 @@ class recursive_cactus {
         return out_graph;
     }
 
+    /*
+    * This is called in the case that the minimum cut is decreased by deleting
+    * an edge between vertices s and t. Thus we know that all minimum cuts
+    * separate s and t and we can just run one run of findSTCactus(s, t) which
+    * is significantly faster than building the cactus completely
+    */
+    mutableGraphPtr decrementalRebuild(mutableGraphPtr graph,
+                                       NodeID s, EdgeWeight mincut,
+                                       size_t fpid) {
+        setMincut(mincut);
+        strongly_connected_components scc;
+        auto [v, num_comp, blocksizes] = scc.strong_components(graph, fpid);
+        auto STCactus = findSTCactus(v, graph, s, num_comp);
+        return STCactus;
+    }
+
  private:
     mutableGraphPtr recursiveCactus(
         mutableGraphPtr G, size_t depth) {

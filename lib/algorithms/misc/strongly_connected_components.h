@@ -31,11 +31,12 @@ class strongly_connected_components {
     virtual ~strongly_connected_components() { }
 
     std::tuple<std::vector<int>, size_t, std::vector<size_t> >
-    strong_components(mutableGraphPtr G) {
+    strong_components(mutableGraphPtr G, size_t fpid = UNDEFINED_NODE) {
         m_dfsnum.resize(G->number_of_nodes());
         m_comp_num.resize(G->number_of_nodes());
         m_dfscount = 0;
         m_comp_count = 0;
+        m_fpid = fpid;
 
         for (NodeID node : G->nodes()) {
             m_comp_num[node] = -1;
@@ -94,13 +95,21 @@ class strongly_connected_components {
 
             for (EdgeID e : G->edges_of_starting_at(current_node,
                                                     current_edge)) {
-                if (G->getEdgeFlow(current_node, e)
-                    == static_cast<FlowType>(
-                        G->getEdgeWeight(current_node, e))) {
-                    // edges that have full flow do not exist in residual graph
-                    continue;
+                if (m_fpid == UNDEFINED_NODE) {
+                    if (G->getEdgeFlow(current_node, e)
+                        == static_cast<FlowType>(
+                            G->getEdgeWeight(current_node, e))) {
+                        // edges that have full flow do not exist in res graph
+                        continue;
+                    }
+                } else {
+                    if (G->getEdgeFlow(current_node, e, m_fpid) ==
+                        static_cast<FlowType>(
+                            G->getEdgeWeight(current_node, e))) {
+                        // edges that have full flow do not exist in res graph
+                        continue;
+                    }
                 }
-
                 NodeID target = G->getEdgeTarget(current_node, e);
                 // explore edge (node, target)
                 if (m_dfsnum[target] == -1) {
@@ -212,6 +221,7 @@ class strongly_connected_components {
  private:
     int32_t m_dfscount;
     size_t m_comp_count;
+    size_t m_fpid;
 
     std::vector<int> m_dfsnum;
     std::vector<int> m_comp_num;

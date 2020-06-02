@@ -64,7 +64,8 @@ class cactus_mincut : public minimum_cut {
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::vector<std::pair<NodeID, EdgeID> > >
-    findAllMincuts(std::vector<GraphPtr> graphs) {
+    findAllMincuts(std::vector<GraphPtr> graphs,
+                   EdgeWeight known_mincut = UNDEFINED_NODE) {
         if (graphs.size() == 0 || !graphs.back()) {
             mutableGraphPtr empty;
             return std::make_tuple(
@@ -73,8 +74,12 @@ class cactus_mincut : public minimum_cut {
         recursive_cactus<GraphPtr> rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;
-        viecut<GraphPtr> vc;
-        mincut = vc.perform_minimum_cut(graphs.back());
+        if (known_mincut != UNDEFINED_NODE) {
+            viecut<GraphPtr> vc;
+            mincut = vc.perform_minimum_cut(graphs.back());
+        } else {
+            mincut = known_mincut;
+        }
         noi_minimum_cut<GraphPtr> noi;
         std::vector<std::vector<std::pair<NodeID, NodeID> > > guaranteed_edges;
         std::vector<size_t> ge_ids;

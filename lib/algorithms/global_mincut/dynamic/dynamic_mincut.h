@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -35,9 +36,10 @@ class dynamic_mincut {
     size_t flow_problem_id;
     size_t max_cache_size = 100;
 
-    std::vector<bool> currentlyCaching;
-    std::vector<std::pair<mutableGraphPtr, std::vector<std::tuple<
-                                                           NodeID, NodeID, EdgeWeight> > > > problemCache;
+    EdgeWeight cachedMincut;
+    mutableGraphPtr cachedCactus;
+    std::vector<std::tuple<NodeID, NodeID, EdgeWeight> > cachedInserts;
+    bool currentlyCaching;
 
 #ifdef PARALLEL
     parallel_cactus<mutableGraphPtr> cactus;
@@ -48,6 +50,7 @@ class dynamic_mincut {
  public:
     dynamic_mincut() {
         verbose = configuration::getConfig()->verbose;
+        currentlyCaching = false;
     }
 
     ~dynamic_mincut() { }
@@ -77,13 +80,6 @@ class dynamic_mincut {
                     auto [cut, o, bal] = cactus.findAllMincuts(original_graph);
                     out_cactus = o;
                     current_cut = cut;
-                    // RECREATE FROM CACHE - SOMETHING IS SUUUUPER SLOW RIGHT NOW
-                    LOG1 << currentlyCaching.size() << " " << cut;
-                    if (currentlyCaching.size() > cut && currentlyCaching[cut]) {
-                        for (auto [s, t, w] : problemCache[cut].second) {
-                            sLOG1 << s << t << w;
-                        }
-                    }
                 } else {
                     LOGC(verbose) << "contract two empty vtcs";
                     out_cactus->contractVertexSet({ sCactusPos, tCactusPos });
@@ -93,19 +89,24 @@ class dynamic_mincut {
                                                     tCactusPos, current_cut);
                 if (vtxset.size() == out_cactus->n()) {
                     LOGC(verbose) << "full recompute";
-                    auto [cut, outg, b] = cactus.findAllMincuts(original_graph);
-                    out_cactus = outg;
-                    current_cut = cut;
-                    LOG1 << currentlyCaching.size() << " " << cut;
-                    if (currentlyCaching.size() > cut && currentlyCaching[cut]) {
-                        for (auto [s, t, w] : problemCache[cut].second) {
-                            sLOG1 << s << t << w;
-                        }
+                    EdgeWeight mincut = UNDEFINED_NODE;
+                    if (currentlyCaching) {
+                        noi_minimum_cut<mutableGraphPtr> noi;
+                        mincut = noi.perform_minimum_cut(original_graph);
                     }
-                    LOG1 << "ins2 " << timer.elapsed();
+
+                    if (mincut == cachedMincut
+                        && 5 * cachedInserts.size() < cachedCactus->n()) {
+                        buildCactusFromCache();
+                    } else {
+                        auto [cut, outg, b] = cactus.findAllMincuts(
+                            original_graph, mincut);
+                        out_cactus = outg;
+                        current_cut = cut;
+                    }
                 } else {
                     LOGC(verbose) << "contract set of size " << vtxset.size();
-                    contractVertexSet(vtxset);
+                    contractVertexSet(out_cactus, vtxset);
                 }
             }
         }
@@ -114,7 +115,30 @@ class dynamic_mincut {
         return current_cut;
     }
 
-    void contractVertexSet(const std::unordered_set<NodeID>& vtxset) {
+    void buildCactusFromCache() {
+        currentlyCaching = false;
+        for (auto [s, t, w] : cachedInserts) {
+            NodeID sCactusPos = cachedCactus->getCurrentPosition(s);
+            NodeID tCactusPos = cachedCactus->getCurrentPosition(t);
+            if (sCactusPos != tCactusPos) {
+                auto vtxset = cactus_path::findPath(cachedCactus, sCactusPos,
+                                                    tCactusPos, current_cut);
+                if (vtxset.size() == cachedCactus->n()) {
+                    auto [cut, outg, b] = cactus.findAllMincuts(original_graph);
+                    out_cactus = outg;
+                    current_cut = cut;
+                    return;
+                } else {
+                    contractVertexSet(cachedCactus, vtxset);
+                }
+            }
+        }
+        out_cactus = cachedCactus;
+        current_cut = cachedMincut;
+    }
+
+    void contractVertexSet(
+        mutableGraphPtr cactus, const std::unordered_set<NodeID>& vtxset) {
         // if one vertex has high degree and all others don't, it is faster
         // to explicitly contract others into this high degree vertex instead of
         // standard set contraction (also check that no vertex is empty so we
@@ -125,11 +149,11 @@ class dynamic_mincut {
         size_t numNonlow = 0;
 
         for (auto v : vtxset) {
-            if (out_cactus->numContainedVertices(v) == 0) {
+            if (cactus->numContainedVertices(v) == 0) {
                 alternativeContract = false;
                 break;
             }
-            if (out_cactus->getUnweightedNodeDegree(v) > 100) {
+            if (cactus->getUnweightedNodeDegree(v) > 100) {
                 if (high_degree != UNDEFINED_NODE) {
                     alternativeContract = false;
                     break;
@@ -138,7 +162,7 @@ class dynamic_mincut {
                 }
             }
 
-            if (out_cactus->getUnweightedNodeDegree(v) > 10) {
+            if (cactus->getUnweightedNodeDegree(v) > 10) {
                 numNonlow++;
             }
             if (numNonlow > 1) {
@@ -148,32 +172,32 @@ class dynamic_mincut {
         }
 
         if (alternativeContract && high_degree != UNDEFINED_NODE) {
-            NodeID high_origid = out_cactus->containedVertices(high_degree)[0];
+            NodeID high_origid = cactus->containedVertices(high_degree)[0];
             std::vector<NodeID> orig_ids;
             for (auto v : vtxset) {
                 if (v != high_degree) {
-                    orig_ids.emplace_back(out_cactus->containedVertices(v)[0]);
+                    orig_ids.emplace_back(cactus->containedVertices(v)[0]);
                 }
             }
 
             for (auto v : orig_ids) {
-                NodeID s = out_cactus->getCurrentPosition(high_origid);
-                NodeID t = out_cactus->getCurrentPosition(v);
+                NodeID s = cactus->getCurrentPosition(high_origid);
+                NodeID t = cactus->getCurrentPosition(v);
                 EdgeID conn_edge = UNDEFINED_EDGE;
-                for (EdgeID e : out_cactus->edges_of(t)) {
-                    if (out_cactus->getEdgeTarget(t, e) == s) {
-                        conn_edge = out_cactus->getReverseEdge(t, e);
+                for (EdgeID e : cactus->edges_of(t)) {
+                    if (cactus->getEdgeTarget(t, e) == s) {
+                        conn_edge = cactus->getReverseEdge(t, e);
                         break;
                     }
                 }
                 if (conn_edge == UNDEFINED_EDGE) {
-                    out_cactus->contractSparseTargetNoEdge(s, t);
+                    cactus->contractSparseTargetNoEdge(s, t);
                 } else {
-                    out_cactus->contractEdgeSparseTarget(s, conn_edge);
+                    cactus->contractEdgeSparseTarget(s, conn_edge);
                 }
             }
         } else {
-            out_cactus->contractVertexSet(vtxset);
+            cactus->contractVertexSet(vtxset);
         }
     }
 
@@ -221,7 +245,6 @@ class dynamic_mincut {
             auto new_g = rc.decrementalRebuild(original_graph, s, flow, fpid);
             current_cut = flow;
             out_cactus = new_g;
-            LOG1 << "del1 t " << timer.elapsed();
         } else {
             push_relabel<true> pr;
             size_t fp = flow_problem_id++;
@@ -236,7 +259,6 @@ class dynamic_mincut {
                 auto new_g = rc.decrementalRebuild(original_graph, s, flow, fp);
                 current_cut = flow;
                 out_cactus = new_g;
-                LOG1 << "del2 t " << timer.elapsed();
                 LOGC(verbose) << "recomputing, minimum cut changed to " << flow;
             }
         }
@@ -253,25 +275,17 @@ class dynamic_mincut {
     }
 
     void putIntoCache(mutableGraphPtr cactusToCache, EdgeWeight cactusCut) {
-        if (problemCache.size() < cactusCut + 1) {
-            problemCache.resize(cactusCut + 1);
-        }
-        problemCache[cactusCut].first = cactusToCache;
-        problemCache[cactusCut].second.clear();
-        if (currentlyCaching.size() + 1 < cactusCut) {
-            currentlyCaching.resize(cactusCut + 1, false);
-        }
-        currentlyCaching[cactusCut] = true;
+        cachedMincut = cactusCut;
+        cachedCactus = cactusToCache;
+        cachedInserts.clear();
+        currentlyCaching = true;
     }
 
     void cacheEdge(NodeID s, NodeID t, EdgeWeight wgt) {
-        EdgeWeight cut = current_cut;
-        if (currentlyCaching.size() >= cut + 2 && currentlyCaching[cut + 1]) {
-            if (problemCache[cut + 1].second.size() < max_cache_size) {
-                problemCache[cut + 1].second.emplace_back(s, t, wgt);
-            } else {
-                currentlyCaching[cut + 1] = false;
-            }
+        if (currentlyCaching && cachedInserts.size() <= max_cache_size) {
+            cachedInserts.emplace_back(s, t, wgt);
+        } else {
+            currentlyCaching = false;
         }
     }
 };

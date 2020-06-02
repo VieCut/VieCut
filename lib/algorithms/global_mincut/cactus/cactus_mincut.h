@@ -57,9 +57,9 @@ class cactus_mincut : public minimum_cut {
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::vector<std::pair<NodeID, EdgeID> > >
-    findAllMincuts(GraphPtr G) {
+    findAllMincuts(GraphPtr G, EdgeWeight known_mincut = UNDEFINED_NODE) {
         std::vector<GraphPtr> v = { G };
-        return findAllMincuts(v);
+        return findAllMincuts(v, known_mincut);
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,

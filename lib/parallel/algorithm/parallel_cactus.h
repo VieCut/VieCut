@@ -67,14 +67,15 @@ class parallel_cactus : public minimum_cut {
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::vector<std::pair<NodeID, EdgeID> > > findAllMincuts(
-        GraphPtr G) {
+        GraphPtr G, EdgeWeight known_mincut = UNDEFINED_NODE) {
         std::vector<GraphPtr> v = { G };
-        return findAllMincuts(v);
+        return findAllMincuts(v, known_mincut);
     }
 
     std::tuple<EdgeWeight, mutableGraphPtr,
                std::vector<std::pair<NodeID, EdgeID> > > findAllMincuts(
-        std::vector<GraphPtr> graphs) {
+        std::vector<GraphPtr> graphs,
+        EdgeWeight known_mincut = UNDEFINED_NODE) {
         if (graphs.size() == 0 || !graphs.back()) {
             mutableGraphPtr empty;
             return std::make_tuple(
@@ -84,13 +85,17 @@ class parallel_cactus : public minimum_cut {
         EdgeWeight mincut = graphs.back()->getMinDegree();
         recursive_cactus<GraphPtr> rc;
         exact_parallel_minimum_cut<GraphPtr> mc;
-#ifdef PARALLEL
-        viecut<GraphPtr> heuristic_mc;
-        auto G2 = graphs.back();
-        mincut = heuristic_mc.perform_minimum_cut(G2, true);
-        LOGC(timing) << "VieCut found cut " << mincut
-                     << " [Time: " << t.elapsed() << "s]";
+        if (known_mincut != UNDEFINED_NODE) {
+#ifdef PARALLEL        
+            viecut<GraphPtr> heuristic_mc;
+            auto G2 = graphs.back();
+            mincut = heuristic_mc.perform_minimum_cut(G2, true);
+            LOGC(timing) << "VieCut found cut " << mincut
+                        << " [Time: " << t.elapsed() << "s]";
 #endif
+        } else {
+            mincut = known_mincut;
+        }
 
         std::vector<std::vector<std::pair<NodeID, NodeID> > > guaranteed_edges;
         std::vector<size_t> ge_ids;

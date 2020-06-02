@@ -34,6 +34,8 @@ else ()
   set( Profiler_LIBRARIES )
 endif ()
 
+message(STATUS "YOOO : ${Profiler_LIBRARY} ${Profiler_INCLUDE_DIR}")
+
 if (Profiler_FOUND)
   message(STATUS "Found Profiler: ${Profiler_LIBRARY} ${Profiler_INCLUDE_DIR}")
 else ()

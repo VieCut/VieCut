@@ -86,12 +86,12 @@ class parallel_cactus : public minimum_cut {
         recursive_cactus<GraphPtr> rc;
         exact_parallel_minimum_cut<GraphPtr> mc;
         if (known_mincut != UNDEFINED_NODE) {
-#ifdef PARALLEL        
+#ifdef PARALLEL
             viecut<GraphPtr> heuristic_mc;
             auto G2 = graphs.back();
             mincut = heuristic_mc.perform_minimum_cut(G2, true);
             LOGC(timing) << "VieCut found cut " << mincut
-                        << " [Time: " << t.elapsed() << "s]";
+                         << " [Time: " << t.elapsed() << "s]";
 #endif
         } else {
             mincut = known_mincut;

@@ -96,7 +96,7 @@ class dynamic_mincut {
                     }
 
                     if (mincut == cachedMincut
-                        && 5 * cachedInserts.size() < cachedCactus->n()) {
+                        && 2 * cachedInserts.size() < cachedCactus->n()) {
                         buildCactusFromCache();
                     } else {
                         auto [cut, outg, b] = cactus.findAllMincuts(

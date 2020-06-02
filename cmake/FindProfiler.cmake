@@ -17,7 +17,7 @@ find_path(Profiler_INCLUDE_DIR google/tcmalloc.h NO_DEFAULT_PATH PATHS
 set(Profiler_NAMES "")
 
 find_library(Profiler_LIBRARY
-  NAMES libtcmalloc_and_profiler tcmalloc_and_profiler NO_DEFAULT_PATH
+  NAMES libtcmalloc_and_profiler tcmalloc_and_profiler
   PATHS $ENV{HOME}/.local/lib
         /lib
         /usr/lib
@@ -33,8 +33,6 @@ else ()
   set(Profiler_FOUND FALSE)
   set( Profiler_LIBRARIES )
 endif ()
-
-message(STATUS "YOOO : ${Profiler_LIBRARY} ${Profiler_INCLUDE_DIR}")
 
 if (Profiler_FOUND)
   message(STATUS "Found Profiler: ${Profiler_LIBRARY} ${Profiler_INCLUDE_DIR}")

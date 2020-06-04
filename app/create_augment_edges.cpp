@@ -38,10 +38,12 @@ int main(int argn, char** argv) {
     if (!cmdl.process(argn, argv))
         return -1;
 
+    random_functions::setSeed(cfg->seed);
     cfg->save_cut = true;
 
     auto output = cfg->graph_filename + "." + std::to_string(insert_edges)
-                  + "." + std::to_string(delete_edges);
+                  + "." + std::to_string(delete_edges)
+                  + "." + std::to_string(cfg->seed);
 
     std::ofstream f(output, std::ofstream::trunc);
 

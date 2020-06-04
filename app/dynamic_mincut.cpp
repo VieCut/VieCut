@@ -33,6 +33,7 @@
 #include "io/graph_io.h"
 #include "tlx/cmdline_parser.hpp"
 #include "tlx/logger.hpp"
+#include "tlx/string.hpp"
 #include "tools/random_functions.h"
 
 int main(int argn, char** argv) {
@@ -53,6 +54,11 @@ int main(int argn, char** argv) {
 
     if (!cmdl.process(argn, argv))
         return -1;
+
+    auto edgenames = tlx::split('.', dynamic_edges);
+    auto seedstr = edgenames[edgenames.size() - 1];
+    auto delstr = edgenames[edgenames.size() - 2];
+    auto insstr = edgenames[edgenames.size() - 3];
 
     random_functions::setSeed(cfg->seed);
 
@@ -88,6 +94,7 @@ int main(int argn, char** argv) {
 
     timer t;
     size_t ctr = 0;
+    size_t cutchange = 0;
 
     if (run_static) {
 #ifdef PARALLEL
@@ -115,8 +122,8 @@ int main(int argn, char** argv) {
             }
             EdgeWeight current_cut = static_alg.perform_minimum_cut(G);
             if (current_cut != previous_cut) {
-                LOG1 << "after " << ctr << " cut changed to " << current_cut;
                 previous_cut = current_cut;
+                cutchange++;
             }
         }
     } else {
@@ -131,10 +138,17 @@ int main(int argn, char** argv) {
                 current_cut = dynmc.removeEdge(s, t);
             }
             if (current_cut != previous_cut) {
-                LOG1 << "after " << ctr << " cut changed to " << current_cut;
                 previous_cut = current_cut;
+                cutchange++;
             }
         }
     }
-    LOG1 << "time " << t.elapsed() << " static " << run_static;
+
+    LOG1 << "RESULT"
+         << " graph=" << initial_graph
+         << " time=" << t.elapsed()
+         << " cutchange=" << cutchange
+         << " insert=" << insstr
+         << " delete=" << delstr
+         << " seed=" << seedstr;
 }

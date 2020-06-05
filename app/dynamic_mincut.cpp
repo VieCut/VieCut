@@ -150,5 +150,6 @@ int main(int argn, char** argv) {
          << " cutchange=" << cutchange
          << " insert=" << insstr
          << " delete=" << delstr
-         << " seed=" << seedstr;
+         << " seed=" << seedstr
+         << " static=" << run_static;
 }

@@ -74,7 +74,7 @@ class cactus_mincut : public minimum_cut {
         recursive_cactus<GraphPtr> rc;
         EdgeWeight mincut = graphs.back()->getMinDegree();
         timer t;
-        if (known_mincut != UNDEFINED_NODE) {
+        if (known_mincut == UNDEFINED_NODE) {
             viecut<GraphPtr> vc;
             mincut = vc.perform_minimum_cut(graphs.back());
         } else {

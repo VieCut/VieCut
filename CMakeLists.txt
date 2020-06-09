@@ -117,6 +117,7 @@ build_and_link(mincut_recursive)
 bal_mpi(multiterminal_cut)
 
 bal_seq(create_augment_edges)
+bal_seq(decremental_gnp)
 bal_seq(gnp_torus)
 bal_seq(largest_cc)
 bal_seq(make_graph_weighted)

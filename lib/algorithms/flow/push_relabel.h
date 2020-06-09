@@ -303,7 +303,7 @@ class push_relabel {
         bool parallel_flows = false,
         FlowType limit = 0,
         size_t problem_id = random_functions::nextInt(0, UNDEFINED_NODE)) {
-        timer t;
+        t.restart();
         for (NodeID s : sources) {
             if (s >= G->number_of_nodes()) {
                 LOG1 << "source " << s << " is too large (only "
@@ -413,4 +413,6 @@ class push_relabel {
     mutableGraphPtr m_G;
     static const bool extended_logs = false;
     bool m_parallel_flows;
+
+    timer t;
 };

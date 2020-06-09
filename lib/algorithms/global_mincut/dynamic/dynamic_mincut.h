@@ -36,10 +36,12 @@ class dynamic_mincut {
     size_t flow_problem_id;
     size_t max_cache_size = 100;
 
-    EdgeWeight cachedMincut;
-    mutableGraphPtr cachedCactus;
-    std::vector<std::tuple<NodeID, NodeID, EdgeWeight> > cachedInserts;
-    bool currentlyCaching;
+    size_t numCachedMincuts;
+    EdgeWeight lowestCachedMincut;
+    std::vector<mutableGraphPtr> cachedCactus;
+    std::vector<std::vector<std::tuple<NodeID, NodeID, EdgeWeight> > >
+    cachedInserts;
+    std::vector<bool> currentlyCaching;
 
 #ifdef PARALLEL
     parallel_cactus<mutableGraphPtr> cactus;
@@ -50,7 +52,6 @@ class dynamic_mincut {
  public:
     dynamic_mincut() {
         verbose = configuration::getConfig()->verbose;
-        currentlyCaching = false;
     }
 
     ~dynamic_mincut() { }
@@ -58,6 +59,8 @@ class dynamic_mincut {
     EdgeWeight initialize(mutableGraphPtr graph) {
         timer t;
         auto [cut, outgraph, balanced] = cactus.findAllMincuts(graph);
+        numCachedMincuts = 0;
+        lowestCachedMincut = UNDEFINED_EDGE;
         original_graph = graph;
         out_cactus = outgraph;
         current_cut = cut;
@@ -90,14 +93,14 @@ class dynamic_mincut {
                 if (vtxset.size() == out_cactus->n()) {
                     LOGC(verbose) << "full recompute";
                     EdgeWeight mincut = UNDEFINED_NODE;
-                    if (currentlyCaching) {
+                    if (lowestCachedMincut != UNDEFINED_EDGE) {
                         noi_minimum_cut<mutableGraphPtr> noi;
                         mincut = noi.perform_minimum_cut(original_graph);
                     }
 
-                    if (mincut == cachedMincut
-                        && 2 * cachedInserts.size() < cachedCactus->n()) {
-                        buildCactusFromCache();
+                    if (mincut == lowestCachedMincut &&
+                        2 * cachedInserts.size() < cachedCactus[mincut]->n()) {
+                        buildCactusFromCache(mincut);
                     } else {
                         auto [cut, outg, b] = cactus.findAllMincuts(
                             original_graph, mincut);
@@ -115,26 +118,54 @@ class dynamic_mincut {
         return current_cut;
     }
 
-    void buildCactusFromCache() {
-        currentlyCaching = false;
-        for (auto [s, t, w] : cachedInserts) {
-            NodeID sCactusPos = cachedCactus->getCurrentPosition(s);
-            NodeID tCactusPos = cachedCactus->getCurrentPosition(t);
+    void buildCactusFromCache(EdgeWeight mincut) {
+        numCachedMincuts--;
+        currentlyCaching[mincut] = false;
+        if (numCachedMincuts == 0) {
+            lowestCachedMincut = UNDEFINED_EDGE;
+        } else {
+            for (size_t i = mincut + 1; i < currentlyCaching.size(); ++i) {
+                if (currentlyCaching[i]) {
+                    lowestCachedMincut = i;
+                    break;
+                }
+            }
+
+            if (cachedInserts[mincut].size()
+                + cachedInserts[lowestCachedMincut].size() > max_cache_size) {
+                if (numCachedMincuts > 0) {
+                    // delete all larger mincut cacti by shrinking the vector
+                    cachedCactus.resize(mincut + 1);
+                    cachedInserts.resize(mincut + 1);
+                    currentlyCaching.resize(mincut + 1);
+                    numCachedMincuts = 0;
+                }
+                lowestCachedMincut = UNDEFINED_EDGE;
+            } else {
+                for (auto x : cachedInserts[mincut]) {
+                    cachedInserts[lowestCachedMincut].emplace_back(x);
+                }
+            }
+        }
+
+        for (auto [s, t, w] : cachedInserts[mincut]) {
+            NodeID sCactusPos = cachedCactus[mincut]->getCurrentPosition(s);
+            NodeID tCactusPos = cachedCactus[mincut]->getCurrentPosition(t);
             if (sCactusPos != tCactusPos) {
-                auto vtxset = cactus_path::findPath(cachedCactus, sCactusPos,
-                                                    tCactusPos, current_cut);
-                if (vtxset.size() == cachedCactus->n()) {
+                auto vtxset = cactus_path::findPath(
+                    cachedCactus[mincut], sCactusPos, tCactusPos, current_cut);
+                if (vtxset.size() == cachedCactus[mincut]->n()) {
                     auto [cut, outg, b] = cactus.findAllMincuts(original_graph);
                     out_cactus = outg;
                     current_cut = cut;
                     return;
                 } else {
-                    contractVertexSet(cachedCactus, vtxset);
+                    contractVertexSet(cachedCactus[mincut], vtxset);
                 }
             }
         }
-        out_cactus = cachedCactus;
-        current_cut = cachedMincut;
+        out_cactus = cachedCactus[mincut];
+        current_cut = mincut;
     }
 
     void contractVertexSet(
@@ -275,17 +306,39 @@ class dynamic_mincut {
     }
 
     void putIntoCache(mutableGraphPtr cactusToCache, EdgeWeight cactusCut) {
-        cachedMincut = cactusCut;
-        cachedCactus = cactusToCache;
-        cachedInserts.clear();
-        currentlyCaching = true;
+        numCachedMincuts++;
+        if (cactusCut < lowestCachedMincut) {
+            lowestCachedMincut = cactusCut;
+        }
+
+        if (cachedCactus.size() < cactusCut + 1) {
+            cachedCactus.resize(cactusCut + 1);
+            cachedInserts.resize(cactusCut + 1);
+            currentlyCaching.resize(cactusCut + 1, false);
+        }
+
+        cachedCactus[cactusCut] = cactusToCache;
+        cachedInserts[cactusCut].clear();
+        currentlyCaching[cactusCut] = true;
     }
 
     void cacheEdge(NodeID s, NodeID t, EdgeWeight wgt) {
-        if (currentlyCaching && cachedInserts.size() <= max_cache_size) {
-            cachedInserts.emplace_back(s, t, wgt);
+        if (numCachedMincuts > 0
+            && cachedInserts[lowestCachedMincut].size() <= max_cache_size) {
+            cachedInserts[lowestCachedMincut].emplace_back(s, t, wgt);
         } else {
-            currentlyCaching = false;
+            if (numCachedMincuts > 0) {
+                numCachedMincuts--;
+                currentlyCaching[lowestCachedMincut] = false;
+                if (numCachedMincuts > 0) {
+                    // delete all larger mincut cacti by shrinking the vector
+                    cachedCactus.resize(lowestCachedMincut + 1);
+                    cachedInserts.resize(lowestCachedMincut + 1);
+                    currentlyCaching.resize(lowestCachedMincut + 1);
+                    numCachedMincuts = 0;
+                }
+                lowestCachedMincut = UNDEFINED_EDGE;
+            }
         }
     }
 };

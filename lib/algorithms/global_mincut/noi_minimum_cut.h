@@ -145,7 +145,7 @@ class noi_minimum_cut : public minimum_cut {
                     if (!visited[tgt]) {
                         bool increase = false;
 
-                        if (r_v[tgt] < mincut) {
+                        if (r_v[tgt] < mincut || mincut == 0) {
                             increase = true;
                             if ((r_v[tgt] + G->getEdgeWeight(
                                      current_node, e)) >= mincut) {

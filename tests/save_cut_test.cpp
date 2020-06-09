@@ -53,7 +53,7 @@ typedef testing::Types<viecut<graphAccessPtr>,
 #else
 typedef testing::Types<viecut<graphAccessPtr>,
                        noi_minimum_cut<graphAccessPtr>,
-                       matula_approx<graphAccessPtr>> MCAlgTypes;
+                       matula_approx<graphAccessPtr> > MCAlgTypes;
 #endif
 
 TYPED_TEST_CASE(SaveCutTest, MCAlgTypes);

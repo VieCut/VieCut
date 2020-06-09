@@ -73,18 +73,25 @@ class push_relabel {
 
     // perform a backward bfs in the residual starting at the sink
     // to update distance labels
+    template <bool initial = false>
     void global_relabeling(std::vector<NodeID> sources, NodeID source) {
         std::queue<NodeID> Q;
         NodeID flow_source = sources[source];
 
         for (NodeID n : m_G->nodes()) {
             m_bfstouched[n] = false;
-            m_distance[n] = std::max(m_distance[n], m_G->number_of_nodes());
+            if constexpr (limited && initial) {
+                m_distance[n] = 3;
+            } else {
+                m_distance[n] = std::max(m_distance[n], m_G->number_of_nodes());
+            }
         }
 
         for (NodeID sink : sources) {
-            if (sink == flow_source)
+            if (sink == flow_source) {
+                m_distance[sink] = m_G->n();
                 continue;
+            }
 
             Q.push(sink);
             m_bfstouched[sink] = true;
@@ -108,7 +115,13 @@ class push_relabel {
                     m_count[m_distance[target]]--;
                     m_distance[target] = m_distance[node] + 1;
                     m_count[m_distance[target]]++;
-                    Q.push(target);
+                    if constexpr (limited && initial) {
+                        if (m_distance[target] < 2) {
+                            Q.push(target);
+                        }
+                    } else {
+                        Q.push(target);
+                    }
                     m_bfstouched[target] = true;
                 }
             }
@@ -344,9 +357,7 @@ class push_relabel {
         NodeID src = sources[curr_source];
 
         init(G, sources, curr_source);
-        if constexpr (!limited) {
-            global_relabeling(sources, curr_source);
-        }
+        global_relabeling<true>(sources, curr_source);
 
         int work_todo = WORK_NODE_TO_EDGES * G->number_of_nodes()
                         + G->number_of_edges();

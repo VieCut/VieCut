@@ -94,6 +94,7 @@ int main(int argn, char** argv) {
     LOG1 << "Starting decremental...";
 
     timer time;
+    bool verbose = cfg->verbose;
 
     size_t ctr = 0;
     if (run_static) {
@@ -104,7 +105,7 @@ int main(int argn, char** argv) {
 #endif
         EdgeWeight previous_cut = static_alg.perform_minimum_cut(G);
         for (auto [s, t] : decrementalEdges) {
-            // LOG1 << ctr << " after " << time.elapsed();
+            LOGC(verbose) << ctr << " after " << time.elapsed();
             ctr++;
             EdgeID eToT = UNDEFINED_EDGE;
             for (EdgeID e : G->edges_of(s)) {
@@ -129,7 +130,7 @@ int main(int argn, char** argv) {
         EdgeWeight previous_cut = dynmc.initialize(G);
         EdgeWeight current_cut = 0;
         for (auto [s, t] : decrementalEdges) {
-            // LOG1 << ctr << " after " << time.elapsed();
+            LOGC(verbose) << ctr << " after " << time.elapsed();
             ctr++;
             current_cut = dynmc.removeEdge(s, t);
 

@@ -116,7 +116,7 @@ class push_relabel {
                     m_distance[target] = m_distance[node] + 1;
                     m_count[m_distance[target]]++;
                     if constexpr (limited && initial) {
-                        if (m_distance[target] < 2) {
+                        if (m_distance[target] < 1) {
                             Q.push(target);
                         }
                     } else {

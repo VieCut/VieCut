@@ -70,6 +70,24 @@ class dynamic_mincut {
         return cut;
     }
 
+    void checkCacheAndRecompute() {
+        EdgeWeight mincut = UNDEFINED_NODE;
+        if (lowestCachedMincut != UNDEFINED_EDGE) {
+            noi_minimum_cut<mutableGraphPtr> noi;
+            mincut = noi.perform_minimum_cut(original_graph);
+        }
+
+        if (mincut == lowestCachedMincut &&
+            2 * cachedInserts.size() < cachedCactus[mincut]->n()) {
+            buildCactusFromCache(mincut);
+        } else {
+            auto [cut, outg, b] = cactus.findAllMincuts(
+                original_graph, mincut);
+            out_cactus = outg;
+            current_cut = cut;
+        }
+    }
+
     EdgeWeight addEdge(NodeID s, NodeID t, EdgeWeight w) {
         timer timer;
         NodeID sCactusPos = out_cactus->getCurrentPosition(s);
@@ -80,9 +98,7 @@ class dynamic_mincut {
             if (current_cut == 0) {
                 if (out_cactus->n() == 2) {
                     LOGC(verbose) << "full recompute from empty";
-                    auto [cut, o, bal] = cactus.findAllMincuts(original_graph);
-                    out_cactus = o;
-                    current_cut = cut;
+                    checkCacheAndRecompute();
                 } else {
                     LOGC(verbose) << "contract two empty vtcs";
                     out_cactus->contractVertexSet({ sCactusPos, tCactusPos });
@@ -92,21 +108,7 @@ class dynamic_mincut {
                                                     tCactusPos, current_cut);
                 if (vtxset.size() == out_cactus->n()) {
                     LOGC(verbose) << "full recompute";
-                    EdgeWeight mincut = UNDEFINED_NODE;
-                    if (lowestCachedMincut != UNDEFINED_EDGE) {
-                        noi_minimum_cut<mutableGraphPtr> noi;
-                        mincut = noi.perform_minimum_cut(original_graph);
-                    }
-
-                    if (mincut == lowestCachedMincut &&
-                        2 * cachedInserts.size() < cachedCactus[mincut]->n()) {
-                        buildCactusFromCache(mincut);
-                    } else {
-                        auto [cut, outg, b] = cactus.findAllMincuts(
-                            original_graph, mincut);
-                        out_cactus = outg;
-                        current_cut = cut;
-                    }
+                    checkCacheAndRecompute();
                 } else {
                     LOGC(verbose) << "contract set of size " << vtxset.size();
                     contractVertexSet(out_cactus, vtxset);

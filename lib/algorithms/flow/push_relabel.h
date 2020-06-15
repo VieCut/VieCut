@@ -78,11 +78,11 @@ class push_relabel {
         std::queue<NodeID> Q;
         NodeID flow_source = sources[source];
 
-        for (NodeID n : m_G->nodes()) {
-            m_bfstouched[n] = false;
-            if constexpr (limited && initial) {
-                m_distance[n] = 3;
+            std::fill(m_bfstouched.begin(), m_bfstouched.end(), false);
+        if constexpr (limited && initial) {
+            std::fill(m_distance.begin(), m_distance.end(), 3);
             } else {
+            for (NodeID n : m_G->nodes()) {
                 m_distance[n] = std::max(m_distance[n], m_G->number_of_nodes());
             }
         }

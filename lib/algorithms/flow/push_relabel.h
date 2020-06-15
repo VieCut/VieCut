@@ -31,7 +31,7 @@ const int WORK_OP_RELABEL = 9;
 const double GLOBAL_UPDATE_FRQ = 0.51;
 const int WORK_NODE_TO_EDGES = 4;
 
-template <bool limited = false>
+template <bool limited = false, bool parallel_flows = false>
 class push_relabel {
  public:
     push_relabel() { }
@@ -78,10 +78,10 @@ class push_relabel {
         std::queue<NodeID> Q;
         NodeID flow_source = sources[source];
 
-            std::fill(m_bfstouched.begin(), m_bfstouched.end(), false);
+        std::fill(m_bfstouched.begin(), m_bfstouched.end(), false);
         if constexpr (limited && initial) {
             std::fill(m_distance.begin(), m_distance.end(), 3);
-            } else {
+        } else {
             for (NodeID n : m_G->nodes()) {
                 m_distance[n] = std::max(m_distance[n], m_G->number_of_nodes());
             }
@@ -281,7 +281,7 @@ class push_relabel {
     }
 
     void setEdgeFlow(NodeID n, EdgeID e, FlowType f) {
-        if (m_parallel_flows) {
+        if constexpr (parallel_flows) {
             edge_flow[n][e] = f;
         } else {
             m_G->setEdgeFlow(n, e, f, m_problemid);
@@ -289,7 +289,7 @@ class push_relabel {
     }
 
     FlowType getEdgeFlow(NodeID n, EdgeID e) {
-        if (m_parallel_flows) {
+        if constexpr (parallel_flows) {
             return edge_flow[n][e];
         } else {
             return m_G->getEdgeFlow(n, e, m_problemid);
@@ -304,7 +304,7 @@ class push_relabel {
         // this exists to be called by std::async.
         // thus, parallel_flows is set to true
         auto source_set = solve_max_flow_min_cut(
-            G, sources, curr_source, compute_source_set, true).second;
+            G, sources, curr_source, compute_source_set).second;
         return source_set;
     }
 
@@ -313,7 +313,6 @@ class push_relabel {
         std::vector<NodeID> sources,
         NodeID curr_source,
         bool compute_source_set,
-        bool parallel_flows = false,
         FlowType limit = 0,
         size_t problem_id = random_functions::nextInt(0, UNDEFINED_NODE)) {
         t.restart();
@@ -336,7 +335,6 @@ class push_relabel {
             }
         }
 
-        m_parallel_flows = parallel_flows;
         m_G = G;
         m_work = 0;
         m_num_relabels = 0;
@@ -423,7 +421,6 @@ class push_relabel {
     size_t m_problemid;
     mutableGraphPtr m_G;
     static const bool extended_logs = false;
-    bool m_parallel_flows;
 
     timer t;
 };

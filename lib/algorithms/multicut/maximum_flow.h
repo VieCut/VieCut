@@ -96,7 +96,7 @@ class maximum_flow {
         std::unordered_set<NodeID> previous;
 
         std::vector<std::future<std::vector<NodeID> > > futures;
-        std::vector<push_relabel<false> > prs(
+        std::vector<push_relabel<false, true> > prs(
             configuration::getConfig()->random_flows +
             configuration::getConfig()->high_distance_flows);
         size_t pr_id = 0;
@@ -137,11 +137,12 @@ class maximum_flow {
 
             if (parallel) {
                 futures.emplace_back(
-                    std::async(&push_relabel<false>::callable_max_flow,
+                    std::async(&push_relabel<false, true>::callable_max_flow,
                                &prs[pr_id++],
                                problem->graph, terms, num_t, true));
             } else {
-                auto sourceSet = prs[pr_id++].solve_max_flow_min_cut(
+                push_relabel pr;
+                auto sourceSet = pr.solve_max_flow_min_cut(
                     problem->graph, terms, num_t, true).second;
 
                 for (const auto& s : sourceSet) {
@@ -172,11 +173,12 @@ class maximum_flow {
 
             if (parallel) {
                 futures.emplace_back(
-                    std::async(&push_relabel<false>::callable_max_flow,
+                    std::async(&push_relabel<false, true>::callable_max_flow,
                                &prs[pr_id++],
                                problem->graph, terms, num_t, true));
             } else {
-                auto sourceSet = prs[pr_id++].solve_max_flow_min_cut(
+                push_relabel pr;
+                auto sourceSet = pr.solve_max_flow_min_cut(
                     problem->graph, terms, num_t, true).second;
 
                 for (const auto& s : sourceSet) {
@@ -211,7 +213,7 @@ class maximum_flow {
         bool parallel_flows = false;
         std::vector<std::future<std::vector<NodeID> > > futures;
         // so futures don't lose their object :)
-        std::vector<push_relabel<false> > prs(problem->terminals.size());
+        std::vector<push_relabel<false, true> > prs(problem->terminals.size());
         if (parallel) {
             // in the beginning when we don't have many problems
             // already (but big graphs), we can start a thread per flow.
@@ -233,9 +235,10 @@ class maximum_flow {
                         sched_setaffinity(0, sizeof(cpu_set_t), &all_cores);
                     }
                     futures.emplace_back(
-                        std::async(&push_relabel<false>::callable_max_flow,
-                                   &prs[i],
-                                   problem->graph, curr_terminals, i, true));
+                        std::async(
+                            &push_relabel<false, true>::callable_max_flow,
+                            &prs[i], problem->graph, curr_terminals,
+                            i, true));
                 } else {
                     push_relabel pr;
                     maxVolIsoBlock.emplace_back(

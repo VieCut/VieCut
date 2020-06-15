@@ -42,6 +42,7 @@ class dynamic_mincut {
     std::vector<std::vector<std::tuple<NodeID, NodeID, EdgeWeight> > >
     cachedInserts;
     std::vector<bool> currentlyCaching;
+    push_relabel<true, false> pr;
 
 #ifdef PARALLEL
     parallel_cactus<mutableGraphPtr> cactus;
@@ -272,17 +273,15 @@ class dynamic_mincut {
             putIntoCache(out_cactus, current_cut);
             size_t fpid = flow_problem_id++;
             recursive_cactus<mutableGraphPtr> rc;
-            push_relabel<false> pr;
             size_t flow = pr.solve_max_flow_min_cut(
-                original_graph, { s, t }, 0, false, false, 0, fpid).first;
+                original_graph, { s, t }, 0, false, 0, fpid).first;
             auto new_g = rc.decrementalRebuild(original_graph, s, flow, fpid);
             current_cut = flow;
             out_cactus = new_g;
         } else {
-            push_relabel<true> pr;
             size_t fp = flow_problem_id++;
             auto [flow, sourceset] = pr.solve_max_flow_min_cut(
-                original_graph, { s, t }, 0, false, false,
+                original_graph, { s, t }, 0, false,
                 current_cut, fp);
             if (static_cast<EdgeWeight>(flow) >= current_cut) {
                 LOGC(verbose) << "cut not changed!";

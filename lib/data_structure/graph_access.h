@@ -597,9 +597,9 @@ class graph_access {
         EdgeID e_rev = -1;
         NodeID src = getEdgeSource(e);
         NodeID tgt = getEdgeTarget(e);
-        for (EdgeID e : edges_of(tgt)) {
-            if (getEdgeTarget(e) == src) {
-                e_rev = e;
+        for (EdgeID re : edges_of(tgt)) {
+            if (getEdgeTarget(re) == src) {
+                e_rev = re;
                 break;
             }
         }

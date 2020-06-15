@@ -64,7 +64,7 @@ class branch_multicut {
 #endif
     static const bool testing = true;
 
-    branch_multicut(mutable_graph original_graph,
+    branch_multicut(const mutable_graph& original_graph,
                     std::vector<NodeID> original_terminals,
                     std::vector<bool> fixed_vertex)
         : original_graph(original_graph),

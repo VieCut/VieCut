@@ -101,7 +101,7 @@ class adjlist_graph {
         return false;
     }
 
-    void construct_from_graph(graph_access G) {
+    void construct_from_graph(const graph_access& G) {
         start_construction(G.number_of_nodes(), G.number_of_edges());
         for (NodeID n : G.nodes()) {
             new_node(G.getNodeWeight(n));

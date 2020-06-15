@@ -108,15 +108,15 @@ class multiterminal_cut {
                 graph_algorithms::checkGraphValidity(problem.graph);
             }
 
-            std::vector<NodeID> terminals;
+            std::vector<NodeID> p_terminals;
             for (size_t i = 0; i < problem.terminals.size(); ++i) {
-                terminals.emplace_back(problem.terminals[i].position);
+                p_terminals.emplace_back(problem.terminals[i].position);
             }
 
             configuration::getConfig()->orign = problems[p].graph->n();
             configuration::getConfig()->origm = problems[p].graph->m();
 
-            branch_multicut bmc(originalGraphs[p], terminals, fixedVertex[p]);
+            branch_multicut bmc(originalGraphs[p], p_terminals, fixedVertex[p]);
             auto p_pointer = std::make_shared<multicut_problem>(problem);
             auto [sol, flow] = bmc.find_multiterminal_cut(p_pointer);
             flow_sum += flow;

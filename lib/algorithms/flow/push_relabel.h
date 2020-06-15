@@ -369,7 +369,7 @@ class push_relabel {
 
             if constexpr (limited) {
                 if (m_limitreached) {
-                    return std::make_pair(limit, std::vector<NodeID>{ });
+                    return std::make_pair(limit, std::vector<NodeID> { });
                 }
             }
 

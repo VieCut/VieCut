@@ -79,7 +79,7 @@ class parallel_cactus : public minimum_cut {
         if (graphs.size() == 0 || !graphs.back()) {
             mutableGraphPtr empty;
             return std::make_tuple(
-                -1, empty, std::vector<std::pair<NodeID, EdgeID> >{ });
+                -1, empty, std::vector<std::pair<NodeID, EdgeID> > { });
         }
         timer t;
         EdgeWeight mincut = graphs.back()->getMinDegree();

@@ -48,7 +48,7 @@ class most_balanced_minimum_cut {
         auto [n1, e1, n2, e2, bestcutInCycle] = dfs.runDFS();
 
         if (!configuration::getConfig()->set_node_in_cut) {
-            return std::vector<std::pair<NodeID, EdgeID> >{ };
+            return std::vector<std::pair<NodeID, EdgeID> > { };
         }
 
         NodeID rev_n1 = G->getEdgeTarget(n1, e1);

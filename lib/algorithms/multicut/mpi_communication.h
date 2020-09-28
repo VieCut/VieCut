@@ -52,16 +52,19 @@ class mpi_communication {
     }
 
     void broadcastImprovedSolution(FlowType solution) {
+        FlowType beforeBest = best_solution;
         if (solution < best_solution) {
-            best_solution = solution;
+            bool updated = __sync_bool_compare_and_swap(
+                &best_solution, beforeBest, solution);
+            if (!updated) return;  // CAS so every solution is only sent once
             bestSolutionLocal = true;
-        }
 
-        for (int i = 0; i < mpi_size; ++i) {
-            if (i != mpi_rank) {
-                LOG0 << mpi_rank << " sending " << best_solution << " to " << i;
-                MPI_Isend(&best_solution, 1, MPI_LONG,
-                          i, 15123, MPI_COMM_WORLD, &req[i]);
+            for (int i = 0; i < mpi_size; ++i) {
+                if (i != mpi_rank) {
+                    LOG0 << mpi_rank << " send " << best_solution << " > " << i;
+                    MPI_Isend(&best_solution, 1, MPI_LONG,
+                              i, 15123, MPI_COMM_WORLD, &req[i]);
+                }
             }
         }
     }

@@ -509,7 +509,8 @@ class branch_multicut {
 
     void updateBestSolution(std::vector<NodeID>* sol, size_t numTerminals) {
         auto s = pm.findBestSolution(sol, numTerminals);
-        if (s.has_value()) {
+        if (s.has_value() && last_sent_flow > pm.bestCut()) {
+            last_sent_flow = pm.bestCut();
             mpic.broadcastImprovedSolution(s.value());
         }
     }

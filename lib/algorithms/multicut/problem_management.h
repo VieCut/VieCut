@@ -202,7 +202,7 @@ class problem_management {
 
             graph_contraction::deleteTermEdges(new_p, original_terminals);
             std::optional<int> sending = std::nullopt;
-            if (mpi_size > 1 && thread_id == 0) {
+            if (i < terminal_ids.size() - 1 && mpi_size > 1 && thread_id == 0) {
                 sending = mpic->checkForReceiver();
             } 
             if (sending.has_value()) {

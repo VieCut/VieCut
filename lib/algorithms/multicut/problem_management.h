@@ -55,6 +55,8 @@ class problem_management {
     bool bestSolutionInitialized;
     measurements msm;
     timer t;
+    int mpi_size;
+    int mpi_rank;
 
  public:
     problem_management(const mutable_graph& original_graph,
@@ -76,6 +78,8 @@ class problem_management {
           beforeLSGUB(original_terminals.size() + 1, UNDEFINED_FLOW),
           bestSolutionInitialized(false),
           msm(this->original_graph, this->original_terminals) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
         best_solution.resize(original_graph.number_of_nodes());
     }
 
@@ -118,9 +122,10 @@ class problem_management {
         return problems.pullProblem(thread_id, send);
     }
 
-    void branch(problemPointer problem, size_t thread_id) {
+    void branch(problemPointer problem, size_t thread_id,
+                mpi_communication* mpic) {
         if (configuration::getConfig()->multibranch) {
-            multiBranch(problem, thread_id);
+            multiBranch(problem, thread_id, mpic);
         } else {
             singleBranch(problem, thread_id);
         }
@@ -137,7 +142,7 @@ class problem_management {
     }
 
     void multiBranch(problemPointer problem,
-                     size_t thread_id) {
+                     size_t thread_id, mpi_communication* mpic) {
         auto [vertex, terminal_ids] = findEdgeMultiBranch(problem);
         std::unordered_set<NodeID> terminals;
         for (const auto& t : problem->terminals) {
@@ -196,7 +201,15 @@ class problem_management {
             }
 
             graph_contraction::deleteTermEdges(new_p, original_terminals);
-            processNewProblem(new_p, thread_id);
+            std::optional<int> sending = std::nullopt;
+            if (mpi_size > 1 && thread_id == 0) {
+                sending = mpic->checkForReceiver();
+            } 
+            if (sending.has_value()) {
+                mpic->sendProblem(new_p, sending.value());
+            } else {
+                processNewProblem(new_p, thread_id);
+            }
         }
     }
 
@@ -235,6 +248,7 @@ class problem_management {
                 sol = msm.getSolution(new_p);
                 runLS = true;
             }
+
             size_t thr = problems.addProblem(new_p, thread_id,
                                              runLocalSearch(new_p));
             q_cv[thr].notify_all();

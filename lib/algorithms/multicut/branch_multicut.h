@@ -81,7 +81,8 @@ class branch_multicut {
           msm(this->original_graph, this->original_terminals),
           last_sent_flow(UNDEFINED_FLOW),
           log_timer(0),
-          finished(false) {
+          finished(false),
+          mpic() {
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
         mpi_num_done = 0;
@@ -297,6 +298,7 @@ class branch_multicut {
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 
+        LOG1 << ((double) heapsize) / 1024.0 / 1024.0;
         uint64_t max_size = 32UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
             LOG1 << "Memoryout!";
@@ -552,7 +554,7 @@ class branch_multicut {
 
         if (outOfMemory())
             return;
-        pm.branch(problem, thread_id);
+        pm.branch(problem, thread_id, &mpic);
 
         if (outOfMemory())
             return;

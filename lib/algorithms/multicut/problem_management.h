@@ -381,7 +381,7 @@ class problem_management {
     }
 
     bool runLocalSearch(problemPointer problem) {
-        return problem->upper_bound < beforeLSGUB[problem->terminals.size()];
+        return problem->upper_bound < beforeLSGUB[problem->terminals.size()] && !queueEmpty;
     }
 
     void updateBound(FlowType newSolution) {

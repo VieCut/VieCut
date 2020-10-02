@@ -71,6 +71,8 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('s', "seed", config->seed, "random seed");
     cmdl.add_stringlist('t', "terminal", config->term_strings,
                         "add terminal vertex");
+    cmdl.add_size_t('T', "maxtime", config->timeoutSeconds,
+                    "Timeout after [s]");
     cmdl.add_flag('w', "write_solution", config->write_solution,
                   "Print best solution");
     cmdl.add_flag('X', "inexact", config->inexact, "Apply inexact heuristics");

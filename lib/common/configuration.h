@@ -59,7 +59,9 @@ class configuration {
     size_t maximumBranchingFactor = 5;
     bool multibranch = true;
     bool inexact = false;
+    bool runLocalSearch = true;
     size_t timeoutSeconds = 600;
+    double ilpTime = 60.0;
     NodeID orign;
     EdgeID origm;
 

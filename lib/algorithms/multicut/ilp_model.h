@@ -78,9 +78,7 @@ class ilp_model {
                 }
             }
             model.set(GRB_IntParam_PoolSearchMode, 0);
-
-            // TODO(anoe): time limit lowered, change this back (possibly)
-            model.set(GRB_DoubleParam_TimeLimit, 60.0);
+            model.set(GRB_DoubleParam_TimeLimit, configuration::getConfig()->ilpTime);
             // Set decision variables for nodes
             for (size_t q = 0; q < num_terminals; q++) {
                 GRBLinExpr nodeTot = 0;

@@ -298,7 +298,6 @@ class branch_multicut {
         MallocExtension::instance()->GetNumericProperty(
             "generic.heap_size", &heapsize);
 
-        LOG1 << ((double) heapsize) / 1024.0 / 1024.0;
         uint64_t max_size = 32UL * 1024UL * 1024UL * 1024UL;
         if (heapsize > max_size) {
             LOG1 << "Memoryout!";

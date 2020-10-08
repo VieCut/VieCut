@@ -204,7 +204,7 @@ class problem_management {
             std::optional<int> sending = std::nullopt;
             if (i < terminal_ids.size() - 1 && mpi_size > 1 && thread_id == 0) {
                 sending = mpic->checkForReceiver();
-            } 
+            }
             if (sending.has_value()) {
                 mpic->sendProblem(new_p, sending.value());
             } else {

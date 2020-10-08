@@ -34,7 +34,8 @@ class dynamic_mincut {
     mutableGraphPtr out_cactus;
     EdgeWeight current_cut;
     size_t flow_problem_id;
-    size_t max_cache_size = 100;
+    size_t max_cache_size = 1000;
+    size_t callsOfStaticAlgorithm;
 
     size_t numCachedMincuts;
     EdgeWeight lowestCachedMincut;
@@ -61,6 +62,7 @@ class dynamic_mincut {
         timer t;
         auto [cut, outgraph, balanced] = cactus.findAllMincuts(graph);
         numCachedMincuts = 0;
+        callsOfStaticAlgorithm = 1;
         lowestCachedMincut = UNDEFINED_EDGE;
         original_graph = graph;
         out_cactus = outgraph;
@@ -84,6 +86,7 @@ class dynamic_mincut {
         } else {
             auto [cut, outg, b] = cactus.findAllMincuts(
                 original_graph, mincut);
+            callsOfStaticAlgorithm++;
             out_cactus = outg;
             current_cut = cut;
         }
@@ -159,6 +162,7 @@ class dynamic_mincut {
                     cachedCactus[mincut], sCactusPos, tCactusPos, current_cut);
                 if (vtxset.size() == cachedCactus[mincut]->n()) {
                     auto [cut, outg, b] = cactus.findAllMincuts(original_graph);
+                    callsOfStaticAlgorithm++;
                     out_cactus = outg;
                     current_cut = cut;
                     return;
@@ -304,6 +308,10 @@ class dynamic_mincut {
 
     mutableGraphPtr getCurrentCactus() {
         return out_cactus;
+    }
+
+    size_t getCallsOfStaticAlgorithm() {
+        return callsOfStaticAlgorithm;
     }
 
     void putIntoCache(mutableGraphPtr cactusToCache, EdgeWeight cactusCut) {

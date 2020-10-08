@@ -56,9 +56,14 @@ int main(int argn, char** argv) {
         return -1;
 
     auto edgenames = tlx::split('.', dynamic_edges);
-    auto seedstr = edgenames[edgenames.size() - 1];
-    auto delstr = edgenames[edgenames.size() - 2];
-    auto insstr = edgenames[edgenames.size() - 3];
+    std::string seedstr = "";
+    std::string delstr = "";
+    std::string insstr = "";
+    if (edgenames.size() >= 4) {
+        seedstr = edgenames[edgenames.size() - 1];
+        delstr = edgenames[edgenames.size() - 2];
+        insstr = edgenames[edgenames.size() - 3];
+    }
 
     random_functions::setSeed(cfg->seed);
 
@@ -84,6 +89,7 @@ int main(int argn, char** argv) {
 
     auto [numV, tempEdges] = graph_io::readTemporalGraph(dynamic_edges);
 
+    LOG1 << "graph with " << numV << " vertices!";
     if (initial_graph == "") {
         G = std::make_shared<mutable_graph>();
         G->start_construction(numV);
@@ -95,6 +101,8 @@ int main(int argn, char** argv) {
     timer t;
     size_t ctr = 0;
     size_t cutchange = 0;
+    size_t staticruns = 0;
+    bool verbose = configuration::getConfig()->verbose;
 
     if (run_static) {
 #ifdef PARALLEL
@@ -102,9 +110,27 @@ int main(int argn, char** argv) {
 #else
         noi_minimum_cut<mutableGraphPtr> static_alg;
 #endif
+        EdgeID previous_timestamp = std::get<3>(tempEdges[0]);
         EdgeWeight previous_cut = static_alg.perform_minimum_cut(G);
+        size_t edgesInBatch = 0;
         for (auto [s, t, w, timestamp] : tempEdges) {
+            if (timestamp != previous_timestamp) {
+                edgesInBatch = 0;
+                previous_timestamp = timestamp;
+                staticruns++;
+                EdgeWeight current_cut = static_alg.perform_minimum_cut(G);
+                if (current_cut != previous_cut) {
+                    previous_cut = current_cut;
+                    cutchange++;
+                }
+            }
+            edgesInBatch++;
             ctr++;
+            if (ctr % 1000 == 0) {
+                LOG1 << ctr << " out of " << tempEdges.size()
+                     << " -> " << staticruns << " batches so far";
+            }
+            if (s == t) continue;
             if (w > 0) {
                 G->new_edge_order(s, t, w);
             } else {
@@ -117,13 +143,9 @@ int main(int argn, char** argv) {
                 }
                 if (eToT == UNDEFINED_EDGE) {
                     LOG1 << "Warning: delete edge that doesn't exist!";
+                } else {
+                    G->deleteEdge(s, eToT);
                 }
-                G->deleteEdge(s, eToT);
-            }
-            EdgeWeight current_cut = static_alg.perform_minimum_cut(G);
-            if (current_cut != previous_cut) {
-                previous_cut = current_cut;
-                cutchange++;
             }
         }
     } else {
@@ -132,6 +154,7 @@ int main(int argn, char** argv) {
         EdgeWeight current_cut = 0;
         for (auto [s, t, w, timestamp] : tempEdges) {
             ctr++;
+            if (s == t) continue;
             if (w > 0) {
                 current_cut = dynmc.addEdge(s, t, w);
             } else {
@@ -142,14 +165,21 @@ int main(int argn, char** argv) {
                 cutchange++;
             }
         }
+        staticruns = dynmc.getCallsOfStaticAlgorithm();
+    }
+
+    std::string graph = initial_graph;
+    if (graph == "") {
+        graph = dynamic_edges;
     }
 
     LOG1 << "RESULT"
-         << " graph=" << initial_graph
+         << " graph=" << graph
          << " time=" << t.elapsed()
          << " cutchange=" << cutchange
          << " insert=" << insstr
          << " delete=" << delstr
          << " seed=" << seedstr
-         << " static=" << run_static;
+         << " static=" << run_static
+         << " runs_static_alg=" << staticruns;
 }

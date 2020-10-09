@@ -146,10 +146,6 @@ int main(int argn, char** argv) {
             }
             currentBatchSize++;
             ctr++;
-            if (ctr % 1000 == 0) {
-                LOG1 << ctr << " out of " << dynEdges.size()
-                     << " -> " << staticruns << " batches so far";
-            }
             if (s == t) continue;
             if (isInsert) {
                 dynG->new_edge_order(s, t, w);
@@ -170,6 +166,12 @@ int main(int argn, char** argv) {
                 }
             }
         }
+	staticruns++;
+	EdgeWeight current_cut = static_alg.perform_minimum_cut(dynG);
+	if (current_cut != previous_cut) {
+	    LOG1 << "at end, cut " << current_cut;
+	    cutchange++;
+	}	
     } else {
         dynamic_mincut dynmc;
         EdgeWeight previous_cut = dynmc.initialize(dynG);
@@ -187,7 +189,8 @@ int main(int argn, char** argv) {
             if (current_cut != previous_cut) {
                 previous_cut = current_cut;
                 cutchange++;
-            }
+		LOG1 << "after " << ctr << " " << current_cut;
+	    }
         }
         staticruns = dynmc.getCallsOfStaticAlgorithm();
     }

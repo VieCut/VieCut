@@ -119,8 +119,8 @@ class dynamic_mincut {
                 }
             }
         }
-        LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut
-                      << " vtcs_in_cactus " << out_cactus->n();
+        // LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut
+        //              << " vtcs_in_cactus " << out_cactus->n();
         return current_cut;
     }
 
@@ -279,7 +279,9 @@ class dynamic_mincut {
             size_t fpid = flow_problem_id++;
             recursive_cactus<mutableGraphPtr> rc;
             size_t flow = pr.solve_max_flow_min_cut(
-                original_graph, { s, t }, 0, false, 0, fpid).first;
+                original_graph, { s, t }, 0, false, current_cut, fpid).first;
+
+            rc.setMincut(flow);
             auto new_g = rc.decrementalRebuild(original_graph, s, flow, fpid);
             current_cut = flow;
             out_cactus = new_g;
@@ -288,9 +290,7 @@ class dynamic_mincut {
             auto [flow, sourceset] = pr.solve_max_flow_min_cut(
                 original_graph, { s, t }, 0, false,
                 current_cut, fp);
-            if (static_cast<EdgeWeight>(flow) >= current_cut) {
-                LOGC(verbose) << "cut not changed!";
-            } else {
+            if (static_cast<EdgeWeight>(flow) < current_cut) {
                 putIntoCache(out_cactus, current_cut);
                 recursive_cactus<mutableGraphPtr> rc;
                 auto new_g = rc.decrementalRebuild(original_graph, s, flow, fp);
@@ -299,7 +299,7 @@ class dynamic_mincut {
                 LOGC(verbose) << "recomputing, minimum cut changed to " << flow;
             }
         }
-        LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut;
+        // LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut;
         return current_cut;
     }
 

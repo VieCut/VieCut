@@ -50,17 +50,157 @@ int main(int argn, char** argv) {
     cmdl.add_double('r', "remove_factor", remove_factor,
                     "factor of edges that are removed dynamically");
     cmdl.add_size_t('b', "batch_size", batch_size, "batch size");
-    cmdl.add_size_t('s', "seed", configuration::getConfig()->seed, "rnd seed");
+    cmdl.add_size_t('r', "seed", configuration::getConfig()->seed, "rnd seed");
+    cmdl.add_bool('s', "run_static", run_static, "Run static algorithm");
+    cmdl.add_bool('v', "vbs", configuration::getConfig()->verbose, "verbose");
+
+    configuration::getConfig()->save_cut = true;
 
     if (!cmdl.process(argn, argv))
         return -1;
 
     random_functions::setSeed(configuration::getConfig()->seed);
-    mutableGraphPtr G = graph_io::readGraphWeighted<mutable_graph>(init_graph);
+    graphAccessPtr G = graph_io::readGraphWeighted<graph_access>(init_graph);
 
-    size_t insert_edges = std::floor(insert_factor * G->m());
-    size_t remove_edges = std::floor(remove_factor * G->m());
+    size_t insert_edges =
+        std::floor(insert_factor * static_cast<double>(G->m()) * 0.5);
+    size_t remove_edges =
+        std::floor(remove_factor * static_cast<double>(G->m()) * 0.5);
 
-    LOG1 << "insert " << insert_edges << " remove " << remove_edges; 
+    if (insert_factor + remove_factor >= 0.999) {
+        LOG1 << "ERROR: Insert factor + remove factor >= 1. Exiting!";
+        exit(1);
+    }
 
+    size_t ie = 0;
+    size_t re = 0;
+    std::vector<bool> insertMarked(G->m(), false);
+    std::vector<bool> removeMarked(G->m(), false);
+
+    EdgeID nextEdge = random_functions::nextInt(0, G->m() - 1);
+    while (ie < insert_edges) {
+        while (insertMarked[nextEdge]
+               || G->getEdgeTarget(nextEdge) < G->getEdgeSource(nextEdge)) {
+            nextEdge = random_functions::nextInt(0, G->m() - 1);
+        }
+        insertMarked[nextEdge] = true;
+        ie++;
+    }
+    while (re < remove_edges) {
+        while (insertMarked[nextEdge] || removeMarked[nextEdge]
+               || G->getEdgeTarget(nextEdge) < G->getEdgeSource(nextEdge)) {
+            nextEdge = random_functions::nextInt(0, G->m() - 1);
+        }
+        removeMarked[nextEdge] = true;
+        re++;
+    }
+
+    std::vector<std::tuple<NodeID, NodeID, int64_t, uint64_t> > edges;
+    LOG1 << "insert " << insert_edges << " remove " << remove_edges;
+    mutableGraphPtr dynG = std::make_shared<mutable_graph>();
+    std::vector<std::tuple<NodeID, NodeID, int64_t, bool> > dynEdges;
+
+    dynG->start_construction(G->n());
+    for (EdgeID e : G->edges()) {
+        NodeID src = G->getEdgeSource(e);
+        NodeID tgt = G->getEdgeTarget(e);
+        EdgeWeight wgt = G->getEdgeWeight(e);
+        if (tgt < src) continue;
+        if (!insertMarked[e]) {
+            dynG->new_edge_order(src, tgt, wgt);
+        } else {
+            dynEdges.emplace_back(src, tgt, wgt, true);
+        }
+        if (removeMarked[e]) {
+            dynEdges.emplace_back(src, tgt, wgt, false);
+        }
+    }
+    dynG->finish_construction();
+    std::shuffle(dynEdges.begin(), dynEdges.end(), random_functions::getRand());
+
+    timer t;
+    size_t ctr = 0;
+    size_t cutchange = 0;
+    size_t staticruns = 1;
+    LOG1 << dynG->m();
+    size_t insert = 0;
+    size_t remove = 0;
+    if (run_static) {
+        size_t currentBatchSize = 0;
+#ifdef PARALLEL
+        exact_parallel_minimum_cut<mutableGraphPtr> static_alg;
+#else
+        noi_minimum_cut<mutableGraphPtr> static_alg;
+#endif
+        EdgeWeight previous_cut = static_alg.perform_minimum_cut(dynG);
+        for (auto [s, t, w, isInsert] : dynEdges) {
+            if (currentBatchSize >= batch_size) {
+                currentBatchSize = 0;
+                staticruns++;
+                EdgeWeight current_cut = static_alg.perform_minimum_cut(dynG);
+                if (current_cut != previous_cut) {
+                    previous_cut = current_cut;
+                    cutchange++;
+                    LOG1 << "after " << ctr << " " << current_cut;
+                }
+            }
+            currentBatchSize++;
+            ctr++;
+            if (ctr % 1000 == 0) {
+                LOG1 << ctr << " out of " << dynEdges.size()
+                     << " -> " << staticruns << " batches so far";
+            }
+            if (s == t) continue;
+            if (isInsert) {
+                dynG->new_edge_order(s, t, w);
+                insert++;
+            } else {
+                EdgeID eToT = UNDEFINED_EDGE;
+                for (EdgeID e : dynG->edges_of(s)) {
+                    if (dynG->getEdgeTarget(s, e) == t) {
+                        eToT = e;
+                        break;
+                    }
+                }
+                if (eToT == UNDEFINED_EDGE) {
+                    LOG1 << "Warning: delete edge that doesn't exist!";
+                } else {
+                    dynG->deleteEdge(s, eToT);
+                    remove++;
+                }
+            }
+        }
+    } else {
+        dynamic_mincut dynmc;
+        EdgeWeight previous_cut = dynmc.initialize(dynG);
+        EdgeWeight current_cut = 0;
+        for (auto [s, t, w, isInsert] : dynEdges) {
+            ctr++;
+            if (s == t) continue;
+            if (isInsert) {
+                insert++;
+                current_cut = dynmc.addEdge(s, t, w);
+            } else {
+                remove++;
+                current_cut = dynmc.removeEdge(s, t);
+            }
+            if (current_cut != previous_cut) {
+                previous_cut = current_cut;
+                cutchange++;
+            }
+        }
+        staticruns = dynmc.getCallsOfStaticAlgorithm();
+    }
+    LOG1 << insert << " " << remove;
+    LOG1 << dynG->m();
+
+    LOG1 << "RESULT"
+         << " graph=" << init_graph
+         << " time=" << t.elapsed()
+         << " cutchange=" << cutchange
+         << " insert=" << insert_edges
+         << " delete=" << remove_edges
+         << " seed=" << configuration::getConfig()->seed
+         << " static=" << run_static
+         << " runs_static_alg=" << staticruns;
 }

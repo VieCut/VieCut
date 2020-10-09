@@ -180,6 +180,10 @@ class random_functions {
         return m_mt();
     }
 
+    static MersenneTwister getRand() {
+        return m_mt;
+    }
+
     static void setSeed(int seed) {
         m_seed = seed;
         srand(seed);

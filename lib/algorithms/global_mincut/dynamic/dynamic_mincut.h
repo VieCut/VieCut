@@ -250,7 +250,8 @@ class dynamic_mincut {
         }
 
         if (eToT == UNDEFINED_EDGE) {
-            LOG1 << "Warning: Deleting edge that does not exist! Doing nothing";
+            LOG1 << "Warning: Deleting edge between " << s << " and " << t
+                 << " that does not exist! Doing nothing";
             return current_cut;
         }
 

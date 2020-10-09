@@ -66,17 +66,16 @@ int main(int argn, char** argv) {
     }
 
     random_functions::setSeed(cfg->seed);
+    bool verbose = configuration::getConfig()->verbose;
 
 #ifdef PARALLEL
-    LOGC(cfg->verbose) << "PARALLEL DEFINED, USING " << procs << " THREADS";
+    LOGC(verbose) << "PARALLEL DEFINED, USING " << procs << " THREADS";
     omp_set_num_threads(procs);
     parallel_cactus<mutableGraphPtr> cactus;
 #else
-    LOGC(cfg->verbose) << "PARALLEL NOT DEFINED";
+    LOGC(verbose) << "PARALLEL NOT DEFINED";
     cactus_mincut<mutableGraphPtr> cactus;
 #endif
-
-    random_functions::setSeed(cfg->seed);
 
     cfg->save_cut = true;
 
@@ -102,7 +101,6 @@ int main(int argn, char** argv) {
     size_t ctr = 0;
     size_t cutchange = 0;
     size_t staticruns = 0;
-    bool verbose = configuration::getConfig()->verbose;
 
     if (run_static) {
 #ifdef PARALLEL

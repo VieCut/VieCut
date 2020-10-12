@@ -382,7 +382,7 @@ class problem_management {
 
     bool runLocalSearch(problemPointer problem) {
         return problem->upper_bound < beforeLSGUB[problem->terminals.size()]
-            && configuration::getConfig()->runLocalSearch;
+               && configuration::getConfig()->runLocalSearch;
     }
 
     void updateBound(FlowType newSolution) {

@@ -118,7 +118,7 @@ int main(int argn, char** argv) {
     dynG->finish_construction();
     std::shuffle(dynEdges.begin(), dynEdges.end(), random_functions::getRand());
 
-    timer t;
+    timer run_timer;
     size_t ctr = 0;
     size_t cutchange = 0;
     size_t staticruns = 1;
@@ -199,7 +199,7 @@ int main(int argn, char** argv) {
 
     LOG1 << "RESULT"
          << " graph=" << init_graph
-         << " time=" << t.elapsed()
+         << " time=" << run_timer.elapsed()
          << " cutchange=" << cutchange
          << " insert=" << insert_edges
          << " delete=" << remove_edges

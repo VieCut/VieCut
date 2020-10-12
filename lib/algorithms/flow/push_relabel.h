@@ -42,18 +42,18 @@ class push_relabel {
               std::vector<NodeID> sources,
               NodeID source) {
         m_Q = std::queue<NodeID>();
-        m_excess.clear();
-        m_distance.clear();
-        m_active.clear();
-        m_count.clear();
-        m_bfstouched.clear();
-
-        m_excess.resize(G->number_of_nodes(), 0);
-        m_distance.resize(G->number_of_nodes(), 0);
-        m_active.resize(G->number_of_nodes(), false);
-        m_count.resize(2 * G->number_of_nodes(), 0);
-        m_bfstouched.resize(G->number_of_nodes(), false);
-        m_already_contracted.resize(G->number_of_nodes(), false);
+        if (m_excess.size() < G->n()) {
+            m_excess.resize(G->n(), 0);
+            m_distance.resize(G->n(), 0);
+            m_active.resize(G->n(), false);
+            m_count.resize(2 * G->n(), 0);
+            m_bfstouched.resize(G->n(), false);
+        }
+        std::fill(m_excess.begin(), m_excess.end(), 0);
+        std::fill(m_distance.begin(), m_distance.end(), 0);
+        std::fill(m_active.begin(), m_active.end(), false);
+        std::fill(m_count.begin(), m_count.end(), 0);
+        std::fill(m_bfstouched.begin(), m_bfstouched.end(), false);
 
         m_count[0] = G->number_of_nodes() - 1;
         m_count[G->number_of_nodes()] = 1;
@@ -149,6 +149,9 @@ class push_relabel {
         m_excess[target] += amount;
 
         if constexpr (limited) {
+            /* if (target == m_sink) {
+                 LOG1 << t.elapsed() << " e " << m_excess[target];
+             }*/
             if (target == m_sink && m_excess[target] >= m_limit) {
                 m_limitreached = true;
                 return;
@@ -408,7 +411,6 @@ class push_relabel {
     std::vector<int> m_count;
     std::queue<NodeID> m_Q;
     std::vector<bool> m_bfstouched;
-    std::vector<bool> m_already_contracted;
     std::vector<std::vector<FlowType> > edge_flow;
     int m_num_relabels;
     int m_gaps;

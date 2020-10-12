@@ -299,7 +299,9 @@ class dynamic_mincut {
                 LOGC(verbose) << "recomputing, minimum cut changed to " << flow;
             }
         }
-        // LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut;
+        LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut
+                      << " n " << original_graph->n()
+                      << " m " << original_graph->m();
         return current_cut;
     }
 

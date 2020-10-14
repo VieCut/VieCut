@@ -185,8 +185,12 @@ class mutable_graph {
         vertices[node][edge].problem_id = f_prob;
     }
 
+    void addEdgeFlow(NodeID node, EdgeID edge, FlowType addFlow) {
+        vertices[node][edge].flow += addFlow;
+    }
+
     FlowType getEdgeFlow(NodeID node, EdgeID edge, size_t f_problem) {
-        if (vertices[node][edge].problem_id == f_problem) {
+        if (vertices[node][edge].problem_id == f_problem) [[unlikely]] {
             return vertices[node][edge].flow;
         } else {
             vertices[node][edge].flow = 0;

@@ -67,7 +67,7 @@ class push_relabel {
 
         for (EdgeID e : G->edges_of(flow_source)) {
             m_excess[flow_source] += G->getEdgeWeight(flow_source, e);
-            push(flow_source, e);
+            push(flow_source, e, G->n());
         }
     }
 
@@ -110,16 +110,12 @@ class push_relabel {
                 if (m_bfstouched[target]) continue;
 
                 EdgeID rev_e = m_G->getReverseEdge(node, e);
-                if (m_G->getEdgeWeight(target, rev_e) -
-                    getEdgeFlow(target, rev_e) > 0) {
+                if (initial || (m_G->getEdgeWeight(target, rev_e) -
+                                getEdgeFlow(target, rev_e)) > 0) {
                     m_count[m_distance[target]]--;
                     m_distance[target] = m_distance[node] + 1;
                     m_count[m_distance[target]]++;
-                    if constexpr (limited && initial) {
-                        if (m_distance[target] < 1) {
-                            Q.push(target);
-                        }
-                    } else {
+                    if constexpr (!(limited && initial)) {
                         Q.push(target);
                     }
                     m_bfstouched[target] = true;
@@ -129,29 +125,30 @@ class push_relabel {
     }
 
     // push flow from source to target if possible
-    void push(NodeID source, EdgeID e) {
+    void push(NodeID source, EdgeID e, NodeID sourceDistance) {
         m_pushes++;
+        NodeID target = m_G->getEdgeTarget(source, e);
+        if (sourceDistance <= m_distance[target]) [[likely]] return;
+
         FlowType capacity = m_G->getEdgeWeight(source, e);
         FlowType flow = getEdgeFlow(source, e);
-
         FlowType amount = std::min(capacity - flow, m_excess[source]);
-        NodeID target = m_G->getEdgeTarget(source, e);
 
-        if (m_distance[source] <= m_distance[target] || amount == 0) return;
+        if (amount == 0) return;
 
-        setEdgeFlow(source, e, flow + amount);
+        m_actual_pushes++;
 
         EdgeID rev_e = m_G->getReverseEdge(source, e);
-        FlowType rev_flow = getEdgeFlow(target, rev_e);
-        setEdgeFlow(target, rev_e, rev_flow - amount);
+        addEdgeFlow(source, e, amount);
+        addEdgeFlow(target, rev_e, (-1) * amount);
 
         m_excess[source] -= amount;
         m_excess[target] += amount;
 
         if constexpr (limited) {
-            /* if (target == m_sink) {
-                 LOG1 << t.elapsed() << " e " << m_excess[target];
-             }*/
+            /*if (target == m_sink) {
+                LOG1 << t.elapsed() << " e " << m_excess[target];
+            }*/
             if (target == m_sink && m_excess[target] >= m_limit) {
                 m_limitreached = true;
                 return;
@@ -173,11 +170,12 @@ class push_relabel {
 
     // try to push as much excess as possible out of the node node
     void discharge(NodeID node) {
+        NodeID nodeDistance = m_distance[node];
         for (EdgeID e : m_G->edges_of(node)) {
             if (m_excess[node] == 0)
                 break;
 
-            push(node, e);
+            push(node, e, nodeDistance);
         }
 
         if (m_excess[node] > 0) {
@@ -291,6 +289,14 @@ class push_relabel {
         }
     }
 
+    void addEdgeFlow(NodeID n, EdgeID e, FlowType f) {
+        if constexpr (parallel_flows) {
+            edge_flow[n][e] += f;
+        } else {
+            m_G->addEdgeFlow(n, e, f);
+        }
+    }
+
     FlowType getEdgeFlow(NodeID n, EdgeID e) {
         if constexpr (parallel_flows) {
             return edge_flow[n][e];
@@ -343,6 +349,7 @@ class push_relabel {
         m_num_relabels = 0;
         m_gaps = 0;
         m_pushes = 0;
+        m_actual_pushes = 0;
         m_global_updates = 1;
         m_limit = limit;
         m_limitreached = false;
@@ -372,6 +379,7 @@ class push_relabel {
 
             if constexpr (limited) {
                 if (m_limitreached) {
+                    // LOG1 << m_pushes << " " << m_actual_pushes;
                     return std::make_pair(limit, std::vector<NodeID> { });
                 }
             }
@@ -416,6 +424,7 @@ class push_relabel {
     int m_gaps;
     int m_global_updates;
     int m_pushes;
+    int m_actual_pushes;
     int m_work;
     NodeID m_sink;
     FlowType m_limit;

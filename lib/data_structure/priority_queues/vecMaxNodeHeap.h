@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "data_structure/priority_queues/maxNodeHeap.h"
 #include "data_structure/priority_queues/priority_queue_interface.h"
 
 typedef EdgeWeight Key;

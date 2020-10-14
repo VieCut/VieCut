@@ -88,6 +88,12 @@ class maxNodeHeap : public priority_queue_interface {
     void changeKey(NodeID node, Gain gain);
     Gain getKey(NodeID node);
 
+    void reset() {
+        m_elements.clear();
+        m_element_index.clear();
+        m_heap.clear();
+    }
+
  private:
     std::vector<PQElement> m_elements;
     std::unordered_map<NodeID, int> m_element_index;

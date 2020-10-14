@@ -24,6 +24,7 @@
 #include "algorithms/misc/graph_algorithms.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
+#include "data_structure/priority_queues/maxNodeHeap.h"
 #include "tools/random_functions.h"
 #include "tools/timer.h"
 
@@ -41,7 +42,6 @@ class push_relabel {
     void init(mutableGraphPtr G,
               std::vector<NodeID> sources,
               NodeID source) {
-        m_Q = std::queue<NodeID>();
         if (m_excess.size() < G->n()) {
             m_excess.resize(G->n(), 0);
             m_distance.resize(G->n(), 0);
@@ -54,7 +54,7 @@ class push_relabel {
         std::fill(m_active.begin(), m_active.end(), false);
         std::fill(m_count.begin(), m_count.end(), 0);
         std::fill(m_bfstouched.begin(), m_bfstouched.end(), false);
-
+        m_Q.reset();
         m_count[0] = G->number_of_nodes() - 1;
         m_count[G->number_of_nodes()] = 1;
 
@@ -146,9 +146,6 @@ class push_relabel {
         m_excess[target] += amount;
 
         if constexpr (limited) {
-            /*if (target == m_sink) {
-                LOG1 << t.elapsed() << " e " << m_excess[target];
-            }*/
             if (target == m_sink && m_excess[target] >= m_limit) {
                 m_limitreached = true;
                 return;
@@ -163,8 +160,14 @@ class push_relabel {
         if (m_active[target]) return;
         if (m_excess[target] > 0) {
             m_active[target] = true;
-            // m_Q.push(target, m_distance[target]);
-            m_Q.push(target);
+            if constexpr (limited) {
+                // min heap if limited as first flow faster
+                // max heap if not for better asymptotic runtime
+                m_Q.insert(target, (-1) * m_distance[target]);
+            } else {
+                m_Q.insert(target, m_distance[target]);
+            }
+            //m_Q.push(target);
         }
     }
 
@@ -293,7 +296,7 @@ class push_relabel {
         if constexpr (parallel_flows) {
             edge_flow[n][e] += f;
         } else {
-            m_G->addEdgeFlow(n, e, f);
+            m_G->addEdgeFlow(n, e, f, m_problemid);
         }
     }
 
@@ -372,14 +375,14 @@ class push_relabel {
 
         // main loop
         while (!m_Q.empty()) {
-            NodeID v = m_Q.front();
-            m_Q.pop();
+            //NodeID v = m_Q.front();
+            //m_Q.pop();
+            NodeID v = m_Q.deleteMax();
             m_active[v] = false;
             discharge(v);
 
             if constexpr (limited) {
                 if (m_limitreached) {
-                    // LOG1 << m_pushes << " " << m_actual_pushes;
                     return std::make_pair(limit, std::vector<NodeID> { });
                 }
             }
@@ -409,6 +412,8 @@ class push_relabel {
                             << " relabel " << m_num_relabels
                             << " pushes " << m_pushes;
 
+
+
         return std::make_pair(total_flow, source_set);
     }
 
@@ -417,7 +422,7 @@ class push_relabel {
     std::vector<NodeID> m_distance;
     std::vector<bool> m_active;   // store which nodes are in the queue already
     std::vector<int> m_count;
-    std::queue<NodeID> m_Q;
+    maxNodeHeap m_Q;
     std::vector<bool> m_bfstouched;
     std::vector<std::vector<FlowType> > edge_flow;
     int m_num_relabels;

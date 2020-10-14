@@ -158,7 +158,9 @@ TYPED_TEST(CactusCutTest, RingOfVerySmallCliques) {
 
             for (NodeID i = 0; i < 3; ++i) {
                 for (NodeID j = 0; j < 3; ++j) {
-                    G->new_edge(i + (3 * k), j + (3 * k));
+                    if (i != j) {
+                        G->new_edge(i + (3 * k), j + (3 * k));
+                    }
                 }
             }
         }

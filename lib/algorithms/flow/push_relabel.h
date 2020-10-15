@@ -167,7 +167,7 @@ class push_relabel {
             } else {
                 m_Q.insert(target, m_distance[target]);
             }
-            //m_Q.push(target);
+            // m_Q.push(target);
         }
     }
 
@@ -375,8 +375,8 @@ class push_relabel {
 
         // main loop
         while (!m_Q.empty()) {
-            //NodeID v = m_Q.front();
-            //m_Q.pop();
+            // NodeID v = m_Q.front();
+            // m_Q.pop();
             NodeID v = m_Q.deleteMax();
             m_active[v] = false;
             discharge(v);
@@ -411,8 +411,6 @@ class push_relabel {
         LOGC(extended_logs) << "updates " << m_global_updates
                             << " relabel " << m_num_relabels
                             << " pushes " << m_pushes;
-
-
 
         return std::make_pair(total_flow, source_set);
     }

@@ -317,6 +317,10 @@ class dynamic_mincut {
         return callsOfStaticAlgorithm;
     }
 
+    EdgeWeight getCurrentCut() {
+        return current_cut;
+    }
+
     void putIntoCache(mutableGraphPtr cactusToCache, EdgeWeight cactusCut) {
         numCachedMincuts++;
         if (cactusCut < lowestCachedMincut) {

@@ -41,6 +41,7 @@ int main(int argn, char** argv) {
     auto cfg = configuration::getConfig();
     std::string initial_graph = "";
     std::string dynamic_edges = "";
+    size_t timeout = 3600;
     bool run_static = false;
     cmdl.add_string('i', "initial_graph", initial_graph, "path to graph file");
     cmdl.add_string('d', "dynamic_edges", dynamic_edges, "path to edge list");
@@ -50,6 +51,7 @@ int main(int argn, char** argv) {
 #endif
     cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
     cmdl.add_bool('s', "static", run_static, "run static algorithm");
+    cmdl.add_size_t('t', "timeout", timeout, "timeout in seconds");
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
 
     if (!cmdl.process(argn, argv))
@@ -97,10 +99,11 @@ int main(int argn, char** argv) {
         G = graph_io::readGraphWeighted<mutable_graph>(initial_graph);
     }
 
-    timer t;
+    timer run_timer;
     size_t ctr = 0;
     size_t cutchange = 0;
     size_t staticruns = 0;
+    bool timedOut = false;
 
     if (run_static) {
 #ifdef PARALLEL
@@ -112,6 +115,10 @@ int main(int argn, char** argv) {
         EdgeWeight previous_cut = static_alg.perform_minimum_cut(G);
         size_t edgesInBatch = 0;
         for (auto [s, t, w, timestamp] : tempEdges) {
+            if (run_timer.elapsed() > timeout) {
+                timedOut = true;
+                break;
+            }
             if (timestamp != previous_timestamp) {
                 edgesInBatch = 0;
                 previous_timestamp = timestamp;
@@ -124,10 +131,6 @@ int main(int argn, char** argv) {
             }
             edgesInBatch++;
             ctr++;
-            if (ctr % 1000 == 0) {
-                LOG1 << ctr << " out of " << tempEdges.size()
-                     << " -> " << staticruns << " batches so far";
-            }
             if (s == t) continue;
             if (w > 0) {
                 G->new_edge_order(s, t, w);
@@ -157,12 +160,20 @@ int main(int argn, char** argv) {
         EdgeWeight previous_cut = dynmc.initialize(G);
         EdgeWeight current_cut = 0;
         for (auto [s, t, w, timestamp] : tempEdges) {
+            if (run_timer.elapsed() > timeout) {
+                timedOut = true;
+                break;
+            }
             ctr++;
             if (s == t) continue;
             if (w > 0) {
                 current_cut = dynmc.addEdge(s, t, w);
             } else {
-                current_cut = dynmc.removeEdge(s, t);
+                if (w < 0) {
+                    current_cut = dynmc.removeEdge(s, t);
+                } else {
+                    LOG1 << "WEIGHT 0 EDGE";
+                }
             }
             if (current_cut != previous_cut) {
                 previous_cut = current_cut;
@@ -170,6 +181,8 @@ int main(int argn, char** argv) {
             }
         }
         staticruns = dynmc.getCallsOfStaticAlgorithm();
+        LOG1 << "n " << dynmc.getCurrentCactus()->n()
+             << " c " << dynmc.getCurrentCut();
     }
 
     std::string graph = initial_graph;
@@ -179,7 +192,8 @@ int main(int argn, char** argv) {
 
     LOG1 << "RESULT"
          << " graph=" << graph
-         << " time=" << t.elapsed()
+         << " time=" << run_timer.elapsed()
+         << " timedOut=" << timedOut
          << " cutchange=" << cutchange
          << " insert=" << insstr
          << " delete=" << delstr

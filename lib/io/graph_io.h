@@ -92,6 +92,10 @@ class graph_io {
             int64_t wgt;
             uint64_t timestamp;
 
+            // remove additional whitespaces inbetween
+            while (line[line_ptr] == ' ' || line[line_ptr] == '\t')
+                ++line_ptr;
+
             if (line[line_ptr] == '+' || line[line_ptr] == '-') {
                 bool isNegative = line[line_ptr] == '-';
                 line_ptr++;

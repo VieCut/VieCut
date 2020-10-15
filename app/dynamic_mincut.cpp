@@ -65,6 +65,8 @@ int main(int argn, char** argv) {
         seedstr = edgenames[edgenames.size() - 1];
         delstr = edgenames[edgenames.size() - 2];
         insstr = edgenames[edgenames.size() - 3];
+    } else {
+        seedstr = std::to_string(cfg->seed);
     }
 
     random_functions::setSeed(cfg->seed);

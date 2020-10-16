@@ -101,11 +101,16 @@ int main(int argn, char** argv) {
         G = graph_io::readGraphWeighted<mutable_graph>(initial_graph);
     }
 
+    size_t numNodes = G->n();
+    size_t initialNumEdges = G->m();
+
     timer run_timer;
     size_t ctr = 0;
     size_t cutchange = 0;
     size_t staticruns = 0;
     bool timedOut = false;
+    size_t inserts = 0;
+    size_t deletes = 0;
 
     if (run_static) {
 #ifdef PARALLEL
@@ -135,8 +140,10 @@ int main(int argn, char** argv) {
             ctr++;
             if (s == t) continue;
             if (w > 0) {
+                inserts++;
                 G->new_edge_order(s, t, w);
             } else {
+                deletes++;
                 EdgeID eToT = UNDEFINED_EDGE;
                 for (EdgeID e : G->edges_of(s)) {
                     if (G->getEdgeTarget(s, e) == t) {
@@ -144,9 +151,7 @@ int main(int argn, char** argv) {
                         break;
                     }
                 }
-                if (eToT == UNDEFINED_EDGE) {
-                    LOG1 << "Warning: delete edge that doesn't exist!";
-                } else {
+                if (eToT != UNDEFINED_EDGE) {
                     G->deleteEdge(s, eToT);
                 }
             }
@@ -169,13 +174,11 @@ int main(int argn, char** argv) {
             ctr++;
             if (s == t) continue;
             if (w > 0) {
+                inserts++;
                 current_cut = dynmc.addEdge(s, t, w);
             } else {
-                if (w < 0) {
-                    current_cut = dynmc.removeEdge(s, t);
-                } else {
-                    LOG1 << "WEIGHT 0 EDGE";
-                }
+                deletes++;
+                current_cut = dynmc.removeEdge(s, t);
             }
             if (current_cut != previous_cut) {
                 previous_cut = current_cut;
@@ -192,6 +195,9 @@ int main(int argn, char** argv) {
         graph = dynamic_edges;
     }
 
+    insstr = std::to_string(inserts);
+    delstr = std::to_string(deletes);
+
     LOG1 << "RESULT"
          << " graph=" << graph
          << " time=" << run_timer.elapsed()
@@ -201,5 +207,7 @@ int main(int argn, char** argv) {
          << " delete=" << delstr
          << " seed=" << seedstr
          << " static=" << run_static
-         << " runs_static_alg=" << staticruns;
+         << " runs_static_alg=" << staticruns
+         << " n=" << numNodes
+         << " initialm=" << (initialNumEdges / 2);
 }

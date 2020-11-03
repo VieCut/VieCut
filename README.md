@@ -1,6 +1,6 @@
 # VieCut 1.00 - Shared-memory Minimum Cuts
 
-[![Build Status](https://travis-ci.com/alexnoe/VieCut.svg?branch=master)](https://travis-ci.com/alexnoe/VieCut)
+[![Build Status](https://travis-ci.com/VieCut/VieCut.svg?branch=master)](https://travis-ci.com/VieCut/VieCut)
 
 If you have any questions, find any errors or would like to use this library but are unsure how, feel free to send me a message. I would be very happy to help you out!
 

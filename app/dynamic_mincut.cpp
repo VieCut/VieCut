@@ -139,7 +139,7 @@ int main(int argn, char** argv) {
             ctr++;
             if (s == t) continue;
             edgesInBatch++;
-	    if (w > 0) {
+            if (w > 0) {
                 inserts++;
                 G->new_edge_order(s, t, w);
             } else {

@@ -65,12 +65,23 @@ int main(int argn, char** argv) {
     random_functions::setSeed(configuration::getConfig()->seed);
     graphAccessPtr G = graph_io::readGraphWeighted<graph_access>(init_graph);
 
-    size_t insert_edges =
-        std::floor(insert_factor * static_cast<double>(G->m()) * 0.5);
-    size_t remove_edges =
-        std::floor(remove_factor * static_cast<double>(G->m()) * 0.5);
+    size_t insert_edges = 0;
+    if (insert_factor >= 0.999) {
+        insert_edges = static_cast<size_t>(insert_factor);
+    } else {
+        insert_edges =
+            std::floor(insert_factor * static_cast<double>(G->m()) * 0.5);
+    }
 
-    if (insert_factor + remove_factor >= 0.999) {
+    size_t remove_edges = 0;
+    if (remove_factor >= 0.999) {
+        remove_edges = static_cast<size_t>(remove_factor);
+    } else {
+        remove_edges =
+            std::floor(remove_factor * static_cast<double>(G->m()) * 0.5);
+    }
+
+    if (insert_edges + remove_edges >= G->m()) {
         LOG1 << "ERROR: Insert factor + remove factor >= 1. Exiting!";
         exit(1);
     }

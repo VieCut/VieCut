@@ -83,7 +83,10 @@ class push_relabel {
         size_t depthPR = configuration::getConfig()->depthOfPartialRelabeling;
 
         if constexpr (limited && initial) {
-            std::fill(m_distance.begin(), m_distance.end(), depthPR + 1);
+            size_t fillValue = depthPR + 1;
+            std::fill(m_distance.begin(), m_distance.end(), fillValue);
+            m_count[0] = 0;
+            m_count[fillValue] = m_G->n() - 1;
         } else {
             for (NodeID n : m_G->nodes()) {
                 m_distance[n] = std::max(m_distance[n], m_G->number_of_nodes());
@@ -98,10 +101,14 @@ class push_relabel {
 
             Q.push(sink);
             m_bfstouched[sink] = true;
+            m_count[m_distance[sink]]--;
+            m_count[0]++;
             m_distance[sink] = 0;
         }
 
-        if (depthPR + 1 <= 1) return;
+        if constexpr (limited && initial) {
+            if (depthPR + 1 <= 1) return;
+        }
 
         m_bfstouched[flow_source] = true;
 

@@ -53,6 +53,9 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('r', "seed", configuration::getConfig()->seed, "rnd seed");
     cmdl.add_bool('s', "run_static", run_static, "Run static algorithm");
     cmdl.add_bool('v', "vbs", configuration::getConfig()->verbose, "verbose");
+    cmdl.add_size_t('d', "depth",
+                    configuration::getConfig()->depthOfPartialRelabeling,
+                    "depth of partial relabeling");
 
     configuration::getConfig()->save_cut = true;
 

@@ -78,6 +78,9 @@ class configuration {
     bool blacklist = true;
     bool set_node_in_cut = false;
 
+    // dynamic minimum cut
+    size_t depthOfPartialRelabeling = 1;
+
     // karger-stein:
     size_t optimal = 0;
 

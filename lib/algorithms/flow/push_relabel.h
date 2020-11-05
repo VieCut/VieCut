@@ -79,8 +79,10 @@ class push_relabel {
         NodeID flow_source = sources[source];
 
         std::fill(m_bfstouched.begin(), m_bfstouched.end(), false);
+        size_t depthPR = configuration::getConfig()->depthOfPartialRelabeling;
+
         if constexpr (limited && initial) {
-            std::fill(m_distance.begin(), m_distance.end(), 2);
+            std::fill(m_distance.begin(), m_distance.end(), depthPR + 1);
         } else {
             for (NodeID n : m_G->nodes()) {
                 m_distance[n] = std::max(m_distance[n], m_G->number_of_nodes());
@@ -97,6 +99,8 @@ class push_relabel {
             m_bfstouched[sink] = true;
             m_distance[sink] = 0;
         }
+
+        if (depthPR + 1 <= 1) return;
 
         m_bfstouched[flow_source] = true;
 
@@ -117,6 +121,10 @@ class push_relabel {
                     m_count[m_distance[target]]++;
                     if constexpr (!(limited && initial)) {
                         Q.push(target);
+                    } else {
+                        if (m_distance[target] < depthPR) {
+                            Q.push(target);
+                        }
                     }
                     m_bfstouched[target] = true;
                 }
@@ -370,6 +378,8 @@ class push_relabel {
         init(G, sources, curr_source);
         global_relabeling<true>(sources, curr_source);
 
+        double initialTime = t.elapsed();
+
         int work_todo = WORK_NODE_TO_EDGES * G->number_of_nodes()
                         + G->number_of_edges();
 
@@ -383,6 +393,16 @@ class push_relabel {
 
             if constexpr (limited) {
                 if (m_limitreached) {
+                    double timeAll = t.elapsed();
+                    size_t depthPR =
+                        configuration::getConfig()->depthOfPartialRelabeling;
+                    LOG1 << "RESULT-PR n=" << G->n() << " m=" << G->m()
+                         << " depthPR=" << depthPR
+                         << " limit=" << limit
+                         << " flow=" << limit
+                         << " timeInitial=" << initialTime
+                         << " time=" << timeAll;
+
                     return std::make_pair(limit, std::vector<NodeID> { });
                 }
             }
@@ -411,6 +431,16 @@ class push_relabel {
         LOGC(extended_logs) << "updates " << m_global_updates
                             << " relabel " << m_num_relabels
                             << " pushes " << m_pushes;
+
+        double timeAll = t.elapsed();
+
+        size_t depthPR = configuration::getConfig()->depthOfPartialRelabeling;
+        LOG1 << "RESULT-PR n=" << G->n() << " m=" << G->m()
+             << " depthPR=" << depthPR
+             << " limit=" << limit
+             << " flow=" << total_flow
+             << " timeInitial=" << initialTime
+             << " time=" << timeAll;
 
         return std::make_pair(total_flow, source_set);
     }

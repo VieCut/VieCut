@@ -281,7 +281,6 @@ class dynamic_mincut {
             size_t flow = pr.solve_max_flow_min_cut(
                 original_graph, { s, t }, 0, false, current_cut, fpid).first;
 
-            rc.setMincut(flow);
             auto new_g = rc.decrementalRebuild(original_graph, s, flow, fpid);
             current_cut = flow;
             out_cactus = new_g;

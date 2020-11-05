@@ -36,13 +36,14 @@ const int WORK_NODE_TO_EDGES = 4;
 template <bool limited = false, bool parallel_flows = false>
 class push_relabel {
  public:
-    push_relabel() { }
+    push_relabel() : m_current_iteration(0) { }
     virtual ~push_relabel() { }
 
  private:
     void init(mutableGraphPtr G,
               std::vector<NodeID> sources,
               NodeID source) {
+        m_current_iteration++;
         if (m_excess.size() < G->n()) {
             m_excess.resize(G->n(), 0);
             m_distance.resize(G->n(), 0);
@@ -406,6 +407,7 @@ class push_relabel {
                         configuration::getConfig()->depthOfPartialRelabeling;
                     LOG1 << "RESULT-PR n=" << G->n() << " m=" << G->m()
                          << " depthPR=" << depthPR
+                         << " currentIteration=" << m_current_iteration
                          << " limit=" << limit
                          << " flow=" << limit
                          << " timeInitial=" << initialTime
@@ -445,6 +447,7 @@ class push_relabel {
         size_t depthPR = configuration::getConfig()->depthOfPartialRelabeling;
         LOG1 << "RESULT-PR n=" << G->n() << " m=" << G->m()
              << " depthPR=" << depthPR
+             << " currentIteration=" << m_current_iteration
              << " limit=" << limit
              << " flow=" << total_flow
              << " timeInitial=" << initialTime
@@ -467,6 +470,7 @@ class push_relabel {
     int m_pushes;
     int m_actual_pushes;
     int m_work;
+    int m_current_iteration;
     NodeID m_sink;
     FlowType m_limit;
     bool m_limitreached;

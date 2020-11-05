@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "algorithms/misc/graph_algorithms.h"
+#include "common/configuration.h"
 #include "common/definitions.h"
 #include "data_structure/mutable_graph.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"

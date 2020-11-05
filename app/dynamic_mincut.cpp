@@ -126,7 +126,7 @@ int main(int argn, char** argv) {
                 timedOut = true;
                 break;
             }
-            if (timestamp != previous_timestamp) {
+            if (timestamp != previous_timestamp && edgesInBatch > 0) {
                 edgesInBatch = 0;
                 previous_timestamp = timestamp;
                 staticruns++;
@@ -136,10 +136,10 @@ int main(int argn, char** argv) {
                     cutchange++;
                 }
             }
-            edgesInBatch++;
             ctr++;
             if (s == t) continue;
-            if (w > 0) {
+            edgesInBatch++;
+	    if (w > 0) {
                 inserts++;
                 G->new_edge_order(s, t, w);
             } else {

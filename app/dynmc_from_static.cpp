@@ -44,6 +44,7 @@ int main(int argn, char** argv) {
     double insert_factor = 0.0;
     double remove_factor = 0.0;
     size_t batch_size = 1;
+    size_t timeout = 3600;
     cmdl.add_string('g', "initial_graph", init_graph, "path to graph file");
     cmdl.add_double('i', "insert_factor", insert_factor,
                     "factor of edges that are added dynamically");
@@ -52,6 +53,7 @@ int main(int argn, char** argv) {
     cmdl.add_size_t('b', "batch_size", batch_size, "batch size");
     cmdl.add_size_t('r', "seed", configuration::getConfig()->seed, "rnd seed");
     cmdl.add_bool('s', "run_static", run_static, "Run static algorithm");
+    cmdl.add_size_t('t', "timeout", timeout, "timeout in seconds");
     cmdl.add_bool('v', "vbs", configuration::getConfig()->verbose, "verbose");
     cmdl.add_size_t('d', "depth",
                     configuration::getConfig()->depthOfPartialRelabeling,
@@ -133,6 +135,7 @@ int main(int argn, char** argv) {
     std::shuffle(dynEdges.begin(), dynEdges.end(), random_functions::getRand());
 
     timer run_timer;
+    bool timedOut = false;
     size_t ctr = 0;
     size_t cutchange = 0;
     size_t staticruns = 1;
@@ -148,6 +151,10 @@ int main(int argn, char** argv) {
 #endif
         EdgeWeight previous_cut = static_alg.perform_minimum_cut(dynG);
         for (auto [s, t, w, isInsert] : dynEdges) {
+            if (run_timer.elapsed() > timeout) {
+                timedOut = true;
+                break;
+            }
             if (currentBatchSize >= batch_size) {
                 currentBatchSize = 0;
                 staticruns++;
@@ -191,6 +198,10 @@ int main(int argn, char** argv) {
         EdgeWeight previous_cut = dynmc.initialize(dynG);
         EdgeWeight current_cut = 0;
         for (auto [s, t, w, isInsert] : dynEdges) {
+            if (run_timer.elapsed() > timeout) {
+                timedOut = true;
+                break;
+            }
             ctr++;
             if (s == t) continue;
             if (isInsert) {
@@ -219,5 +230,6 @@ int main(int argn, char** argv) {
          << " delete=" << remove_edges
          << " seed=" << configuration::getConfig()->seed
          << " static=" << run_static
-         << " runs_static_alg=" << staticruns;
+         << " runs_static_alg=" << staticruns
+         << " timed_out=" << timedOut;
 }

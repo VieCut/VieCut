@@ -405,7 +405,7 @@ class push_relabel {
                     double timeAll = t.elapsed();
                     size_t depthPR =
                         configuration::getConfig()->depthOfPartialRelabeling;
-                    LOG1 << "RESULT-PR n=" << G->n() << " m=" << G->m()
+                    LOG0 << "RESULT-PR n=" << G->n() << " m=" << G->m()
                          << " depthPR=" << depthPR
                          << " currentIteration=" << m_current_iteration
                          << " limit=" << limit
@@ -445,7 +445,7 @@ class push_relabel {
         double timeAll = t.elapsed();
 
         size_t depthPR = configuration::getConfig()->depthOfPartialRelabeling;
-        LOG1 << "RESULT-PR n=" << G->n() << " m=" << G->m()
+        LOG0 << "RESULT-PR n=" << G->n() << " m=" << G->m()
              << " depthPR=" << depthPR
              << " currentIteration=" << m_current_iteration
              << " limit=" << limit

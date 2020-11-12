@@ -50,7 +50,8 @@ template <class GraphPtr>
 class recursive_cactus {
  public:
     recursive_cactus() { }
-    explicit recursive_cactus(EdgeWeight mincut) : mincut(mincut) { }
+    explicit recursive_cactus(EdgeWeight mincut)
+        : mincut(mincut), problem_id(random_functions::next()) { }
     ~recursive_cactus() { }
 
     static constexpr bool debug = false;
@@ -152,8 +153,9 @@ class recursive_cactus {
         {
             std::vector<NodeID> vtcs = { s, tgt };
             push_relabel pr;
+            problem_id++;
             max_flow = pr.solve_max_flow_min_cut(
-                G, vtcs, 0, false, false).first;
+                G, vtcs, 0, false, false, problem_id).first;
         }
 
         if (max_flow > (FlowType)mincut) {
@@ -167,7 +169,7 @@ class recursive_cactus {
                 return G;
             }
             strongly_connected_components scc;
-            auto [v, num_comp, blocksizes] = scc.strong_components(G);
+            auto [v, num_comp, blocksizes] = scc.strong_components(G, problem_id);
             if (num_comp == 2
                 && (G->getWeightedNodeDegree(s) == mincut
                     || G->getWeightedNodeDegree(tgt) == mincut)) {
@@ -198,6 +200,7 @@ class recursive_cactus {
             }
 
             auto STCactus = findSTCactus(v, G, s, num_comp);
+
             double g_n = static_cast<double>(G->n());
             // first the small blocks, last the big one. then we don't need to
             // copy graphs as the small ones are newly generated
@@ -609,4 +612,5 @@ class recursive_cactus {
 
     timer t;
     EdgeWeight mincut;
+    size_t problem_id;
 };

@@ -169,7 +169,8 @@ class recursive_cactus {
                 return G;
             }
             strongly_connected_components scc;
-            auto [v, num_comp, blocksizes] = scc.strong_components(G, problem_id);
+            auto [v, num_comp, blocksizes] =
+                scc.strong_components(G, problem_id);
             if (num_comp == 2
                 && (G->getWeightedNodeDegree(s) == mincut
                     || G->getWeightedNodeDegree(tgt) == mincut)) {

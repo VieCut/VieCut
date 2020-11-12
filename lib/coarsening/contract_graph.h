@@ -152,7 +152,7 @@ class contraction {
                 G->setPartitionIndex(n, part[part_id]);
             }
             reverse_mapping[part[part_id]].push_back(n);
-         //       G->containedVertices(n)[0]);
+            //       G->containedVertices(n)[0]);
         }
         return contractGraph(G, mapping, reverse_mapping, copy);
     }

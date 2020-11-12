@@ -92,20 +92,36 @@ int main(int argn, char** argv) {
     size_t re = 0;
     std::vector<bool> insertMarked(G->m(), false);
     std::vector<bool> removeMarked(G->m(), false);
+    std::vector<size_t> dynamizedEdges(G->n(), 0);
+    std::vector<size_t> numEdges(G->n(), 0);
+
+    for (NodeID n : G->nodes()) {
+        numEdges[n] = G->getUnweightedNodeDegree(n);
+    }
 
     EdgeID nextEdge = random_functions::nextInt(0, G->m() - 1);
+    NodeID src = G->getEdgeSource(nextEdge);
+    NodeID tgt = G->getEdgeTarget(nextEdge);
     while (ie < insert_edges) {
-        while (insertMarked[nextEdge]
-               || G->getEdgeTarget(nextEdge) < G->getEdgeSource(nextEdge)) {
+        while (insertMarked[nextEdge] ||
+               tgt < src ||
+               ((dynamizedEdges[src] + 1) >= numEdges[src]) ||
+               ((dynamizedEdges[tgt] + 1) >= numEdges[tgt])) {
             nextEdge = random_functions::nextInt(0, G->m() - 1);
+            src = G->getEdgeSource(nextEdge);
+            tgt = G->getEdgeTarget(nextEdge);
         }
         insertMarked[nextEdge] = true;
         ie++;
     }
     while (re < remove_edges) {
-        while (insertMarked[nextEdge] || removeMarked[nextEdge]
-               || G->getEdgeTarget(nextEdge) < G->getEdgeSource(nextEdge)) {
+        while (insertMarked[nextEdge] || removeMarked[nextEdge] ||
+               tgt < src ||
+               ((dynamizedEdges[src] + 1) >= numEdges[src]) ||
+               ((dynamizedEdges[tgt] + 1) >= numEdges[tgt])) {
             nextEdge = random_functions::nextInt(0, G->m() - 1);
+            src = G->getEdgeSource(nextEdge);
+            tgt = G->getEdgeTarget(nextEdge);
         }
         removeMarked[nextEdge] = true;
         re++;

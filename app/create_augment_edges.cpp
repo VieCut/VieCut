@@ -26,6 +26,9 @@ int main(int argn, char** argv) {
 
     size_t insert_edges = 0;
     size_t delete_edges = 0;
+    size_t timeout = 3600;
+    bool timedOut = false;
+
 #ifdef PARALLEL
     size_t procs = 1;
     cmdl.add_size_t('p', "proc", procs, "number of processes");
@@ -65,7 +68,7 @@ int main(int argn, char** argv) {
     double insProbability = static_cast<double>(insert_edges)
                             / static_cast<double>(insert_edges + delete_edges);
 
-    LOG1 << insProbability;
+    timer run_timer;
 
     for (size_t dedge = 0; dedge < insert_edges + delete_edges; ++dedge) {
         bool isInsert = false;
@@ -84,10 +87,15 @@ int main(int argn, char** argv) {
             }
         }
 
+
+        if (run_timer.elapsed() > timeout) {
+            timedOut = true;
+            break;
+        }
+
         if (isInsert) {
             ins++;
             auto curr = dynmc.getCurrentCactus();
-            LOG1 << "INSERT " << curr->n();
             auto original_graph = dynmc.getOriginalGraph();
             NodeID s = UNDEFINED_NODE;
             NodeID t = UNDEFINED_NODE;
@@ -130,7 +138,6 @@ int main(int argn, char** argv) {
             dynmc.addEdge(s, t, 1);
             insEdges.emplace_back(s, t);
         } else {
-            LOG1 << "DELETO!";
             bool deleted = false;
             while (!deleted) {
                 size_t r = random_functions::nextInt(0, ins - 1);
@@ -145,6 +152,10 @@ int main(int argn, char** argv) {
                 }
             }
         }
+    }
+
+    if (timedOut) {
+        f << "TIMEOUT - NOT COMPLETE!\n";
     }
 
     f.close();

@@ -43,6 +43,8 @@ int main(int argn, char** argv) {
     std::string dynamic_edges = "";
     size_t timeout = 3600;
     bool run_static = false;
+    bool disable_batching = false;
+    cmdl.add_bool('b', "disablebatching", disable_batching, "disable batching");
     cmdl.add_string('i', "initial_graph", initial_graph, "path to graph file");
     cmdl.add_string('d', "dynamic_edges", dynamic_edges, "path to edge list");
 #ifdef PARALLEL
@@ -126,7 +128,8 @@ int main(int argn, char** argv) {
                 timedOut = true;
                 break;
             }
-            if (timestamp != previous_timestamp && edgesInBatch > 0) {
+            if ((timestamp != previous_timestamp || disable_batching)
+                && edgesInBatch > 0) {
                 edgesInBatch = 0;
                 previous_timestamp = timestamp;
                 staticruns++;

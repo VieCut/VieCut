@@ -87,7 +87,6 @@ int main(int argn, char** argv) {
             }
         }
 
-
         if (run_timer.elapsed() > timeout) {
             timedOut = true;
             break;

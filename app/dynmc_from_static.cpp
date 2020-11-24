@@ -45,19 +45,20 @@ int main(int argn, char** argv) {
     double remove_factor = 0.0;
     size_t batch_size = 1;
     size_t timeout = 3600;
+    cmdl.add_size_t('b', "batch_size", batch_size, "batch size");
+    cmdl.add_size_t('d', "depth", cfg->depthOfPartialRelabeling,
+                    "depth of partial relabeling");
     cmdl.add_string('g', "initial_graph", init_graph, "path to graph file");
     cmdl.add_double('i', "insert_factor", insert_factor,
                     "factor of edges that are added dynamically");
+    cmdl.add_bool('m', "most_balanced", cfg->find_most_balanced_cut,
+                  "find most balanced cut");
     cmdl.add_double('r', "remove_factor", remove_factor,
                     "factor of edges that are removed dynamically");
-    cmdl.add_size_t('b', "batch_size", batch_size, "batch size");
-    cmdl.add_size_t('r', "seed", configuration::getConfig()->seed, "rnd seed");
     cmdl.add_bool('s', "run_static", run_static, "Run static algorithm");
     cmdl.add_size_t('t', "timeout", timeout, "timeout in seconds");
     cmdl.add_bool('v', "vbs", configuration::getConfig()->verbose, "verbose");
-    cmdl.add_size_t('d', "depth",
-                    configuration::getConfig()->depthOfPartialRelabeling,
-                    "depth of partial relabeling");
+    cmdl.add_size_t('x', "seed", configuration::getConfig()->seed, "rnd seed");
 
     configuration::getConfig()->save_cut = true;
 

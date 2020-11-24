@@ -47,6 +47,8 @@ int main(int argn, char** argv) {
     cmdl.add_bool('b', "disablebatching", disable_batching, "disable batching");
     cmdl.add_string('i', "initial_graph", initial_graph, "path to graph file");
     cmdl.add_string('d', "dynamic_edges", dynamic_edges, "path to edge list");
+    cmdl.add_bool('m', "most_balaned", cfg->find_most_balanced_cut,
+                  "find most balanced cut");
 #ifdef PARALLEL
     size_t procs = 1;
     cmdl.add_size_t('p', "proc", procs, "number of processes");

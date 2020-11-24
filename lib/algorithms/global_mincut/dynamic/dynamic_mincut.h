@@ -121,6 +121,10 @@ class dynamic_mincut {
         }
         // LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut
         //              << " vtcs_in_cactus " << out_cactus->n();
+        if (configuration::getConfig()->find_most_balanced_cut) {
+            most_balanced_minimum_cut<mutableGraphPtr> mb;
+            mb.findCutFromCactus(out_cactus, current_cut, original_graph);
+        }
         return current_cut;
     }
 
@@ -301,6 +305,12 @@ class dynamic_mincut {
         LOGC(verbose) << "t " << timer.elapsed() << " cut " << current_cut
                       << " n " << original_graph->n()
                       << " m " << original_graph->m();
+        
+
+        if (configuration::getConfig()->find_most_balanced_cut) {
+            most_balanced_minimum_cut<mutableGraphPtr> mb;
+            mb.findCutFromCactus(out_cactus, current_cut, original_graph);
+        }
         return current_cut;
     }
 

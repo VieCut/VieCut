@@ -159,15 +159,23 @@ int main(int argn, char** argv) {
     LOG1 << dynG->m();
     size_t insert = 0;
     size_t remove = 0;
+    bool findMB = cfg->find_most_balanced_cut;
     if (run_static) {
         size_t currentBatchSize = 0;
 #ifdef PARALLEL
         exact_parallel_minimum_cut<mutableGraphPtr> static_alg;
 #else
-        noi_minimum_cut<mutableGraphPtr> static_alg;
+        minimum_cut* static_alg;
+        if (findMB) {
+            static_alg = new cactus_mincut<mutableGraphPtr>;
+        } else {
+            static_alg = new noi_minimum_cut<mutableGraphPtr>;
+        }
 #endif
-        EdgeWeight previous_cut = static_alg.perform_minimum_cut(dynG);
+
+        EdgeWeight previous_cut = static_alg->perform_minimum_cut(dynG);
         for (auto [s, t, w, isInsert] : dynEdges) {
+            LOGC(findMB) << "i=" << ctr;
             if (run_timer.elapsed() > timeout) {
                 timedOut = true;
                 break;
@@ -175,7 +183,7 @@ int main(int argn, char** argv) {
             if (currentBatchSize >= batch_size) {
                 currentBatchSize = 0;
                 staticruns++;
-                EdgeWeight current_cut = static_alg.perform_minimum_cut(dynG);
+                EdgeWeight current_cut = static_alg->perform_minimum_cut(dynG);
                 if (current_cut != previous_cut) {
                     previous_cut = current_cut;
                     cutchange++;
@@ -205,7 +213,7 @@ int main(int argn, char** argv) {
             }
         }
         staticruns++;
-        EdgeWeight current_cut = static_alg.perform_minimum_cut(dynG);
+        EdgeWeight current_cut = static_alg->perform_minimum_cut(dynG);
         if (current_cut != previous_cut) {
             LOG1 << "at end, cut " << current_cut;
             cutchange++;
@@ -215,6 +223,7 @@ int main(int argn, char** argv) {
         EdgeWeight previous_cut = dynmc.initialize(dynG);
         EdgeWeight current_cut = 0;
         for (auto [s, t, w, isInsert] : dynEdges) {
+            LOGC(findMB) << "i=" << ctr;
             if (run_timer.elapsed() > timeout) {
                 timedOut = true;
                 break;

@@ -175,12 +175,12 @@ int main(int argn, char** argv) {
 
         EdgeWeight previous_cut = static_alg->perform_minimum_cut(dynG);
         for (auto [s, t, w, isInsert] : dynEdges) {
-            LOGC(findMB) << "i=" << ctr;
             if (run_timer.elapsed() > timeout) {
                 timedOut = true;
                 break;
             }
             if (currentBatchSize >= batch_size) {
+                LOGC(findMB) << "i=" << ctr;
                 currentBatchSize = 0;
                 staticruns++;
                 EdgeWeight current_cut = static_alg->perform_minimum_cut(dynG);

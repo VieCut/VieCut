@@ -48,11 +48,13 @@ If you use this code in the context of an academic publication, we ask that you 
 @article{henzinger2020finding,
   title={Finding All Global Minimum Cuts in Practice},
   author={Henzinger, Monika and Noe, Alexander and Schulz, Christian and Strash, Darren},
+  booktitle = {28th Annual European Symposium on Algorithms, {ESA} 2020, September
+               7-9, 2020, Pisa, Italy (Virtual Conference)},
   year={2020}
 }
 
 @article{henzinger2020faster,
-  title={Faster Parallel Minimum Cuts},
+  title={Faster Parallel Multiterminal Cuts},
   author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
   year={2020}
 }

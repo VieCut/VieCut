@@ -72,7 +72,7 @@ TEST(UnionFindTest, UnionBlocks) {
     size_t blocksize_outer = 5;
     size_t blocksize_inner = 10;
     size_t blocksize = blocksize_inner * blocksize_outer;
-    union_find uf(num_blocks * blocksize);
+    union_find uf(num_blocks* blocksize);
     std::random_device rd;
     std::mt19937 eng(rd());
     std::uniform_int_distribution<> distribution(0, blocksize_inner - 1);

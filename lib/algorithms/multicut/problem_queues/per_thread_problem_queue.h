@@ -145,7 +145,7 @@ class per_thread_problem_queue {
             std::min_element(sizes.begin(), sizes.end(),
                              [](const auto& e1, const auto& e2) {
                                  return e1.first + e1.second
-                                 < e2.first + e2.second;
+                                        < e2.first + e2.second;
                              });
 
         if (!preferLocal) {

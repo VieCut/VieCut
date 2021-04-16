@@ -80,7 +80,7 @@ These algorithms significantly outperform the state of the art.
 
 ### Prerequisites
 
-In order to compile the code you need a version of the GCC that supports `c++-20`, such as `clang++-11`, and `cmake`. 
+In order to compile the code you need a C++ compiler that supports `c++-20`, such as `clang++-11`, and `cmake`. 
 As we use TCMalloc to allocate and deallocate memory, you need to have `google-perftools` installed.
 If you haven't installed these dependencies, please do so via your package manager
 

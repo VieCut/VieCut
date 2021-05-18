@@ -10,11 +10,13 @@ This is the code repository to accompany our papers:
 
 - *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-memory Exact Minimum Cuts. arXiv preprint [arXiv:1808.05458.](https://arxiv.org/abs/1808.05458)*
 
-- *Henzinger, M, Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908.04141)*
+- *Henzinger, M., Noe, A., Schulz, C. and Strash, D., 2020. Finding All Global Minimum Cuts in Practice. arXiv preprint [arxiv:2002.06948](https://arxiv.org/abs/2002.06948)*
 
-- *Henzinger, M, Noe, A., Schulz, C. and Strash, D., 2020. Finding All Global Minimum Cuts in Practice. arXiv preprint [arxiv:2002.06948](https://arxiv.org/abs/2002.06948)*
+- *Henzinger, M., Noe, A. and Schulz C., 2021. Practical Fully Dynamic Minimum Cut Algorithms [arxiv:2101.05033](https://arxiv.org/abs/2101.05033)* 
 
-- *Henzinger, M, Noe, A. and Schulz, C. Faster Parallel Multiterminal Cuts. arXiv preprint [arxiv:2004.11666](https://arxiv.org/abs/2004.11666)*
+- *Henzinger, M., Noe, A. and Schulz, C., 2019. Shared-Memory Branch-and-Reduce for Multiterminal Cuts. arXiv preprint [arXiv:1908.04141.](https://arxiv.org/abs/1908.04141)*
+
+- *Henzinger, M., Noe, A. and Schulz, C., 2020. Faster Parallel Multiterminal Cuts. arXiv preprint [arxiv:2004.11666](https://arxiv.org/abs/2004.11666)*
 
 The instances used for the third paper can be found on the [website](http://viecut.taa.univie.ac.at) for VieCut.
 
@@ -22,13 +24,15 @@ The papers can be freely accessed online in the arXiv.
 
 If you use this code in the context of an academic publication, we ask that you cite the applicable papers:
 ```bibtex
-@inproceedings{henzinger2018practical,
-  title={Practical Minimum Cut Algorithms},
-  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian and Strash, Darren},
-  booktitle={2018 Proceedings of the Twentieth Workshop on Algorithm Engineering and Experiments (ALENEX)},
-  pages={48--61},
-  year={2018},
-  organization={SIAM}
+@article{henzinger2018practical,
+  author  = {Monika Henzinger and
+               Alexander Noe and
+               Christian Schulz and
+               Darren Strash},
+  title   = {Practical Minimum Cut Algorithms},
+  journal = {{ACM} Journal of Experimental Algorithmics},
+  volume  = {23},
+  year    = {2018}
 }
 
 @inproceedings{henzinger2019shared,
@@ -36,13 +40,6 @@ If you use this code in the context of an academic publication, we ask that you 
   title = {{Shared-memory Exact Minimum Cuts}},
   booktitle={Proceedings of the 33rd International Parallel and Distributed Processing Symposium (IPDPS)},
   year = {2019}
-}
-
-@article{henzinger2020shared,
-  title={Shared-Memory Branch-and-Reduce for Multiterminal Cuts},
-  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
-  journal={2020 Proceedings of the 22nd Workshop on Algorithm Engineering and Experiments (ALENEX)},
-  year={2020}
 }
 
 @article{henzinger2020finding,
@@ -53,11 +50,31 @@ If you use this code in the context of an academic publication, we ask that you 
   year={2020}
 }
 
-@article{henzinger2020faster,
-  title={Faster Parallel Multiterminal Cuts},
-  author={Henzinger, Monika and Noe, Alexander and Schulz, Christian},
-  year={2020}
+@manuscript{henzinger2021practical,
+  title   = {Practical Fully Dynamic Minimum Cut Algorithms},
+  author  = {Henzinger, Monika and Noe, Alexander and Schulz, Christian},
+  journal = {arXiv preprint arXiv:2101.05033},
+  year    = {2021}
 }
+
+@inproceedings{henzinger2020sharedmemory,
+  title        = {Shared-Memory Branch-and-Reduce for Multiterminal Cuts},
+  author       = {Monika Henzinger and Alexander Noe and Christian Schulz},
+  year         = {2019},
+  booktitle    = {Proc. of the Twenty-First Workshop on Algorithm Engineering and Experiments, {ALENEX} 2020},
+  publisher    = {{SIAM}},
+  year         = {2020},
+  primaryclass = {cs.DS}
+}
+
+@manuscript{henzinger2020faster,
+  title   = {Faster Parallel Multiterminal Cuts},
+  author  = {Henzinger, Monika and Noe, Alexander and Schulz, Christian},
+  journal = {arXiv preprint arXiv:2004.11666},
+  year    = {2020}
+}
+
+
 ```
 
 ## Introduction

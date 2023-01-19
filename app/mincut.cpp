@@ -70,6 +70,8 @@ int main(int argn, char** argv) {
     cmdl.add_flag('v', "verbose", cfg->verbose, "more verbose logs");
     cmdl.add_string('e', "edge_select", cfg->edge_selection, "NNI edge select");
     cmdl.add_size_t('r', "seed", cfg->seed, "random seed");
+    cmdl.add_string('t', "cactus_filename", cfg->cactus_filename,
+                    "name of GraphML file for the cactus graph");
 
     if (!cmdl.process(argn, argv))
         return -1;

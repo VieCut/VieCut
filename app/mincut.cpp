@@ -81,6 +81,11 @@ int main(int argn, char** argv) {
         cfg->find_most_balanced_cut = true;
     }
 
+    if (cfg->cactus_filename != "" ) {
+        // need save_cut to properly maintain containedVertices, see https://github.com/VieCut/VieCut/issues/7
+	cfg->save_cut = true;
+    }
+
     std::vector<int> numthreads;
     timer t;
     GraphPtr G = graph_io::readGraphWeighted<graph_type>(

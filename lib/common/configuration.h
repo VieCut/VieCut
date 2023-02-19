@@ -78,6 +78,9 @@ class configuration {
     bool blacklist = true;
     bool set_node_in_cut = false;
 
+    // cactus graph output
+    std::string cactus_filename = "";
+
     // dynamic minimum cut
     size_t depthOfPartialRelabeling = 1;
 

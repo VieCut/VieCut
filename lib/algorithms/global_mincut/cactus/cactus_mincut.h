@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <tuple>
@@ -29,6 +30,7 @@
 #include "algorithms/global_mincut/viecut.h"
 #include "common/definitions.h"
 #include "data_structure/graph_access.h"
+#include "data_structure/mutable_graph.h"
 #include "data_structure/priority_queues/maxNodeHeap.h"
 #include "io/graph_io.h"
 #include "tools/string.h"
@@ -166,7 +168,7 @@ class cactus_mincut : public minimum_cut {
             mincut = noi.perform_minimum_cut(graphs.back());
 
         rc.setMincut(mincut);
-        auto out_graph = rc.flowMincut(graphs);
+        auto out_graph = rc.flowMincut(graphs);  // This is the cactus graph!
 
         minimum_cut_helpers<GraphPtr>::setVertexLocations(
             out_graph, graphs, ge_ids, guaranteed_edges, mincut);
@@ -179,6 +181,66 @@ class cactus_mincut : public minimum_cut {
             mb_edges = mbmc.findCutFromCactus(out_graph, mincut, graphs[0]);
         }
 
+	if (configuration::getConfig()->cactus_filename != "") {
+	    _write_cactus_graphml_file(out_graph, configuration::getConfig()->cactus_filename);
+	}
+
         return std::make_tuple(mincut, out_graph, mb_edges);
     }
 };
+
+
+void _write_cactus_graphml_file(mutableGraphPtr cactus, const std::string& cactus_filename) {
+    std::ostringstream oss;
+
+    oss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+	<< "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\"\n"
+	<< "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+	<< "         xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n";
+
+    oss << "  <key id=\"containedVertices\" for=\"node\" attr.name=\"containedVertices\" attr.type=\"string\"/>\n"
+	<< "  <key id=\"weight\" for=\"edge\" attr.name=\"weight\" attr.type=\"double\"/>\n";
+
+    oss << "  <graph id=\"cactus\" edgedefault=\"undirected\">\n";
+
+    // Generate XML for nodes.
+    auto nodes = cactus->nodes();
+
+    for (auto node_it = nodes.begin(); node_it != nodes.end(); ++node_it) {
+        oss << "    <node id=\"" << *node_it << "\">\n"
+	    << "      <data key=\"containedVertices\">";
+
+	auto vertices = cactus->containedVertices(*node_it); // needed as containedVertices() creates copy, not reference
+
+        for (auto vertex_it = vertices.begin(); vertex_it != vertices.end(); ) {
+            oss << *vertex_it;
+	    if (++vertex_it != vertices.end())
+		oss << ",";
+        }
+
+        oss << "</data>\n";
+	oss << "    </node>\n";
+    }
+
+    // Generate XML for edges.
+    for (NodeID n : cactus->nodes()) {
+        for (EdgeID e : cactus->edges_of(n)) {
+	    if (n > cactus->getEdgeTarget(n, e))
+		continue;
+
+	    std::ostringstream edge_id;
+	    edge_id << n << "-" << cactus->getEdgeTarget(n, e) << "-" << e;
+
+	    oss << "    <edge id=\"" << edge_id.str() << "\" source=\"" << n << "\" target=\"" << cactus->getEdgeTarget(n, e) << "\">\n"
+		<< "      <data key=\"weight\">" << cactus->getEdgeWeight(n, e) << "</data>\n"
+		<< "    </edge>\n";
+        }
+    }
+
+    oss << "  </graph>\n";
+    oss << "</graphml>\n";
+
+    std::ofstream cactus_file(cactus_filename);
+    cactus_file << oss.str();
+    cactus_file.close();
+}
